@@ -31,7 +31,8 @@ public class GoogleMapsController {
     public GoogleMapsConfigDto getConfigStatus() {
         return new GoogleMapsConfigDto(
                 googleMapsProperties.isConfigured(),
-                googleMapsProperties.getBaseUrl()
+                googleMapsProperties.getBaseUrl(),
+                googleMapsProperties.getApiKey()
         );
     }
 //aficher ligne dans google map
