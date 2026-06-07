@@ -1,0 +1,56 @@
+services:
+  backend:
+    image: maven:3.9.9-eclipse-temurin-21
+    build: {}
+    container_name: esprit-market-backend-dev
+    working_dir: /app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-for-development-only}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+    volumes:
+      - ../backend:/app
+      - maven_cache:/root/.m2
+    ports:
+      - "8088:8088"
+      - "5005:5005"
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "mvn spring-boot:run -Dspring-boot.run.jvmArguments='-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'"
+    networks:
+      - backend-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile.dev
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ../frontend/src:/app/src:ro
+      - ../frontend/angular.json:/app/angular.json:ro
+      - ../frontend/tsconfig.json:/app/tsconfig.json:ro
+      - ../frontend/tsconfig.app.json:/app/tsconfig.app.json:ro
+    ports:
+      - "4200:4200"
+    command: npx ng serve --host 0.0.0.0 --port 4200 --poll 500
+    networks:
+      - backend-network
+
+  prometheus:
+    ports:
+      - "9090:9090"
+
+  grafana:
+    ports:
+      - "3000:3000"
+
+volumes:
+  maven_cache:
+    driver: local

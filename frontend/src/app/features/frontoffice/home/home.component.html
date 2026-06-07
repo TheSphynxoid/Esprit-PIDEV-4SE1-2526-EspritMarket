@@ -1,0 +1,137 @@
+<app-header></app-header>
+
+<!-- Hero Section -->
+<section class="relative min-h-screen flex items-center justify-center px-4 overflow-hidden bg-gradient-to-br from-neutral-50 via-white to-esprit-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 transition-colors duration-200">
+  <!-- Decorative elements -->
+  <div class="absolute top-0 right-0 w-96 h-96 bg-esprit-red/5 rounded-full blur-3xl -mr-48 -mt-48"></div>
+  <div class="absolute bottom-0 left-0 w-96 h-96 bg-esprit-red/5 rounded-full blur-3xl -ml-48 -mb-48"></div>
+
+  <div class="relative z-10 container-wide text-center max-w-4xl">
+    <!-- Logo -->
+    <div class="mb-8 inline-flex items-center justify-center">
+      <img 
+        src="assets/logo.png"
+        alt="ESPRIT Market Logo"
+        class="w-24 h-24 object-contain drop-shadow-xl"
+      />
+    </div>
+    
+    <h1 class="text-5xl sm:text-6xl font-bold text-primary dark:text-white mb-6 leading-tight">
+      The Student 
+      <span class="bg-gradient-to-r from-esprit-red to-esprit-700 bg-clip-text text-transparent">Platform</span>
+    </h1>
+    
+    <p class="text-xl text-secondary dark:text-neutral-300 mb-8 max-w-2xl mx-auto leading-relaxed">
+      Buy, sell, find job offers and connect with thousands of ESPRIT students
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+      <a routerLink="/marketplace" class="btn btn-primary text-lg px-8 py-4 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+        Explore the Store →
+      </a>
+      <a routerLink="/tickets" class="btn bg-gradient-to-r from-esprit-red to-esprit-700 text-white text-lg px-8 py-4 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300">
+        🎟️ Get Tickets
+      </a>
+      <a routerLink="/projects" class="btn btn-secondary border-2 border-esprit-red text-esprit-red text-lg px-8 py-4 rounded-xl font-semibold hover:bg-esprit-red/5 transform hover:-translate-y-1 transition-all duration-300">
+        View Services
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-3 gap-6 max-w-2xl mx-auto pt-8 border-t border-neutral-200 dark:border-neutral-700">
+      <div>
+        <div class="text-3xl font-bold text-esprit-red">2.5K+</div>
+        <div class="text-sm text-secondary dark:text-neutral-400">Active Users</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-esprit-red">1K+</div>
+        <div class="text-sm text-secondary">Listed Products</div>
+      </div>
+      <div>
+        <div class="text-3xl font-bold text-esprit-red">5K+</div>
+        <div class="text-sm text-secondary">Transactions</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-20 px-4 bg-white dark:bg-neutral-800 transition-colors duration-200">
+  <div class="container-wide">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold text-primary dark:text-white mb-4">Why choose ESPRIT Market?</h2>
+      <p class="text-lg text-secondary dark:text-neutral-300">Everything you need to succeed in your student life</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">🛍️</div>
+        <h3 class="text-xl font-bold text-primary dark:text-white mb-3">Secure Marketplace</h3>
+        <p class="text-secondary dark:text-neutral-300 mb-4">Buy and sell among peers with confidence through a transparent rating system</p>
+        <a href="#" class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </a>
+      </div>
+
+      <div class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">💼</div>
+        <h3 class="text-xl font-bold text-primary mb-3">Job Offers</h3>
+        <p class="text-secondary mb-4">Discover internship and job offers directly from partner companies</p>
+        <a href="#" class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </a>
+      </div>
+
+      <div class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">📚</div>
+        <h3 class="text-xl font-bold text-primary mb-3">Student Services</h3>
+        <p class="text-secondary mb-4">Access services like tutoring, projects and much more</p>
+        <a href="#" class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </a>
+      </div>
+
+      <a routerLink="/tickets" class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">🎟️</div>
+        <h3 class="text-xl font-bold text-primary mb-3">Event Tickets</h3>
+        <p class="text-secondary mb-4">Buy tickets for campus events and special activities</p>
+        <span class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </span>
+      </a>
+
+      <div class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">🚗</div>
+        <h3 class="text-xl font-bold text-primary mb-3">Fast Delivery</h3>
+        <p class="text-secondary mb-4">Reliable delivery system between students and ESPRIT</p>
+        <a href="#" class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </a>
+      </div>
+
+      <div class="group card card-md hover:shadow-lg hover:shadow-esprit-red/20 cursor-pointer">
+        <div class="text-4xl mb-4 transform group-hover:scale-110 transition-transform duration-300">👥</div>
+        <h3 class="text-xl font-bold text-primary mb-3">Active Community</h3>
+        <p class="text-secondary mb-4">Connect with thousands of students and grow your network</p>
+        <a href="#" class="text-esprit-red font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-2">
+          Learn more <span>→</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 px-4 bg-gradient-to-r from-esprit-red to-esprit-700 text-white">
+  <div class="container-wide text-center max-w-3xl">
+    <h2 class="text-4xl font-bold mb-6">Ready to get started?</h2>
+    <p class="text-xl mb-8 opacity-90">Join thousands of students who are already part of the ESPRIT Market community</p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a routerLink="/marketplace" class="btn bg-white text-esprit-red hover:bg-neutral-100 text-lg px-8 py-4 rounded-xl font-semibold transition-all duration-300">
+        Get Started →
+      </a>
+    </div>
+  </div>
+</section>
+
+<app-footer></app-footer>

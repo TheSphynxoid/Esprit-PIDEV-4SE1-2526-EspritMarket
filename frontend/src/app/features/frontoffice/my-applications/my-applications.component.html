@@ -1,0 +1,99 @@
+<app-header></app-header>
+
+<main class="applications-container">
+  <div class="dashboard-header">
+    <h1>My Applications</h1>
+    <p>Track the status of your job applications and upcoming interviews.</p>
+  </div>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading your applications...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-alert">
+    {{ errorMessage }}
+  </div>
+
+  <div *ngIf="!loading && applications.length === 0 && !errorMessage" class="empty-state">
+    <div class="empty-icon">📄</div>
+    <h3>No applications yet</h3>
+    <p>You haven't applied to any job offers. Explore our marketplace to find your dream opportunity!</p>
+    <a routerLink="/offers" class="btn btn-primary mt-4">Browse Job Offers</a>
+  </div>
+
+  <div class="applications-grid" *ngIf="!loading && applications.length > 0">
+    <div class="application-card" *ngFor="let app of applications">
+      
+      <div class="card-header">
+        <div class="job-info">
+          <h2>{{ app.jobOffer?.title || 'Unknown Job' }}</h2>
+          <span class="company-name">🏢 {{ app.jobOffer?.company?.name || 'ESPRIT Market' }}</span>
+        </div>
+        <span class="status-badge" 
+              [ngClass]="{
+                'status-pending': app.status === 'PENDING',
+                'status-accepted': app.status === 'ACCEPTED',
+                'status-rejected': app.status === 'REJECTED',
+                'status-waiting': app.status === 'WAITING_LIST'
+              }">
+          {{ app.status }}
+        </span>
+      </div>
+
+      <div class="card-body">
+        <p class="motivation-preview"><strong>Motivation:</strong> {{ app.motivation ? (app.motivation | slice:0:100) + '...' : 'No motivation provided.' }}</p>
+        <div class="score-container">
+          <strong>Matching Score:</strong>
+          <span class="score-badge" [ngClass]="getScoreClass(app.matchingScore)">{{ app.matchingScore }}%</span>
+        </div>
+      </div>
+
+      <div class="card-footer interview-section" *ngIf="app.status === 'ACCEPTED' || (app.interviews && app.interviews.length > 0)">
+        <div *ngIf="getLatestInterview(app)">
+          <div class="interview-details">
+            <span class="interview-icon">📅</span>
+            <div class="interview-text">
+              <strong>Interview {{ getLatestInterview(app)?.status }}</strong>
+              <span>{{ getLatestInterview(app)?.interviewDate | date:'EEEE, MMM d, y, h:mm a' }}</span>
+              <span>Type: {{ getLatestInterview(app)?.type }}</span>
+            </div>
+          </div>
+          <div class="interview-actions mt-3">
+            <!-- VIDEO INTERVIEW -->
+            <ng-container *ngIf="getLatestInterview(app)?.type === 'VIDEO'">
+              <button 
+                class="btn btn-join-interview" 
+                [ngClass]="{'btn-disabled': !isInterviewJoinable(getLatestInterview(app))}"
+                [disabled]="!isInterviewJoinable(getLatestInterview(app))"
+                (click)="joinInterview(getLatestInterview(app)?.id)">
+                🎥 {{ isInterviewJoinable(getLatestInterview(app)) ? 'Join Interview Room' : getTimeUntilInterviewMessage(getLatestInterview(app)) }}
+              </button>
+              <span *ngIf="isInterviewJoinable(getLatestInterview(app))" class="pulse-indicator">● Live</span>
+            </ng-container>
+
+            <!-- IN PERSON INTERVIEW -->
+            <div *ngIf="getLatestInterview(app)?.type === 'IN_PERSON'" class="info-box info-location">
+              <strong>📍 Location:</strong> {{ getLatestInterview(app)?.location || 'TBD - Contact Recruiter' }}
+            </div>
+
+            <!-- PHONE INTERVIEW -->
+            <div *ngIf="getLatestInterview(app)?.type === 'PHONE'" class="info-box info-phone">
+              <strong>📞 Phone Interview:</strong> The recruiter will call you at the scheduled time.
+            </div>
+          </div>
+        </div>
+        <div *ngIf="app.status === 'ACCEPTED' && (!app.interviews || app.interviews.length === 0)" class="waiting-interview">
+          <span>🎉 You've been accepted! The recruiter will schedule an interview soon.</span>
+        </div>
+      </div>
+
+      <div class="card-footer" *ngIf="app.status === 'REJECTED'">
+        <span class="muted-text">Unfortunately, your application was not selected this time.</span>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

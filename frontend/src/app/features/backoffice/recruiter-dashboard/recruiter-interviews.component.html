@@ -1,0 +1,333 @@
+<div class="recruiter-interviews">
+  <!-- Toast Notification -->
+  <div *ngIf="showToast" class="toast-notification toast-success">
+    <div class="toast-icon">✅</div>
+    <div class="toast-content">Interview result saved successfully</div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Create Interview Form -->
+  <div class="form-section">
+    <h2>Schedule New Interview</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <div class="form-group status-row">
+        <label>Status</label>
+        <span class="status-badge status-scheduled">{{ createStatus }}</span>
+      </div>
+
+      <!-- Interview Date Field -->
+      <div class="form-group">
+        <label for="interviewDate">Interview Date & Time *</label>
+        <div class="date-input-wrapper">
+          <input 
+            id="interviewDate" 
+            type="datetime-local" 
+            formControlName="interviewDate" 
+            class="form-control"
+          />
+          <button 
+            type="button" 
+            class="btn btn-sm btn-suggest"
+            (click)="fetchSuggestedSlots()"
+            [disabled]="loadingSlots || !form.get('applicationId')?.value"
+            title="Suggest optimal conflict-free slots"
+          >
+            <span *ngIf="loadingSlots" class="spinner-sm"></span>
+            <span *ngIf="!loadingSlots"><i class="fas fa-magic"></i> Suggest Slots</span>
+          </button>
+        </div>
+
+        <!-- Suggested Slots Row -->
+        <div *ngIf="suggestedSlots.length > 0" class="suggested-slots-container fade-in">
+          <div class="slots-header">
+            <i class="fas fa-sparkles text-amber-500"></i>
+            <span class="slots-label">Smart Suggestions</span>
+          </div>
+          <div class="slots-list">
+            <button 
+              type="button" 
+              class="slot-chip" 
+              *ngFor="let slot of suggestedSlots"
+              (click)="applySuggestedSlot(slot)"
+              title="Click to apply this slot"
+            >
+              <i class="far fa-calendar-check"></i>
+              {{ slot | date:'MMM dd, HH:mm' }}
+            </button>
+          </div>
+        </div>
+
+        <small class="error" *ngIf="getFieldError('interviewDate')">
+          {{ getFieldError('interviewDate') }}
+        </small>
+        <small class="help-text">Date must be today or in the future</small>
+      </div>
+
+      <!-- Interview Type Field -->
+      <div class="form-group">
+        <label for="type">Interview Type *</label>
+        <select 
+          id="type" 
+          formControlName="type"
+          class="form-control"
+        >
+          <option *ngFor="let type of types" [value]="type">
+            {{ type }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('type')">
+          {{ getFieldError('type') }}
+        </small>
+      </div>
+
+      <!-- Location Field -->
+      <div class="form-group">
+        <label for="location">
+          Location
+          <span *ngIf="isLocationRequired()">*</span>
+        </label>
+        <input
+          id="location"
+          type="text"
+          formControlName="location"
+          placeholder="e.g. Google Meet link or office address"
+          class="form-control"
+        />
+        <small class="error" *ngIf="getFieldError('location')">
+          {{ getFieldError('location') }}
+        </small>
+        <small class="help-text" *ngIf="isLocationRequired()">
+          Required for VIDEO and IN_PERSON interviews.
+        </small>
+      </div>
+
+      <!-- Application Field -->
+      <div class="form-group">
+        <label for="applicationId">Application *</label>
+        <select 
+          id="applicationId" 
+          formControlName="applicationId"
+          class="form-control"
+        >
+          <option value="">Select an application</option>
+          <option *ngFor="let app of applications" [value]="app.id">
+            {{ getApplicationLabel(app.id) }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('applicationId')">
+          {{ getFieldError('applicationId') }}
+        </small>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="form.invalid"
+        >
+          Schedule Interview
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Interviews List Section -->
+  <div class="list-section">
+    <h2>Scheduled Interviews</h2>
+    
+    <div *ngIf="loading" class="loading">Loading interviews...</div>
+    
+    <div *ngIf="!loading && interviews.length === 0" class="empty-state">
+      No interviews scheduled. Schedule one to get started.
+    </div>
+
+    <table *ngIf="!loading && interviews.length > 0" class="interviews-table">
+      <thead>
+        <tr>
+          <th>Application</th>
+          <th>Interview Date</th>
+          <th>Type</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Result</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let interview of interviews">
+          <td>{{ getInterviewApplicationLabel(interview) }}</td>
+          <td>{{ interview.interviewDate | date: 'MMM dd, yyyy HH:mm' }}</td>
+          <td>
+            <span class="type-badge" [ngClass]="'type-' + interview.type.toLowerCase()">
+              {{ formatType(interview.type) }}
+            </span>
+          </td>
+          <td>{{ interview.location || 'N/A' }}</td>
+          <td>
+            <span
+              class="status-badge"
+              [ngClass]="{
+                'status-scheduled': interview.status === 'SCHEDULED',
+                'status-completed': interview.status === 'COMPLETED',
+                'status-cancelled': interview.status === 'CANCELLED'
+              }"
+            >
+              {{ interview.status }}
+            </span>
+          </td>
+          <td class="result-cell">
+            <span *ngIf="!interview.result" class="result-pending">Pending</span>
+            <span *ngIf="interview.result === 'ACCEPTED'" class="badge badge-accepted">✅ ACCEPTED</span>
+            <span *ngIf="interview.result === 'REJECTED'" class="badge badge-rejected">❌ REJECTED</span>
+            <span *ngIf="interview.result === 'WAITING_LIST'" class="badge badge-waiting">⏳ WAITING LIST</span>
+          </td>
+          <td class="actions">
+            <!-- JOIN VIDEO INTERVIEW BUTTON -->
+            <button
+              *ngIf="interview.type === 'VIDEO' && interview.status === 'SCHEDULED'"
+              class="btn btn-sm"
+              [ngClass]="isInterviewJoinable(interview) ? 'btn-primary pulse-btn' : 'btn-disabled'"
+              [disabled]="!isInterviewJoinable(interview)"
+              (click)="joinInterview(interview.id)"
+              [title]="isInterviewJoinable(interview) ? 'Join Now' : getTimeUntilInterviewMessage(interview)"
+            >
+              🎥 {{ isInterviewJoinable(interview) ? 'Join' : getTimeUntilInterviewMessage(interview) }}
+            </button>
+
+            <!-- MARK RESULT BUTTON -->
+            <button 
+              *ngIf="canMarkAsDone(interview)"
+              class="btn btn-sm btn-secondary"
+              (click)="startEditResult(interview)"
+              title="Mark as Done"
+            >
+              Mark Result
+            </button>
+            <span *ngIf="!canMarkAsDone(interview) && (interview.status === 'COMPLETED' || interview.status === 'CANCELLED')" class="muted-action">Finalized</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Modal Overlay for Interview Result -->
+  <div *ngIf="showResultModal && selectedInterview" class="modal-overlay">
+    <div class="modal-container">
+      
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h2>Mark Interview Result</h2>
+          <span
+            class="status-badge"
+            [ngClass]="{
+              'status-scheduled': selectedInterview.status === 'SCHEDULED',
+              'status-completed': selectedInterview.status === 'COMPLETED',
+              'status-cancelled': selectedInterview.status === 'CANCELLED'
+            }"
+          >
+            {{ selectedInterview.status }}
+          </span>
+        </div>
+        <div class="modal-details">
+          <p class="detail-student"><strong>{{ selectedInterview.studentFirstName }} {{ selectedInterview.studentLastName }}</strong> — {{ selectedInterview.jobTitle }}</p>
+          <div class="detail-meta">
+            <span>📅 {{ selectedInterview.interviewDate | date: 'MMM dd, yyyy HH:mm' }}</span>
+            <span>🎥 {{ formatType(selectedInterview.type) }}</span>
+            <span *ngIf="selectedInterview.location">📍 {{ selectedInterview.location }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form State -->
+      <div *ngIf="!showConfirmation" class="modal-body">
+        <form [formGroup]="editResultForm">
+          <div class="form-group">
+            <label for="resultStatus">Status *</label>
+            <select id="resultStatus" formControlName="status" class="form-control">
+              <option *ngFor="let status of statuses" [value]="status">
+                {{ status }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="showResultDropdown()">
+            <label for="resultValue">Result *</label>
+            <select id="resultValue" formControlName="result" class="form-control">
+              <option [ngValue]="null">Select result</option>
+              <option *ngFor="let result of results" [value]="result">
+                {{ result }}
+              </option>
+            </select>
+            <small class="error" *ngIf="getResultFieldError('result')">
+              {{ getResultFieldError('result') }}
+            </small>
+          </div>
+
+          <div class="form-group" *ngIf="showResultDropdown()">
+            <label for="resultNotes">Notes</label>
+            <textarea
+              id="resultNotes"
+              formControlName="resultNotes"
+              placeholder="Add interview notes..."
+              class="form-control"
+              rows="3"
+            ></textarea>
+            <small class="error" *ngIf="getResultFieldError('resultNotes')">
+              {{ getResultFieldError('resultNotes') }}
+            </small>
+          </div>
+
+          <div class="form-group" *ngIf="showCancellationReason()">
+            <label for="cancellationReason">Cancellation Reason</label>
+            <input
+              id="cancellationReason"
+              type="text"
+              formControlName="resultNotes"
+              placeholder="Why was the interview cancelled?"
+              class="form-control"
+            />
+          </div>
+        </form>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-cancel" (click)="cancelEditResult()">Cancel</button>
+          <button type="button" class="btn btn-save" [disabled]="editResultForm.invalid" (click)="confirmResult()">Save Result</button>
+        </div>
+      </div>
+
+      <!-- Confirmation State -->
+      <div *ngIf="showConfirmation" class="modal-body confirmation-step">
+        <div class="confirmation-icon">⚠️</div>
+        <h3>Confirm Result</h3>
+        <p class="confirmation-message">
+          Are you sure you want to mark this interview as 
+          <strong>{{ editResultForm.get('status')?.value }}</strong>
+          <span *ngIf="editResultForm.get('status')?.value === 'COMPLETED'"> - <strong>{{ editResultForm.get('result')?.value }}</strong></span>?
+        </p>
+        <p class="confirmation-subtext">This action will automatically notify the student and update their application status.</p>
+        
+        <div *ngIf="errorMessage" class="alert alert-error" style="margin-top: 15px;">
+          {{ errorMessage }}
+        </div>
+
+        <div class="modal-actions confirmation-actions">
+          <button type="button" class="btn btn-secondary" [disabled]="isSaving" (click)="goBackToForm()">Go Back</button>
+          <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="executeResultUpdate()">
+            {{ isSaving ? 'Saving...' : 'Confirm' }}
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+

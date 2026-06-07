@@ -1,0 +1,95 @@
+@startuml partnerships-sprint2-sequence-matching
+skinparam style strictuml
+
+actor Company
+participant "MatchingController" as MC
+participant "MatchingEngine" as ME
+participant "MatchingScoreRepository" as MSR
+participant "InterviewScheduler" as IS
+participant "CalendarService" as CS
+participant "NotificationService" as NS
+database "Database" as DB
+
+== ML-Based Candidate Matching ==
+
+Company -> MC : POST /api/matching/calculate\n{offerId}
+activate MC
+
+MC -> ME : batchCalculate(offerId)
+activate ME
+
+ME -> DB : SELECT FROM user_profiles\nJOIN skills, experiences
+activate DB
+DB --> ME : List<UserProfile>
+deactivate DB
+
+ME -> DB : SELECT FROM offers WHERE id = ?
+activate DB
+DB --> ME : Offer
+deactivate DB
+
+loop For each candidate profile
+    ME -> ME : calculateSkillsMatch(profile, offer)
+    ME -> ME : calculateExperienceMatch(profile, offer)
+    ME -> ME : calculateLocationMatch(profile, offer)
+    ME -> ME : applyWeights()\noverallScore = w1*skills + w2*exp + w3*loc
+end
+
+ME -> MSR : saveAll(matchingScores)
+activate MSR
+MSR -> DB : BATCH INSERT INTO matching_scores
+activate DB
+DB --> MSR : saved
+deactivate DB
+MSR --> ME : scores
+deactivate MSR
+
+ME --> MC : List<MatchingScore>\n(sorted by score desc)
+deactivate ME
+
+MC --> Company : 200 OK\n[{candidateId, score, breakdown}, ...]
+deactivate MC
+
+== Schedule Interview ==
+
+Company -> MC : POST /api/interviews\n{applicationId, datetime, duration}
+activate MC
+
+MC -> IS : scheduleInterview(applicationId, datetime, duration)
+activate IS
+
+IS -> DB : SELECT FROM applications WHERE id = ?
+activate DB
+DB --> IS : Application
+deactivate DB
+
+IS -> IS : createInterviewSchedule()
+
+IS -> CS : createCalendarEvent(interview)
+activate CS
+CS -> CS : generateCalendarInvite()\ncalendarEventId = ...
+CS --> IS : calendarEventId
+deactivate CS
+
+IS -> MSR : save(interviewSchedule)
+activate MSR
+MSR -> DB : INSERT INTO interview_schedules
+activate DB
+DB --> MSR : interview (with id)
+deactivate DB
+MSR --> IS : saved
+deactivate MSR
+
+IS -> NS : sendInterviewInvitation(candidate, interview)
+activate NS
+NS -> NS : sendEmail(candidate, calendarInvite, details)
+NS --> IS : sent
+deactivate NS
+
+IS --> MC : InterviewScheduleDTO
+deactivate IS
+
+MC --> Company : 201 Created\n{interviewId, datetime, meetingLink}
+deactivate MC
+
+@enduml

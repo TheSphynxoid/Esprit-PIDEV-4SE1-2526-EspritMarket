@@ -1,0 +1,101 @@
+<app-backoffice-layout
+  title="Admin Services"
+  [navItems]="navItems"
+  [activeTab]="activeTab()"
+  (tabChange)="onTabChange($event)"
+  (logout)="logout()"
+>
+<div class="space-y-6">
+  <div *ngIf="activeTab() === 'overview'" class="animate-fade-in">
+    <h1 class="text-3xl font-bold text-primary dark:text-white mb-6">Services Overview</h1>
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="card card-md text-center">
+        <p class="text-sm text-secondary mb-2">Services</p>
+        <p class="text-3xl font-bold text-esprit-red">{{ services.length }}</p>
+        <p class="text-xs text-secondary mt-2">Total</p>
+      </div>
+      <div class="card card-md text-center">
+        <p class="text-sm text-secondary mb-2">Providers</p>
+        <p class="text-3xl font-bold text-esprit-red">{{ providers.length }}</p>
+        <p class="text-xs text-secondary mt-2">Active</p>
+      </div>
+      <div class="card card-md text-center">
+        <p class="text-sm text-secondary mb-2">Active</p>
+        <p class="text-3xl font-bold text-esprit-red">{{ services.length }}</p>
+        <p class="text-xs text-secondary mt-2">Online</p>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="activeTab() === 'services'" class="animate-fade-in">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-primary dark:text-white">Services Management</h1>
+      <button (click)="openCreateServiceModal()" class="btn btn-primary">New Service</button>
+    </div>
+
+    <div class="card card-lg overflow-hidden">
+      <table class="w-full">
+        <thead class="bg-neutral-100 dark:bg-neutral-700">
+          <tr>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Service</th>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Category</th>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Provider</th>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Price</th>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Status</th>
+            <th class="text-left px-4 py-3 text-sm font-semibold text-secondary">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let service of services" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50 transition-colors duration-200">
+            <td class="px-4 py-3 text-sm text-primary dark:text-white">{{ service.name }}</td>
+            <td class="px-4 py-3 text-sm text-secondary">{{ service.category }}</td>
+            <td class="px-4 py-3 text-sm text-secondary">{{ service.provider }}</td>
+            <td class="px-4 py-3 text-sm font-semibold text-esprit-red">{{ service.price }} DT</td>
+            <td class="px-4 py-3">
+              <span class="badge" [class.badge-success]="service.status === 'active'" [class.badge-warning]="service.status === 'pending'">
+                {{ service.status === 'active' ? 'Available' : 'Pending' }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <button (click)="openEditServiceModal(service)" class="btn btn-secondary btn-sm mr-2">Edit</button>
+              <button class="btn btn-danger btn-sm" (click)="confirmDeleteService(service.id, service.name)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="activeTab() === 'providers'" class="animate-fade-in">
+    <h1 class="text-3xl font-bold text-primary dark:text-white mb-6">Providers Management</h1>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div *ngFor="let provider of providers" class="card card-md">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white font-bold">
+            {{ provider.initials }}
+          </div>
+          <div>
+            <h3 class="font-bold text-primary dark:text-white">{{ provider.name }}</h3>
+            <p class="text-xs text-secondary">{{ provider.speciality }}</p>
+          </div>
+        </div>
+        <div class="flex justify-between text-xs text-secondary mb-3">
+          <span>{{ provider.rating }}/5</span>
+          <span>{{ provider.serviceCount }} services</span>
+        </div>
+        <button class="btn btn-secondary btn-sm w-full">View profile</button>
+      </div>
+    </div>
+  </div>
+</div>
+</app-backoffice-layout>
+
+<app-modal
+  [isOpen]="isModalOpen()"
+  [title]="isEditing() ? 'Edit Service' : 'Add Service'"
+  [isSubmitting]="isSubmitting()"
+  (close)="closeServiceModal()"
+  (submitted)="submitServiceForm()"
+>
+  <app-service-form></app-service-form>
+</app-modal>

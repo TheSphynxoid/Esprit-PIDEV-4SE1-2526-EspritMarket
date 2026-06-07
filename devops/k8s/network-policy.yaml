@@ -1,0 +1,46 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"networking.k8s.io/v1","kind":"NetworkPolicy","metadata":{"annotations":{},"name":"postgres-network-policy","namespace":"esprit-market"},"spec":{"egress":[{"ports":[{"port":53,"protocol":"UDP"}],"to":[{"namespaceSelector":{},"podSelector":{"matchLabels":{"k8s-app":"kube-dns"}}}]}],"ingress":[{"from":[{"podSelector":{"matchLabels":{"app":"esprit-market-backend"}}}],"ports":[{"port":5432,"protocol":"TCP"}]},{"from":[{"podSelector":{"matchLabels":{"app":"ml-service"}}}],"ports":[{"port":5432,"protocol":"TCP"}]}],"podSelector":{"matchLabels":{"app":"postgres"}},"policyTypes":["Ingress","Egress"]}}
+  creationTimestamp: "2026-03-27T21:10:56Z"
+  generation: 3
+  name: postgres-network-policy
+  namespace: esprit-market
+  resourceVersion: "4776123"
+  uid: 5c0293c3-e8cf-42d3-adf7-05a722d480cd
+spec:
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: esprit-market-backend
+    - podSelector:
+        matchLabels:
+          app: esprit-market-backend-dev
+    ports:
+    - port: 5432
+      protocol: TCP
+  - from:
+    - podSelector:
+        matchLabels:
+          app: ml-service
+    ports:
+    - port: 5432
+      protocol: TCP
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+  - Ingress
+  - Egress

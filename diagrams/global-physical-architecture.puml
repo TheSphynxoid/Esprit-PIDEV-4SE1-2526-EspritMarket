@@ -1,0 +1,24 @@
+@startuml physical-architecture
+skinparam componentStyle rectangle
+skinparam componentFontName monospaced
+
+actor "User" as user
+
+package "Client" {
+    component "Web Browser" as browser
+}
+
+package "Kubernetes Cluster" {
+    component "Spring Boot Application" as springBoot
+    component "AI Microservices" as ai
+    component "PostgreSQL Database" as db
+    component "Persistent Volume\n(File Storage)" as pvc
+}
+
+user <--> browser : HTTPS
+browser <--> springBoot : HTTP
+springBoot <--> ai : REST API
+springBoot <--> db : JDBC/5432
+springBoot <--> pvc : File I/O
+ai <--> pvc : File I/O
+@enduml

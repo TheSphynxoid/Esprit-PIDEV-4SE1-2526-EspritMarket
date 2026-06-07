@@ -1,0 +1,104 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <!-- Sidebar -->
+  <aside
+    class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div
+        class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+        <img src="assets/logo.png" alt="ESPRIT Logo" class="w-full h-full object-contain" />
+      </div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Recruiter Dashboard</h2>
+    <nav class="space-y-2">
+      <a routerLink="/dashboard/recruiter/overview" routerLinkActive="bg-esprit-red text-white"
+        [routerLinkActiveOptions]="{ exact: true }"
+        class="block text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-secondary text-sm font-medium">
+        📊 Overview
+      </a>
+      <a routerLink="/dashboard/recruiter/companies" routerLinkActive="bg-esprit-red text-white"
+        class="block text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-secondary text-sm font-medium">
+        🏢 Companies
+      </a>
+      <a routerLink="/dashboard/recruiter/joboffers" routerLinkActive="bg-esprit-red text-white"
+        class="block text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-secondary text-sm font-medium">
+        💼 Job Offers
+      </a>
+      <a routerLink="/dashboard/recruiter/applications" routerLinkActive="bg-esprit-red text-white"
+        class="block text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-secondary text-sm font-medium">
+        📋 Applications
+      </a>
+      <a routerLink="/dashboard/recruiter/interviews" routerLinkActive="bg-esprit-red text-white"
+        class="block text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-secondary text-sm font-medium">
+        🎯 Interviews
+      </a>
+    </nav>
+
+    <div class="mt-auto pt-6 border-t border-neutral-200 dark:border-neutral-700">
+      <button (click)="logout()"
+        class="w-full px-4 py-3 rounded-lg bg-esprit-red hover:bg-esprit-700 text-white transition-colors duration-300 text-sm font-medium">
+        🚪 Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-64 p-6">
+    <!-- 🔔 Notification Bell (top-right) -->
+    <div class="notification-bar">
+      <button class="notification-bell" (click)="toggleNotificationPanel()" id="notification-bell">
+        🔔
+        <span *ngIf="unreadCount > 0" class="notification-badge">{{ unreadCount }}</span>
+      </button>
+
+      <!-- Notification Dropdown Panel -->
+      <div *ngIf="showNotificationPanel" class="notification-panel" id="notification-panel">
+        <div class="notification-header">
+          <h3>Notifications</h3>
+          <button *ngIf="unreadCount > 0" class="mark-all-btn" (click)="markAllAsRead()">
+            Mark all as read
+          </button>
+        </div>
+        <div class="notification-list">
+          <div *ngIf="notifications.length === 0" class="notification-empty">
+            No notifications yet
+          </div>
+          <div *ngFor="let notif of notifications" 
+               class="notification-item" 
+               [class.unread]="!notif.isRead"
+               (click)="markAsRead(notif)">
+            <span class="notif-icon" [ngClass]="{
+              'icon-application': notif.type === 'APPLICATION',
+              'icon-reminder': notif.type === 'INTERVIEW_REMINDER',
+              'icon-result': notif.type === 'RESULT'
+            }">
+              {{ notif.type === 'APPLICATION' ? '📨' : notif.type === 'INTERVIEW_REMINDER' ? '⏰' : '📋' }}
+            </span>
+            <div class="notif-content">
+              <p class="notif-message">{{ notif.message }}</p>
+              <span class="notif-time">{{ notif.createdAt | date:'short' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <router-outlet></router-outlet>
+  </main>
+</div>
+
+<!-- 🍞 Toast Notifications (floating bottom-right) -->
+<div class="toast-container" id="toast-container">
+  <div *ngFor="let toast of toasts" class="toast" [ngClass]="{
+    'toast-application': toast.type === 'APPLICATION',
+    'toast-reminder': toast.type === 'INTERVIEW_REMINDER',
+    'toast-result': toast.type === 'RESULT'
+  }">
+    <span class="toast-icon">
+      {{ toast.type === 'APPLICATION' ? '📨' : toast.type === 'INTERVIEW_REMINDER' ? '⏰' : '📋' }}
+    </span>
+    <p class="toast-message">{{ toast.message }}</p>
+    <button class="toast-close" (click)="removeToast(toast)">✕</button>
+  </div>
+</div>

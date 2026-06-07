@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: esprit-market-ingress
+  namespace: esprit-market
+  labels:
+    app: esprit-market-backend
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - espritmarket.local
+        - api.espritmarket.example.com
+      secretName: esprit-market-tls
+  rules:
+    - host: espritmarket.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: esprit-market-backend
+                port:
+                  number: 8088
+          - path: /actuator
+            pathType: Prefix
+            backend:
+              service:
+                name: esprit-market-backend
+                port:
+                  number: 8088
+    - host: api.espritmarket.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: esprit-market-backend
+                port:
+                  number: 8088

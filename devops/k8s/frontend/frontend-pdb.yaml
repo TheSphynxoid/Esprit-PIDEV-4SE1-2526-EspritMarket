@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: esprit-market-frontend-pdb
+  namespace: esprit-market
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: esprit-market-frontend

@@ -1,0 +1,85 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-12 px-4">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-primary mb-2">Campus Events</h1>
+      <p class="text-xl text-secondary">Discover all created school events</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center py-16">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p class="mt-4 text-secondary">Loading events...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-error mb-8">
+      <div>
+        <span>{{ error }}</span>
+        <button (click)="loadEvents()" class="btn btn-sm">Retry</button>
+      </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div *ngIf="!loading && !error && events.length > 0" class="grid md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div *ngFor="let event of events" class="group card card-md hover:shadow-lg hover:-translate-y-1 cursor-pointer transition-all duration-300 flex flex-col">
+        <!-- Event Image -->
+        <div class="w-full h-32 bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-lg mb-4 flex items-center justify-center text-6xl">
+          {{ event.emoji }}
+        </div>
+
+        <!-- Event Title -->
+        <h3 class="text-lg font-bold text-primary mb-3 group-hover:text-esprit-red transition-colors">{{ event.name }}</h3>
+
+        <!-- Event Info -->
+        <div class="bg-neutral-50 p-3 rounded-lg mb-4 border border-neutral-200 space-y-2 text-sm">
+          <div class="flex items-center gap-2">
+            <span>📅</span>
+            <span class="text-secondary">{{ event.date }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span>⏰</span>
+            <span class="text-secondary">{{ event.time }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span>📍</span>
+            <span class="text-secondary">{{ event.location }}</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <p class="text-sm text-secondary mb-3 flex-1">{{ event.description }}</p>
+
+        <!-- Stats -->
+        <div class="flex justify-between text-sm text-secondary border-t border-b border-neutral-200 py-3 mb-3">
+          <span>👥 {{ event.attendees }} participants</span>
+          <span class="font-bold text-esprit-red">{{ event.price === 0 ? 'Free' : event.price + ' DT' }}</span>
+        </div>
+
+        <!-- Stands Info -->
+        <div *ngIf="event.hasStands" class="bg-esprit-red/5 p-3 rounded-lg mb-4 text-sm text-esprit-red border border-esprit-red/20">
+          <strong>Available Booths:</strong> {{ event.availableStands }}/{{ event.totalStands }}
+        </div>
+
+        <!-- Tickets Button -->
+        <button 
+          (click)="navigateToReservation(event.id)"
+          class="btn btn-primary w-full text-sm">
+          Tickets
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && events.length === 0" class="card bg-white dark:bg-neutral-800 shadow-lg text-center p-12">
+      <p class="text-lg text-secondary">No events found</p>
+      <button (click)="loadEvents()" class="btn btn-primary mt-4">Reload</button>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

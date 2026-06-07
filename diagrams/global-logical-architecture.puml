@@ -1,0 +1,36 @@
+@startuml logical-architecture
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Presentation Layer (Angular UI)" {
+    component "Angular Application" as angular
+    component "Responsive Design" as responsive
+}
+
+package "Application Layer (Spring Controllers)" {
+    component "REST API Controllers" as controllers
+}
+
+package "Business Logic Layer (Spring Services)" {
+    component "Business Services" as services
+}
+
+package "Data Access Layer (Spring Data JPA)" {
+    component "Data Repositories" as repositories
+}
+
+package "Integration Layer (External APIs)" {
+    component "External Integrations" as external
+}
+
+package "Cross-Cutting (JWT, RBAC, File Storage)" {
+    component "Cross-Cutting Services" as crosscutting
+}
+
+angular --> controllers : REST API
+controllers --> services
+services --> repositories
+services --> external : REST/gRPC
+controllers --> crosscutting
+services --> crosscutting
+@enduml

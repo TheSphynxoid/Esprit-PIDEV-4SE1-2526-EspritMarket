@@ -1,0 +1,50 @@
+@startuml partnerships-sprint2-class
+
+class MatchingScore {
+    - id: Long
+    - candidateId: Long
+    - offerId: Long
+    - score: double
+    - skillsMatch: double
+    - experienceMatch: double
+    - locationMatch: double
+    - calculatedAt: LocalDateTime
+    + getOverallScore(): double
+    + getBreakdown(): Map<String, Double>
+}
+
+class MatchingEngine {
+    - modelVersion: String
+    - weights: Map<String, Double>
+    + calculateMatch(candidate: UserProfile, offer: Offer): MatchingScore
+    + batchCalculate(offerId: Long): List<MatchingScore>
+    + retrainModel(): void
+}
+
+class InterviewSchedule {
+    - id: Long
+    - applicationId: Long
+    - scheduledAt: LocalDateTime
+    - duration: int
+    - location: String
+    - meetingLink: String
+    - status: InterviewStatus
+    - calendarEventId: String
+    + sendInvitation(): void
+    + cancel(): void
+    + reschedule(newTime: LocalDateTime): void
+}
+
+class InterviewStatus {
+    SCHEDULED
+    CONFIRMED
+    CANCELLED
+    COMPLETED
+}
+
+MatchingEngine --> MatchingScore : produces >
+UserProfile "1" -- "0..*" MatchingScore : receives >
+Offer "1" -- "0..*" MatchingScore : generates >
+Application "1" -- "0..1" InterviewSchedule : has >
+InterviewSchedule --> InterviewStatus
+@enduml

@@ -1,0 +1,141 @@
+@startuml events-class
+
+class Event {
+    - id: Long
+    - name: String
+    - description: String
+    - date: LocalDate
+    - location: String
+    - type: EventType
+    - status: EventStatus
+    - maxParticipants: int
+    - createdAt: LocalDateTime
+    + publish(): void
+    + cancel(): void
+    + getRegisteredCount(): int
+}
+
+class Stall {
+    - id: Long
+    - stallNumber: String
+    - block: String
+    - capacity: int
+    - isAvailable: boolean
+    + reserve(): void
+    + release(): void
+}
+
+class StallReservation {
+    - id: Long
+    - reservedAt: LocalDateTime
+    - status: ReservationStatus
+}
+
+class Equipment {
+    - id: Long
+    - name: String
+    - type: String
+    - totalStock: int
+    - availableStock: int
+    + isAvailable(quantity: int): boolean
+    + reserve(quantity: int): void
+    + return_(quantity: int): void
+}
+
+class EquipmentReservation {
+    - id: Long
+    - quantity: int
+    - reservedAt: LocalDateTime
+}
+
+class EventRegistration {
+    - id: Long
+    - registeredAt: LocalDateTime
+    - status: RegistrationStatus
+    + cancel(): void
+}
+
+class Ticket {
+    - id: Long
+    - price: double
+    - quantity: int
+    - purchasedAt: LocalDateTime
+    - status: TicketStatus
+}
+
+class EventSchedule {
+    - id: Long
+    - title: String
+    - date: LocalDate
+    - startTime: LocalTime
+    - endTime: LocalTime
+}
+
+class Notification {
+    - id: Long
+    - message: String
+    - type: NotificationType
+    - sentAt: LocalDateTime
+    - isRead: boolean
+    + markRead(): void
+}
+
+class WaitingList {
+    - id: Long
+    - position: int
+    - addedAt: LocalDateTime
+    - notified: boolean
+    + notify(): void
+}
+
+enum EventType {
+    IN_PERSON
+    ONLINE
+}
+
+enum EventStatus {
+    DRAFT
+    PUBLISHED
+    CANCELLED
+    COMPLETED
+}
+
+enum ReservationStatus {
+    PENDING
+    CONFIRMED
+    CANCELLED
+}
+
+enum RegistrationStatus {
+    REGISTERED
+    CANCELLED
+    WAITLISTED
+}
+
+enum TicketStatus {
+    ACTIVE
+    USED
+    REFUNDED
+}
+
+enum NotificationType {
+    EVENT_REMINDER
+    REGISTRATION_CONFIRMATION
+    STALL_RESERVATION
+    ANNOUNCEMENT
+}
+
+Event "1" -- "0..*" Stall : has >
+Event "1" -- "0..*" EventSchedule : has >
+Event "1" -- "0..*" EventRegistration : receives >
+Event "1" -- "0..*" Ticket : sells >
+Event "1" -- "0..*" Notification : triggers >
+
+Stall "1" -- "0..1" StallReservation : may have >
+Event "1" -- "0..*" EquipmentReservation : requires >
+
+Equipment "1" -- "0..*" EquipmentReservation : allocated in >
+
+EventRegistration "0..*" -- "0..*" WaitingList : may join >
+
+@enduml

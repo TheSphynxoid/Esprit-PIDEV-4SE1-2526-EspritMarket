@@ -1,0 +1,45 @@
+@startuml services-sprint2-class
+
+class RecurringAvailability {
+    - id: Long
+    - providerId: Long
+    - dayOfWeek: DayOfWeek
+    - startTime: LocalTime
+    - endTime: LocalTime
+    - isActive: boolean
+    + getSlotsForWeek(weekStart: LocalDate): List<AvailabilitySlot>
+    + isAvailableOn(date: LocalDate): boolean
+}
+
+class BlockedDate {
+    - id: Long
+    - providerId: Long
+    - date: LocalDate
+    - reason: String
+    - createdAt: LocalDateTime
+}
+
+class Milestone {
+    - id: Long
+    - projectId: Long
+    - title: String
+    - description: String
+    - dueDate: LocalDate
+    - status: MilestoneStatus
+    - completedAt: LocalDateTime
+    + isOverdue(): boolean
+    + markComplete(): void
+}
+
+class MilestoneStatus {
+    PENDING
+    IN_PROGRESS
+    COMPLETED
+    OVERDUE
+}
+
+User "1" -- "0..*" RecurringAvailability : defines >
+User "1" -- "0..*" BlockedDate : blocks >
+Project "1" -- "0..*" Milestone : tracks >
+Milestone --> MilestoneStatus
+@enduml

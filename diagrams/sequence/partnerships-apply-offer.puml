@@ -1,0 +1,48 @@
+@startuml partnerships-sequence-apply-offer
+title Partnerships: Apply to a Job Offer
+
+actor Student
+participant "Frontend\n(Angular)" as FE
+participant "Backend API\n(Spring Boot)" as API
+participant "Auth Service\n(JWT)" as AUTH
+participant "Matching Service" as ML
+database "PostgreSQL" as DB
+
+Student -> FE: Browse job offers
+FE -> API: GET /api/job-offers
+API -> DB: SELECT job_offers\nWHERE status = OPEN
+DB --> API: Offer list
+API --> FE: 200 OK (offers)
+FE --> Student: Display offer cards
+
+Student -> FE: Click on an offer
+FE -> API: GET /api/job-offers/{id}
+API -> DB: SELECT job_offer, company
+DB --> API: Offer details + company info
+API --> FE: 200 OK (offer details)
+FE --> Student: Display offer detail page\nwith "Apply" button
+
+Student -> FE: Click "Apply"\nand fill application form
+FE --> Student: Display application form\n(motivation, skills, documents)
+
+Student -> FE: Submit application
+FE -> API: POST /api/applications\n{offerId, motivation, skills, cvUrl}
+API -> AUTH: Validate JWT token
+AUTH --> API: Token valid (studentId)
+
+API -> DB: CHECK no existing application\nFROM same student FOR same offer
+DB --> API: No duplicate found
+
+API -> ML: calculateScore(student, offer)
+ML -> DB: SELECT student profile,\nskills, past projects
+DB --> ML: Student data
+ML -> ML: Extract features\nand compute similarity
+ML --> API: matchingScore = 0.82
+
+API -> DB: INSERT application\nSET status = PENDING,\nmatchingScore = 0.82
+DB --> API: Application created
+
+API -> DB: INSERT notification\n(for recruiter)
+API --> FE: 201 Created (applicationId)
+FE --> Student: Application submitted\nsuccessfully with confirmation
+@enduml

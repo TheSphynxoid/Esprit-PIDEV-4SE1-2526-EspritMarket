@@ -1,0 +1,356 @@
+:root {
+   --red: #e30613;
+   --red-dark: #b8000f;
+   --white: #ffffff;
+ }
+
+* {
+   margin: 0;
+   padding: 0;
+   box-sizing: border-box;
+ }
+
+ body {
+   font-family: 'Nunito', sans-serif;
+   background: #1a1008;
+ }
+
+.form-container {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+form {
+   background: rgba(255, 252, 248, 0.92);
+   padding: 2.8rem 2.4rem 2.4rem;
+   border-radius: 14px;
+   border: 1px solid rgba(227, 6, 19, 0.2);
+   width: 100%;
+   max-width: 400px;
+   position: relative;
+   overflow: hidden;
+   margin: 2rem auto;
+}
+
+@media (max-width: 640px) {
+   form {
+     padding: 1.5rem 1.2rem 1.2rem;
+     margin: 1rem auto;
+     max-width: 100%;
+     border-radius: 10px;
+   }
+}
+
+ form::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   height: 4px;
+   background: linear-gradient(90deg, var(--red-dark), var(--red), #ff4444, var(--red));
+ }
+
+
+.logo-area {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-esprit {
+   font-family: 'Rajdhani', sans-serif;
+   font-size: 2.4rem;
+   font-weight: 700;
+   letter-spacing: 0.22em;
+   color: #1a1a1a;
+}
+
+@media (max-width: 640px) {
+   .logo-esprit {
+     font-size: 1.8rem;
+     letter-spacing: 0.15em;
+   }
+}
+
+ .logo-esprit span {
+   color: var(--red);
+ }
+
+ .logo-sub {
+   font-size: 0.65rem;
+   color: #999;
+   letter-spacing: 0.16em;
+   text-transform: uppercase;
+   margin-top: 4px;
+ }
+
+.divider {
+   width: 44px;
+   height: 3px;
+   background: var(--red);
+   margin: 0.8rem auto 0;
+   border-radius: 2px;
+ }
+
+label {
+   display: block;
+   margin-bottom: 0.4rem;
+   color: #555;
+   font-size: 0.68rem;
+   font-weight: 700;
+   text-transform: uppercase;
+ }
+
+.input-wrap {
+   position: relative;
+   margin-bottom: 1.2rem;
+ }
+
+input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.4rem;
+    background: rgba(0, 0, 0, 0.04);
+    border: 1.5px solid #e0d8d0;
+    border-radius: 7px;
+    color: #1a1a1a;
+    font-size: 0.92rem;
+    font-family: 'Nunito', sans-serif;
+    outline: none;
+}
+
+@media (max-width: 640px) {
+   input {
+     padding: 0.6rem 0.8rem 0.6rem 2rem;
+     font-size: 0.85rem;
+     border-radius: 6px;
+   }
+}
+
+input:focus {
+   border-color: var(--red);
+ }
+
+input.ng-invalid.ng-touched,
+input.ng-invalid.ng-dirty {
+   border-color: #d92d20;
+ }
+
+button.submit-button {
+    width: 100%;
+    padding: 0.9rem;
+    margin-top: 0.4rem;
+    background: var(--red);
+    color: var(--white);
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 0.92rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+   button.submit-button {
+     padding: 0.7rem;
+     font-size: 0.8rem;
+     border-radius: 6px;
+   }
+}
+
+ button.submit-button:hover {
+   background: var(--red-dark);
+ }
+
+ button.submit-button:active {
+   transform: translateY(0);
+ }
+
+ button.submit-button:disabled {
+   opacity: 0.4;
+   cursor: not-allowed;
+ }
+
+.form-footer {
+   text-align: center;
+   margin-top: 1.4rem;
+   font-size: 0.8rem;
+   color: #999;
+ }
+
+ .form-footer a {
+   color: var(--red);
+   text-decoration: none;
+ }
+
+ .form-footer a:hover {
+   text-decoration: underline;
+ }
+
+.forgot {
+   text-align: right;
+   margin: -0.8rem 0 1rem;
+ }
+
+ .forgot a {
+   font-size: 0.72rem;
+   color: var(--red);
+   text-decoration: none;
+ }
+
+.status-container {
+    background: rgba(255, 252, 248, 0.92);
+    padding: 2.8rem 2.4rem 2.4rem;
+    border-radius: 14px;
+    border: 1px solid rgba(227, 6, 19, 0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    margin: 2rem auto;
+}
+
+@media (max-width: 640px) {
+   .status-container {
+     padding: 1.5rem 1.2rem 1.2rem;
+     margin: 1rem auto;
+     max-width: 100%;
+     border-radius: 10px;
+   }
+}
+
+.status-box {
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.status-box.en_attente {
+  background: rgba(255, 193, 7, 0.1);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  color: #856404;
+}
+
+.status-box.refuse {
+  background: rgba(220, 53, 69, 0.1);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  color: #721c24;
+}
+
+.status-box.success {
+  background: rgba(40, 167, 69, 0.1);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+  color: #155724;
+}
+
+.submit-button.secondary {
+   background: transparent;
+   color: var(--red);
+   border: 2px solid var(--red);
+   margin-top: 1rem;
+ }
+
+ .submit-button.secondary:hover {
+   background: rgba(227, 6, 19, 0.05);
+ }
+
+.card-preview-box {
+   margin-bottom: 1.2rem;
+   padding: 0.7rem;
+   border: 1px solid #e0d8d0;
+   border-radius: 8px;
+ }
+
+ .card-preview-title {
+   margin: 0 0 0.55rem;
+   font-size: 0.74rem;
+   font-weight: 700;
+   letter-spacing: 0.08em;
+   color: #555;
+   text-transform: uppercase;
+ }
+
+ .card-preview-image {
+   width: 100%;
+   max-height: 180px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+.store-step2-choice {
+  margin-top: 1.05rem;
+  padding: 0.9rem;
+  border: 1px solid rgba(227, 6, 19, 0.22);
+  border-left: 4px solid var(--red);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(227, 6, 19, 0.06) 0%, rgba(255, 255, 255, 0.75) 100%);
+}
+
+.store-step2-choice-title {
+  margin: 0 0 0.55rem;
+  color: #7a1020;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0;
+  color: #2f1f1a;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.45;
+  cursor: pointer;
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  box-shadow: none;
+  background: transparent;
+  accent-color: var(--red);
+  flex: 0 0 auto;
+}
+
+.store-step2-choice-help {
+  margin: 0.55rem 0 0;
+  color: #6f5c56;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+/* LOADER */
+.loader {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(227, 6, 19, 0.1);
+  border-top-color: var(--red);
+  border-radius: 50%;
+  margin: 1rem auto 0;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,6 @@
+.*
+!.mvn/
+!pom.xml
+!src/
+!mvnw
+!*.jar

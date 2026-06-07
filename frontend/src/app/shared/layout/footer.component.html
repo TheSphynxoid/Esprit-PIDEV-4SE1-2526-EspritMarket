@@ -1,0 +1,55 @@
+<footer class="bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 py-12 px-4 transition-colors duration-200">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Footer Grid -->
+    <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+
+      <!-- Logo Column -->
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+
+          <!-- LOGO IMAGE -->
+          <img 
+            src="assets/logo.png"
+            alt="ESPRIT Market Logo"
+            class="w-10 h-10 object-contain"
+          />
+
+          <span class="font-bold text-primary dark:text-white text-base">
+            ESPRIT Market
+          </span>
+        </div>
+
+        <p class="text-sm text-secondary dark:text-neutral-400 leading-relaxed">
+          The ultimate student marketplace
+        </p>
+      </div>
+
+      <!-- Footer Columns -->
+      <div *ngFor="let column of columns">
+        <h4 class="font-semibold text-primary dark:text-white mb-3 text-sm uppercase tracking-wide">
+          {{ column.title }}
+        </h4>
+
+        <ul class="space-y-2">
+          <li *ngFor="let link of column.links">
+            <a 
+              [href]="link.url" 
+              class="text-sm text-secondary dark:text-neutral-400 hover:text-esprit-red dark:hover:text-esprit-400 transition-colors duration-300"
+            >
+              {{ link.label }}
+            </a>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="border-t border-neutral-200 dark:border-neutral-700 pt-8 text-center text-sm text-secondary dark:text-neutral-400">
+      <p>&copy; 2026 ESPRIT Market - Designed for students, by students.</p>
+      <p class="mt-2 text-xs">Made with ❤️ at ESPRIT</p>
+    </div>
+
+  </div>
+</footer>

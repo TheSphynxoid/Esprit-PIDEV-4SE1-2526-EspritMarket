@@ -1,0 +1,1892 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+        <img
+          src="assets/logo.png"
+          alt="ESPRIT Logo"
+          class="w-full h-full object-contain"
+        />
+      </div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Admin Delivery</h2>
+    <nav class="space-y-2">
+      <button
+        (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        📊 Overview
+      </button>
+
+      <button
+        (click)="activeTab = 'Delivery interview'"
+        [class.bg-esprit-red]="activeTab === 'Delivery interview'"
+        [class.text-white]="activeTab === 'Delivery interview'"
+        [class.text-secondary]="activeTab !== 'Delivery interview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        <span class="flex items-center justify-between gap-3">
+          <span>🎥 Delivery Interview</span>
+          <span
+            *ngIf="hasPendingInterviewAlert"
+            class="interview-alert-badge"
+            aria-label="{{ pendingCouriersNotificationCount }} pending couriers"
+          >
+            {{ pendingCouriersNotificationCount }}
+          </span>
+        </span>
+      </button>
+
+
+
+
+
+
+
+      <button
+        (click)="activeTab = 'orders'"
+        [class.bg-esprit-red]="activeTab === 'orders'"
+        [class.text-white]="activeTab === 'orders'"
+        [class.text-secondary]="activeTab !== 'orders'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        🧾 Orders
+      </button>
+      <button
+        (click)="activeTab = 'deliveries'"
+        [class.bg-esprit-red]="activeTab === 'deliveries'"
+        [class.text-white]="activeTab === 'deliveries'"
+        [class.text-secondary]="activeTab !== 'deliveries'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        <span class="flex items-center justify-between gap-3">
+          <span>🚚 Create Deliveries</span>
+          <span
+            *ngIf="hasDeliveryManagementAlert"
+            class="sidebar-alert-badge"
+            aria-label="{{ deliveryManagementNotificationCount }} deliveries pending assignment"
+          >
+            {{ deliveryManagementNotificationCount }}
+          </span>
+        </span>
+      </button>
+      <button
+        (click)="activeTab = 'assigned'"
+        [class.bg-esprit-red]="activeTab === 'assigned'"
+        [class.text-white]="activeTab === 'assigned'"
+        [class.text-secondary]="activeTab !== 'assigned'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        🗂️ Assigned Deliveries
+      </button>
+      <button
+        (click)="activeTab = 'vehicles'"
+        [class.bg-esprit-red]="activeTab === 'vehicles'"
+        [class.text-white]="activeTab === 'vehicles'"
+        [class.text-secondary]="activeTab !== 'vehicles'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        🚗 Vehicles
+      </button>
+
+<button
+        (click)="activeTab = 'Couriers'"
+        [class.bg-esprit-red]="activeTab === 'Couriers'"
+        [class.text-white]="activeTab === 'Couriers'"
+        [class.text-secondary]="activeTab !== 'Couriers'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        👤 Couriers
+      </button>
+
+
+
+      <hr class="my-4 border-neutral-200 dark:border-neutral-700">
+      <button
+        (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 text-sm font-medium text-red-600"
+      >
+        🚪 Logout
+      </button>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-6 lg:p-8">
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in overview-shell">
+      <div class="overview-head">
+        <div>
+          <h1 class="text-3xl font-bold text-primary dark:text-white">Delivery Overview</h1>
+          <p class="text-sm text-secondary mt-1">Operational analytics for orders, deliveries, couriers, and vehicles</p>
+        </div>
+      </div>
+
+      <p *ngIf="statisticsLoading()" class="text-sm text-secondary">Loading statistics...</p>
+      <p *ngIf="statisticsError()" class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        {{ statisticsError() }} Local analytics mode enabled.
+      </p>
+
+      <div class="overview-kpis">
+        <article class="metric-card">
+          <div class="metric-icon">🧾</div>
+          <div>
+            <p class="metric-title">Orders</p>
+            <p class="metric-value text-esprit-red">{{ overviewKpis.totalOrders }}</p>
+            <p class="metric-meta">Total orders</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">🚚</div>
+          <div>
+            <p class="metric-title">Deliveries</p>
+            <p class="metric-value text-esprit-red">{{ overviewKpis.totalDeliveries }}</p>
+            <p class="metric-meta">Total deliveries</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">👥</div>
+          <div>
+            <p class="metric-title">Couriers</p>
+            <p class="metric-value text-esprit-red">{{ overviewKpis.totalCouriers }}</p>
+            <p class="metric-meta">Registered couriers</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">🚗</div>
+          <div>
+            <p class="metric-title">Vehicles</p>
+            <p class="metric-value text-esprit-red">{{ overviewKpis.totalVehicles }}</p>
+            <p class="metric-meta">Fleet size</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="overview-secondary-kpis">
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Pending deliveries</p>
+          <p class="sub-kpi-value">{{ overviewKpis.pendingDeliveries }}</p>
+        </div>
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Delivered</p>
+          <p class="sub-kpi-value">{{ overviewKpis.deliveredDeliveries }}</p>
+        </div>
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Completion</p>
+          <p class="sub-kpi-value">{{ overviewKpis.completionRate.toFixed(0) }}%</p>
+        </div>
+        
+      </div>
+
+      <div class="overview-analytics-grid">
+        <section class="card card-md analytics-trend-card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-primary dark:text-white">Delivered trend (7 days)</h2>
+            <span class="trend-delta-badge">{{ trendDeltaLabel }}</span>
+          </div>
+
+          <div class="trend-stage">
+            <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="w-full h-40">
+              <polyline
+                [attr.points]="deliveredTrendPoints"
+                fill="none"
+                stroke="#16a34a"
+                stroke-width="2.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></polyline>
+            </svg>
+
+            <div class="trend-axis-row">
+              <span *ngFor="let tick of deliveredLast7DayTicks" class="trend-day-tick">{{ tick }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card-md analytics-side-stack">
+          <div>
+            <h2 class="text-lg font-semibold text-primary dark:text-white mb-3">Completion</h2>
+            <div class="completion-ring-wrap">
+              <div class="completion-ring" [style.background]="completionRingBackground">
+                <div class="completion-ring-inner">
+                  <p class="completion-ring-value">{{ overviewKpis.completionRate.toFixed(0) }}%</p>
+                  <p class="completion-ring-label">Success rate</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-bars-wrap">
+            <div class="status-bar-item" *ngFor="let stat of statusDistribution">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-secondary">{{ stat.label }}</span>
+                <span class="font-semibold text-primary dark:text-white">{{ stat.count }} ({{ stat.percent.toFixed(0) }}%)</span>
+              </div>
+              <div class="status-track">
+                <div
+                  class="status-fill"
+                  [class.status-fill-delivered]="stat.label === 'Delivered'"
+                  [class.status-fill-pending]="stat.label === 'Pending'"
+                  [class.status-fill-accepted]="stat.label === 'Accepted'"
+                  [class.status-fill-cancelled]="stat.label === 'Cancelled'"
+                  [style.width.%]="stat.percent"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-base font-semibold text-primary dark:text-white mb-3">Upcoming deliveries</h3>
+            <div *ngIf="overviewUpcomingDeliveries.length > 0; else noOverviewUpcoming" class="space-y-2">
+              <article *ngFor="let delivery of overviewUpcomingDeliveries" class="upcoming-delivery-item">
+                <div class="upcoming-id">#{{ delivery.id }}</div>
+                <div>
+                  <p class="text-sm font-semibold text-primary dark:text-white">{{ delivery.to }}</p>
+                  <p class="text-xs text-secondary">{{ delivery.date || 'Date not available' }}</p>
+                </div>
+              </article>
+            </div>
+            <ng-template #noOverviewUpcoming>
+              <p class="text-sm text-secondary">No pending deliveries at the moment.</p>
+            </ng-template>
+          </div>
+        </section>
+
+        <section class="card card-md analytics-side-stack">
+          <div>
+            <h2 class="text-lg font-semibold text-primary dark:text-white mb-3">Couriers per month</h2>
+            <div class="trend-stage">
+              <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="w-full h-40">
+                <polyline
+                  [attr.points]="overviewCourierMonthPoints"
+                  fill="none"
+                  stroke="#2563eb"
+                  stroke-width="2.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                ></polyline>
+              </svg>
+
+              <div class="trend-axis-row">
+                <span *ngFor="let tick of overviewCourierMonthTicks" class="trend-day-tick">{{ tick }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-bars-wrap">
+            <div class="status-bar-item">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-secondary">Accepted couriers</span>
+                <span class="font-semibold text-primary dark:text-white">{{ overviewKpis.acceptedCouriers }}</span>
+              </div>
+              <div class="status-track">
+                <div class="status-fill status-fill-accepted" [style.width.%]="overviewKpis.totalCouriers ? (overviewKpis.acceptedCouriers / overviewKpis.totalCouriers) * 100 : 0"></div>
+              </div>
+            </div>
+            <div class="status-bar-item">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-secondary">Pending couriers</span>
+                <span class="font-semibold text-primary dark:text-white">{{ overviewKpis.pendingCouriers }}</span>
+              </div>
+              <div class="status-track">
+                <div class="status-fill status-fill-pending" [style.width.%]="overviewKpis.totalCouriers ? (overviewKpis.pendingCouriers / overviewKpis.totalCouriers) * 100 : 0"></div>
+              </div>
+            </div>
+            <div class="status-bar-item">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-secondary">Refused couriers</span>
+                <span class="font-semibold text-primary dark:text-white">{{ overviewKpis.refusedCouriers }}</span>
+              </div>
+              <div class="status-track">
+                <div class="status-fill status-fill-cancelled" [style.width.%]="overviewKpis.totalCouriers ? (overviewKpis.refusedCouriers / overviewKpis.totalCouriers) * 100 : 0"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+
+<div *ngIf="activeTab === 'Delivery interview'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6"> 🎥Delivery interview</h1>
+      <div
+        *ngIf="couriersError()"
+        class="p-3 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700"
+      >
+        {{ couriersError() }}
+      </div>
+
+      <div
+        *ngIf="courierStatusMessage()"
+        class="p-3 mb-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-md border border-green-200 dark:border-green-700"
+      >
+        {{ courierStatusMessage() }}
+      </div>
+
+      <div *ngIf="couriers.length > 0; else noInterviewCouriers" class="space-y-6">
+        <div class="max-w-sm">
+          <input
+            [(ngModel)]="interviewPhoneFilterTerm"
+            type="text"
+            placeholder="Filtrer par phone number"
+            class="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+          />
+        </div>
+
+        <div class="border-b border-neutral-200 dark:border-neutral-700">
+          <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-6">
+          <button
+            type="button"
+            (click)="interviewStatusTab = 'PENDING'"
+            [class.text-primary]="interviewStatusTab === 'PENDING'"
+            [class.text-secondary]="interviewStatusTab !== 'PENDING'"
+            [attr.aria-selected]="interviewStatusTab === 'PENDING'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">⏳</span>
+            <span>Pending</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ pendingCouriers.length }}</span>
+            <span
+              *ngIf="interviewStatusTab === 'PENDING'"
+              class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"
+            ></span>
+          </button>
+          <button
+            type="button"
+            (click)="interviewStatusTab = 'ACCEPTED'"
+            [class.text-primary]="interviewStatusTab === 'ACCEPTED'"
+            [class.text-secondary]="interviewStatusTab !== 'ACCEPTED'"
+            [attr.aria-selected]="interviewStatusTab === 'ACCEPTED'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">✅</span>
+            <span>Accepted</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ acceptedCouriers.length }}</span>
+            <span
+              *ngIf="interviewStatusTab === 'ACCEPTED'"
+              class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"
+            ></span>
+          </button>
+          <button
+            type="button"
+            (click)="interviewStatusTab = 'REFUSED'"
+            [class.text-primary]="interviewStatusTab === 'REFUSED'"
+            [class.text-secondary]="interviewStatusTab !== 'REFUSED'"
+            [attr.aria-selected]="interviewStatusTab === 'REFUSED'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">❌</span>
+            <span>Refused</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ refusedCouriers.length }}</span>
+            <span
+              *ngIf="interviewStatusTab === 'REFUSED'"
+              class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"
+            ></span>
+          </button>
+          </div>
+        </div>
+
+        <div *ngIf="interviewStatusTab === 'PENDING'" class="space-y-6">
+          <div *ngIf="interviewCalendarLoading()" class="text-center py-8">
+            <p class="text-secondary">Chargement du calendrier des entretiens...</p>
+          </div>
+
+          <ng-container *ngIf="!interviewCalendarLoading()">
+            <div *ngIf="interviewWeekData.length === 0" class="text-center py-8 bg-neutral-50 dark:bg-neutral-800 rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <p class="text-secondary">Aucun entretien planifié pour cette semaine.</p>
+            </div>
+
+            <div *ngIf="interviewWeekData.length > 0" class="space-y-4">
+              <div class="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 p-3 shadow-sm">
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                  <button
+                    *ngFor="let dayData of interviewWeekData; let dayIndex = index"
+                    type="button"
+                    (click)="selectInterviewDay(dayIndex)"
+                    [ngClass]="selectedInterviewDayIndex() === dayIndex ? 'bg-esprit-red text-white border-esprit-red' : 'bg-neutral-50 dark:bg-neutral-700 text-primary dark:text-white border-neutral-200 dark:border-neutral-600'"
+                    class="flex items-center justify-between rounded-xl border px-4 py-3 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+                  >
+                    <div>
+                      <p class="text-sm font-semibold">{{ dayData.dayOfWeek }}</p>
+                      <p class="text-xs opacity-80">{{ dayData.dayLabel }}</p>
+                    </div>
+                    <span
+                      class="min-w-8 rounded-full px-2 py-1 text-xs font-bold text-center"
+                      [ngClass]="selectedInterviewDayIndex() === dayIndex ? 'bg-white text-esprit-red' : 'bg-neutral-200 text-neutral-700 dark:bg-neutral-600 dark:text-white'"
+                    >
+                      {{ getInterviewDayPendingCount(dayData) }}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div *ngIf="selectedInterviewDay as day" class="card card-lg overflow-hidden border border-neutral-200 dark:border-neutral-700">
+                <div class="flex flex-col gap-2 px-4 py-4 bg-neutral-100 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 class="text-lg font-semibold text-primary dark:text-white">{{ day.dayOfWeek }}</h2>
+                    <p class="text-sm text-secondary">{{ day.dayLabel }} · {{ selectedInterviewDayCount }} entretien(s) pending</p>
+                  </div>
+                  <div class="text-sm text-secondary">
+                    Cliquez sur un jour pour afficher son tableau détaillé.
+                  </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="w-full">
+                    <thead class="bg-neutral-50 dark:bg-neutral-800">
+                      <tr>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Courier</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Email</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Telephone</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Quiz Result</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Score %</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Meeting Link</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Date entretien</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+                        <th class="text-left px-4 py-3 text-sm font-semibold">Change Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let courier of getPageSlice(selectedInterviewDayPendingInterviews(), pendingInterviewsPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+                        <td class="px-4 py-3 text-sm font-semibold text-primary dark:text-white">{{ getCourierDisplayName(courier) }}</td>
+                        <td class="px-4 py-3 text-sm">{{ courier.email || '-' }}</td>
+                        <td class="px-4 py-3 text-sm">{{ courier.phoneNumber || '-' }}</td>
+                        <td class="px-4 py-3 text-sm">{{ getCourierQuizResultLabel(courier.quizResult) }}</td>
+                        <td class="px-4 py-3 text-sm">{{ courier.quizScore ?? '-' }}</td>
+                        <td class="px-4 py-3 text-sm">
+                          <a
+                            *ngIf="courier.meetingLink; else noSelectedMeetingLink"
+                            [href]="courier.meetingLink"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-esprit-red hover:underline font-medium"
+                          >
+                            Open meeting
+                          </a>
+                          <ng-template #noSelectedMeetingLink>
+                            <span class="text-secondary">-</span>
+                          </ng-template>
+                        </td>
+                        <td class="px-4 py-3 text-sm">{{ formatInterviewDate(courier.interviewDate) }}</td>
+                        <td class="px-4 py-3 text-sm">
+                          <span
+                            class="badge"
+                            [class.badge-warning]="courier.status === 'PENDING'"
+                            [class.badge-success]="courier.status === 'ACCEPTED'"
+                            [class.bg-red-500]="courier.status === 'REFUSED'"
+                            [class.text-white]="courier.status === 'REFUSED'"
+                          >
+                            {{ getCourierStatusLabel(courier.status) }}
+                          </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                          <select
+                            class="px-2 py-1 border border-neutral-200 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                            [ngModel]="courier.status"
+                            (ngModelChange)="onCourierStatusSelectionChange(courier, $event)"
+                            [disabled]="isCourierStatusUpdating(courier.courierId)"
+                          >
+                            <option *ngFor="let status of courierStatuses" [ngValue]="status">{{ status }}</option>
+                          </select>
+                        </td>
+                      </tr>
+                      <tr *ngIf="selectedInterviewDayPendingInterviews().length === 0">
+                        <td colspan="9" class="px-4 py-6 text-center text-secondary">Aucun entretien pending pour ce jour.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <mat-paginator
+                    [length]="selectedInterviewDayPendingInterviews().length"
+                    [pageSize]="pageSize"
+                    [pageIndex]="pendingInterviewsPage"
+                    [pageSizeOptions]="[10]"
+                    showFirstLastButtons
+                    (page)="pendingInterviewsPage = $event.pageIndex"
+                  ></mat-paginator>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <div *ngIf="interviewStatusTab === 'ACCEPTED'" class="card card-lg overflow-hidden">
+          <div class="px-4 py-3 bg-neutral-100 border-b border-neutral-200">
+            <h2 class="text-lg font-semibold text-primary">Accepted couriers</h2>
+          </div>
+          <table class="w-full">
+            <thead class="bg-neutral-100">
+              <tr>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Courier</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Email</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Telephone</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Quiz Result</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Score %</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Meeting Link</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Date entretien</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Change Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let courier of getPageSlice(acceptedCouriers, acceptedCouriersPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+                <td class="px-4 py-3 text-sm font-semibold">{{ getCourierDisplayName(courier) }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.email || '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.phoneNumber || '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ getCourierQuizResultLabel(courier.quizResult) }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.quizScore ?? '-' }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <a
+                    *ngIf="courier.meetingLink; else noAcceptedMeetingLink"
+                    [href]="courier.meetingLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-esprit-red hover:underline font-medium"
+                  >
+                    Open meeting
+                  </a>
+                  <ng-template #noAcceptedMeetingLink>
+                    <span class="text-secondary">-</span>
+                  </ng-template>
+                </td>
+                <td class="px-4 py-3 text-sm">{{ formatInterviewDate(courier.interviewDate) }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <span
+                    class="badge"
+                    [class.badge-warning]="courier.status === 'PENDING'"
+                    [class.badge-success]="courier.status === 'ACCEPTED'"
+                    [class.bg-red-500]="courier.status === 'REFUSED'"
+                    [class.text-white]="courier.status === 'REFUSED'"
+                  >
+                    {{ getCourierStatusLabel(courier.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <select
+                    class="px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [ngModel]="courier.status"
+                    (ngModelChange)="onCourierStatusSelectionChange(courier, $event)"
+                    [disabled]="isCourierStatusUpdating(courier.courierId)"
+                  >
+                    <option *ngFor="let status of courierStatuses" [ngValue]="status">{{ status }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr *ngIf="!hasCouriersForStatus('ACCEPTED')">
+                <td colspan="9" class="px-4 py-6 text-center text-secondary">No accepted couriers.</td>
+              </tr>
+            </tbody>
+          </table>
+            <mat-paginator
+              [length]="acceptedCouriers.length"
+              [pageSize]="pageSize"
+              [pageIndex]="acceptedCouriersPage"
+              [pageSizeOptions]="[10]"
+              showFirstLastButtons
+              (page)="acceptedCouriersPage = $event.pageIndex"
+            ></mat-paginator>
+        </div>
+
+        <div *ngIf="interviewStatusTab === 'REFUSED'" class="card card-lg overflow-hidden">
+          <div class="px-4 py-3 bg-neutral-100 border-b border-neutral-200">
+            <h2 class="text-lg font-semibold text-primary">Refused couriers</h2>
+          </div>
+          <table class="w-full">
+            <thead class="bg-neutral-100">
+              <tr>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Courier</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Email</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Telephone</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Quiz Result</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Score %</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Meeting Link</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Date entretien</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Change Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let courier of getPageSlice(refusedCouriers, refusedCouriersPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+                <td class="px-4 py-3 text-sm font-semibold">{{ getCourierDisplayName(courier) }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.email || '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.phoneNumber || '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ getCourierQuizResultLabel(courier.quizResult) }}</td>
+                <td class="px-4 py-3 text-sm">{{ courier.quizScore ?? '-' }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <a
+                    *ngIf="courier.meetingLink; else noRefusedMeetingLink"
+                    [href]="courier.meetingLink"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-esprit-red hover:underline font-medium"
+                  >
+                    Open meeting
+                  </a>
+                  <ng-template #noRefusedMeetingLink>
+                    <span class="text-secondary">-</span>
+                  </ng-template>
+                </td>
+                <td class="px-4 py-3 text-sm">{{ formatInterviewDate(courier.interviewDate) }}</td>
+                <td class="px-4 py-3 text-sm">
+                  <span
+                    class="badge"
+                    [class.badge-warning]="courier.status === 'PENDING'"
+                    [class.badge-success]="courier.status === 'ACCEPTED'"
+                    [class.bg-red-500]="courier.status === 'REFUSED'"
+                    [class.text-white]="courier.status === 'REFUSED'"
+                  >
+                    {{ getCourierStatusLabel(courier.status) }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <select
+                    class="px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [ngModel]="courier.status"
+                    (ngModelChange)="onCourierStatusSelectionChange(courier, $event)"
+                    [disabled]="isCourierStatusUpdating(courier.courierId)"
+                  >
+                    <option *ngFor="let status of courierStatuses" [ngValue]="status">{{ status }}</option>
+                  </select>
+                </td>
+              </tr>
+              <tr *ngIf="!hasCouriersForStatus('REFUSED')">
+                <td colspan="9" class="px-4 py-6 text-center text-secondary">No refused couriers.</td>
+              </tr>
+            </tbody>
+          </table>
+            <mat-paginator
+              [length]="refusedCouriers.length"
+              [pageSize]="pageSize"
+              [pageIndex]="refusedCouriersPage"
+              [pageSizeOptions]="[10]"
+              showFirstLastButtons
+              (page)="refusedCouriersPage = $event.pageIndex"
+            ></mat-paginator>
+        </div>
+      </div>
+
+      <ng-template #noInterviewCouriers>
+        <div class="card card-md text-center text-secondary">No couriers found for interview.</div>
+      </ng-template>
+      </div>
+    
+
+
+
+
+
+
+
+    <div *ngIf="activeTab === 'orders'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Orders List</h1>
+
+
+         <div class="mb-4 max-w-sm">
+        <input
+          [(ngModel)]="searchOrderTerm"
+          type="text"
+          placeholder="Filter by order id (1, 2, 3...)"
+          class="w-full px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+           />
+          </div>
+
+
+
+
+
+
+
+
+
+      <div *ngIf="duplicateShippingAddressGroups.length > 0" class="mb-6 space-y-4">
+        <h2 class="text-xl font-semibold text-primary">Orders with same address</h2>
+        <div
+          *ngFor="let group of duplicateShippingAddressGroups"
+          class="rounded-xl border-2 border-esprit-red/30 bg-white dark:bg-neutral-800 p-4"
+        >
+          <div class="mb-3 text-sm font-semibold text-esprit-red">
+            Adresse: {{ group.address }}
+          </div>
+          <div class="grid gap-3 md:grid-cols-2">
+            <div
+              *ngFor="let order of group.orders"
+              class="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 p-3"
+            >
+              <div class="text-sm font-semibold text-primary">Commande #{{ order.id }}</div>
+              <div class="text-xs text-secondary mt-1">Date: {{ order.date }}</div>
+              <div class="text-xs text-secondary mt-1">Montant: {{ order.amount }} DT</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-lg overflow-hidden">
+        <div class="px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Unassigned orders</h2>
+        </div>
+        <table class="w-full border border-neutral-200 dark:border-neutral-700">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Payment Method</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Shipping Address</th>
+
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Amount</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of getPageSlice(unassignedOrders, unassignedOrdersPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">#{{ order.id }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">{{ order.date }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">{{ order.paymentMethod }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">
+                <div [class]="getShippingAddressBoxClass(order.shipping_address) + ' flex items-center justify-between gap-2'">
+                  <span class="font-medium">{{ order.shipping_address }}</span>
+                  <span
+                    *ngIf="hasDuplicateShippingAddress(order.shipping_address)"
+                    [class]="'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ' + getShippingAddressDuplicateBadgeClass(order.shipping_address)"
+                  >
+                    Meme adresse
+                  </span>
+                </div>
+              </td>
+
+              <td class="px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">{{ order.amount }} DT</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">
+                <span class="badge badge-warning">{{ order.status }}</span>
+              </td>
+              <td class="px-4 py-3"></td>
+            </tr>
+            <tr *ngIf="unassignedOrders.length === 0">
+              <td colspan="7" class="px-4 py-6 text-center text-secondary">No orders match this filter.</td>
+            </tr>
+          </tbody>
+        </table>
+        <mat-paginator
+          [length]="unassignedOrders.length"
+          [pageSize]="pageSize"
+          [pageIndex]="unassignedOrdersPage"
+          [pageSizeOptions]="[10]"
+          showFirstLastButtons
+          (page)="unassignedOrdersPage = $event.pageIndex"
+        ></mat-paginator>
+      </div>
+
+      <div class="card card-lg overflow-hidden mt-6">
+        <div class="px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Assigned orders</h2>
+        </div>
+        <table class="w-full border border-neutral-200 dark:border-neutral-700">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Payment Method</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Shipping Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Amount</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of getPageSlice(assignedOrders, assignedOrdersPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">#{{ order.id }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">{{ order.date }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">{{ order.paymentMethod }}</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">{{ order.shipping_address }}</td>
+              <td class="px-4 py-3 text-sm font-semibold border-r border-neutral-200 dark:border-neutral-700">{{ order.amount }} DT</td>
+              <td class="px-4 py-3 text-sm border-r border-neutral-200 dark:border-neutral-700">
+                <span class="badge badge-warning">{{ order.status }}</span>
+              </td>
+              <td class="px-4 py-3 text-sm font-semibold text-esprit-red">{{ getAssignedDeliveryCode(order.id) }}</td>
+            </tr>
+            <tr *ngIf="assignedOrders.length === 0">
+              <td colspan="7" class="px-4 py-6 text-center text-secondary">No assigned orders.</td>
+            </tr>
+          </tbody>
+        </table>
+        <mat-paginator
+          [length]="assignedOrders.length"
+          [pageSize]="pageSize"
+          [pageIndex]="assignedOrdersPage"
+          [pageSizeOptions]="[10]"
+          showFirstLastButtons
+          (page)="assignedOrdersPage = $event.pageIndex"
+        ></mat-paginator>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'assigned'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">🗂️ Assigned Deliveries</h1>
+
+      <div
+        *ngIf="assignmentError()"
+        class="p-3 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700"
+      >
+        {{ assignmentError() }}
+      </div>
+      <div
+        *ngIf="assignmentMessage()"
+        class="p-3 mb-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-md border border-green-200 dark:border-green-700"
+      >
+        {{ assignmentMessage() }}
+      </div>
+
+      <div class="card card-md mb-4">
+        <input
+          [(ngModel)]="assignedDeliveryFilterTerm"
+          type="text"
+          placeholder="Filter by Delivery ID"
+          class="w-full max-w-sm px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+        />
+      </div>
+
+      <div class="card card-lg overflow-hidden" *ngIf="filteredActiveAssignments.length > 0; else noAssignments">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Capacity</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let assignment of getPageSlice(filteredActiveAssignments, activeAssignmentsPage)" class="border-t border-neutral-200 dark:border-neutral-700">
+              <td class="px-4 py-3 text-sm font-semibold">{{ assignment.deliveryCode }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryType }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryDate }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryStatus }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryAddress }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.orderId ? '#' + assignment.orderId : '-' }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.vehicleType }} - {{ assignment.vehicleLicensePlate }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.vehicleCapacity }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.vehicleStatus }}</td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-2 items-center">
+                  <select
+                    class="px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [(ngModel)]="selectedVehicleByAssignment[assignment.deliveryId]"
+                  >
+                    <option [ngValue]="null">Select vehicle</option>
+                    <option *ngFor="let vehicle of availableVehicles" [ngValue]="vehicle.id">
+                      {{ vehicle.type }} - {{ vehicle.licensePlate }}
+                    </option>
+                  </select>
+                  <button
+                    class="btn btn-secondary btn-sm"
+                    (click)="updateAssignmentVehicle(assignment)"
+                    [disabled]="!selectedVehicleByAssignment[assignment.deliveryId] || selectedVehicleByAssignment[assignment.deliveryId] === assignment.vehicleId"
+                  >
+                    ✅ Update
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-info btn-sm"
+                    (click)="openDeliveryDetails(getDeliveryDetailsCandidate(assignment))"
+                  >
+                    Details
+                  </button>
+                  <button class="btn btn-danger btn-sm" (click)="removeAssignment(assignment.deliveryId)">🗑️ Remove</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <mat-paginator
+          [length]="filteredActiveAssignments.length"
+          [pageSize]="pageSize"
+          [pageIndex]="activeAssignmentsPage"
+          [pageSizeOptions]="[10]"
+          showFirstLastButtons
+          (page)="activeAssignmentsPage = $event.pageIndex"
+        ></mat-paginator>
+      </div>
+
+      <ng-template #noAssignments>
+        <div class="card card-md text-center text-secondary">No assigned deliveries yet.</div>
+      </ng-template>
+    </div>
+
+    <div *ngIf="activeTab === 'deliveries'" class="animate-fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary">Delivery Management</h1>
+      </div>
+
+      <div class="card card-md mb-6">
+        <input
+          [(ngModel)]="deliveryManagementFilterTerm"
+          type="text"
+          placeholder="Filter by Order ID or Delivery ID"
+          class="w-full max-w-sm px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+        />
+      </div>
+
+      <div class="border-b border-neutral-200 dark:border-neutral-700 mb-6">
+        <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-6">
+          <button
+            type="button"
+            (click)="deliveryManagementTab = 'SAME_DAY'"
+            [class.text-primary]="deliveryManagementTab === 'SAME_DAY'"
+            [class.text-secondary]="deliveryManagementTab !== 'SAME_DAY'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">🚚</span>
+            <span>Same Day</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredSameDayDeliveries.length }}</span>
+            <span *ngIf="deliveryManagementTab === 'SAME_DAY'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+          </button>
+
+          <button
+            type="button"
+            (click)="deliveryManagementTab = 'EXPRESS'"
+            [class.text-primary]="deliveryManagementTab === 'EXPRESS'"
+            [class.text-secondary]="deliveryManagementTab !== 'EXPRESS'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">⚡</span>
+            <span>Express</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredExpressDeliveries.length }}</span>
+            <span *ngIf="deliveryManagementTab === 'EXPRESS'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+          </button>
+
+          <button
+            type="button"
+            (click)="deliveryManagementTab = 'STANDARD'"
+            [class.text-primary]="deliveryManagementTab === 'STANDARD'"
+            [class.text-secondary]="deliveryManagementTab !== 'STANDARD'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">📦</span>
+            <span>Standard</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredStandardDeliveries.length }}</span>
+            <span *ngIf="deliveryManagementTab === 'STANDARD'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+          </button>
+
+          <button
+            type="button"
+            (click)="deliveryManagementTab = 'DELIVERED'"
+            [class.text-primary]="deliveryManagementTab === 'DELIVERED'"
+            [class.text-secondary]="deliveryManagementTab !== 'DELIVERED'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">✅</span>
+            <span>Delivered</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredDeliveredAssignments.length }}</span>
+            <span *ngIf="deliveryManagementTab === 'DELIVERED'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+          </button>
+
+          <button
+            type="button"
+            (click)="deliveryManagementTab = 'CANCELLED'"
+            [class.text-primary]="deliveryManagementTab === 'CANCELLED'"
+            [class.text-secondary]="deliveryManagementTab !== 'CANCELLED'"
+            class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+          >
+            <span aria-hidden="true">❌</span>
+            <span>Cancelled</span>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredCancelledAssignments.length }}</span>
+            <span *ngIf="deliveryManagementTab === 'CANCELLED'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="deliveryManagementTab === 'SAME_DAY'" class="card card-lg overflow-hidden mb-6">
+        <div
+          class="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700"
+        >
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Tableau 1 - Same Day ({{ filteredSameDayDeliveries.length }})</h2>
+        </div>
+        <div>
+          <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">QR Code</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let delivery of getPageSlice(filteredSameDayDeliveries, sameDayDeliveriesPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm font-semibold">{{ delivery.code }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverytype }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverydate }}</td>
+              <td class="px-4 py-3">
+                <span class="badge" [class.badge-warning]="delivery.status === 'PENDING'" [class.badge-success]="delivery.status === 'DELIVERED'" [class.bg-red-500]="delivery.status === 'Cancelled'" [class.text-white]="delivery.status === 'Cancelled'">
+                  {{ delivery.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm">{{ delivery.address }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.orderId ? '#' + delivery.orderId : '-' }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div *ngIf="isDeliveryAssigned(delivery.id); else assignVehicle" class="text-sm font-semibold">
+                  {{ getAssignedVehicleLabel(delivery.id) }}
+                </div>
+                <ng-template #assignVehicle>
+                  <select
+                    class="w-full px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [(ngModel)]="selectedVehicleByDelivery[delivery.id]"
+                  >
+                    <option [ngValue]="null">Select vehicle</option>
+                    <option
+                      *ngFor="let vehicle of availableVehicles"
+                      [ngValue]="vehicle.id"
+                    >
+                      {{ vehicle.type }} - {{ vehicle.licensePlate }}
+                    </option>
+                  </select>
+                </ng-template>
+              </td>
+              <td class="px-4 py-3 flex items-center justify-center">
+                <img
+                  *ngIf="qrCodeUrls[delivery.id]"
+                  [src]="qrCodeUrls[delivery.id]"
+                  alt="QR Code"
+                  class="h-20 w-20 object-contain border border-neutral-200 rounded-md p-1"
+                />
+                <span *ngIf="!qrCodeUrls[delivery.id]" class="text-secondary text-xs">Loading...</span>
+              </td>
+              <td class="px-4 py-3">
+                <button
+                  *ngIf="!isDeliveryAssigned(delivery.id)"
+                  (click)="assignDeliveryToVehicle(delivery)"
+                  [disabled]="!selectedVehicleByDelivery[delivery.id]"
+                  class="btn btn-primary btn-sm mr-2"
+                >
+                  Assign
+                </button>
+                <button type="button" class="btn btn-info btn-sm mr-2" (click)="openDeliveryDetails(delivery)">Details</button>
+                <button (click)="openEditDeliveryModal(delivery)" class="btn btn-secondary btn-sm mr-2">✏️ Edit</button>
+                <button (click)="confirmDeleteDelivery(delivery.id, delivery.code)" class="btn btn-danger btn-sm">🗑️ Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredSameDayDeliveries.length === 0">
+              <td colspan="9" class="px-4 py-6 text-center text-secondary">No same-day deliveries.</td>
+            </tr>
+          </tbody>
+          </table>
+          <mat-paginator
+            [length]="filteredSameDayDeliveries.length"
+            [pageSize]="pageSize"
+            [pageIndex]="sameDayDeliveriesPage"
+            [pageSizeOptions]="[10]"
+            showFirstLastButtons
+            (page)="sameDayDeliveriesPage = $event.pageIndex"
+          ></mat-paginator>
+        </div>
+      </div>
+
+      <div *ngIf="deliveryManagementTab === 'EXPRESS'" class="card card-lg overflow-hidden mb-6">
+        <div
+          class="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700"
+        >
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Tableau 2 - Express ({{ filteredExpressDeliveries.length }})</h2>
+        </div>
+        <div>
+          <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">QR Code</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let delivery of getPageSlice(filteredExpressDeliveries, expressDeliveriesPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm font-semibold">{{ delivery.code }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverytype }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverydate }}</td>
+              <td class="px-4 py-3">
+                <span class="badge" [class.badge-warning]="delivery.status === 'PENDING'" [class.badge-success]="delivery.status === 'DELIVERED'" [class.bg-red-500]="delivery.status === 'Cancelled'" [class.text-white]="delivery.status === 'Cancelled'">
+                  {{ delivery.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm">{{ delivery.address }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.orderId ? '#' + delivery.orderId : '-' }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div *ngIf="isDeliveryAssigned(delivery.id); else assignVehicleExpress" class="text-sm font-semibold">
+                  {{ getAssignedVehicleLabel(delivery.id) }}
+                </div>
+                <ng-template #assignVehicleExpress>
+                  <select
+                    class="w-full px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [(ngModel)]="selectedVehicleByDelivery[delivery.id]"
+                  >
+                    <option [ngValue]="null">Select vehicle</option>
+                    <option
+                      *ngFor="let vehicle of availableVehicles"
+                      [ngValue]="vehicle.id"
+                    >
+                      {{ vehicle.type }} - {{ vehicle.licensePlate }}
+                    </option>
+                  </select>
+                </ng-template>
+              </td>
+              <td class="px-4 py-3 flex items-center justify-center">
+                <img
+                  *ngIf="qrCodeUrls[delivery.id]"
+                  [src]="qrCodeUrls[delivery.id]"
+                  alt="QR Code"
+                  class="h-20 w-20 object-contain border border-neutral-200 rounded-md p-1"
+                />
+                <span *ngIf="!qrCodeUrls[delivery.id]" class="text-secondary text-xs">Loading...</span>
+              </td>
+              <td class="px-4 py-3">
+                <button
+                  *ngIf="!isDeliveryAssigned(delivery.id)"
+                  (click)="assignDeliveryToVehicle(delivery)"
+                  [disabled]="!selectedVehicleByDelivery[delivery.id]"
+                  class="btn btn-primary btn-sm mr-2"
+                >
+                  Assign
+                </button>
+                <button type="button" class="btn btn-info btn-sm mr-2" (click)="openDeliveryDetails(delivery)">Details</button>
+                <button (click)="openEditDeliveryModal(delivery)" class="btn btn-secondary btn-sm mr-2">✏️ Edit</button>
+                <button (click)="confirmDeleteDelivery(delivery.id, delivery.code)" class="btn btn-danger btn-sm">🗑️ Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredExpressDeliveries.length === 0">
+              <td colspan="9" class="px-4 py-6 text-center text-secondary">No express deliveries.</td>
+            </tr>
+          </tbody>
+          </table>
+          <mat-paginator
+            [length]="filteredExpressDeliveries.length"
+            [pageSize]="pageSize"
+            [pageIndex]="expressDeliveriesPage"
+            [pageSizeOptions]="[10]"
+            showFirstLastButtons
+            (page)="expressDeliveriesPage = $event.pageIndex"
+          ></mat-paginator>
+        </div>
+      </div>
+
+      <div *ngIf="deliveryManagementTab === 'STANDARD'" class="card card-lg overflow-hidden">
+        <div
+          class="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700"
+        >
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Tableau 3 - Standard ({{ filteredStandardDeliveries.length }})</h2>
+        </div>
+        <div>
+          <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">QR Code</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let delivery of getPageSlice(filteredStandardDeliveries, standardDeliveriesPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm font-semibold">{{ delivery.code }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverytype }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.deliverydate }}</td>
+              <td class="px-4 py-3">
+                <span class="badge" [class.badge-warning]="delivery.status === 'PENDING'" [class.badge-success]="delivery.status === 'DELIVERED'" [class.bg-red-500]="delivery.status === 'Cancelled'" [class.text-white]="delivery.status === 'Cancelled'">
+                  {{ delivery.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm">{{ delivery.address }}</td>
+              <td class="px-4 py-3 text-sm">{{ delivery.orderId ? '#' + delivery.orderId : '-' }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div *ngIf="isDeliveryAssigned(delivery.id); else assignVehicleStandard" class="text-sm font-semibold">
+                  {{ getAssignedVehicleLabel(delivery.id) }}
+                </div>
+                <ng-template #assignVehicleStandard>
+                  <select
+                    class="w-full px-2 py-1 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800 text-sm"
+                    [(ngModel)]="selectedVehicleByDelivery[delivery.id]"
+                  >
+                    <option [ngValue]="null">Select vehicle</option>
+                    <option
+                      *ngFor="let vehicle of availableVehicles"
+                      [ngValue]="vehicle.id"
+                    >
+                      {{ vehicle.type }} - {{ vehicle.licensePlate }}
+                    </option>
+                  </select>
+                </ng-template>
+              </td>
+              <td class="px-4 py-3 flex items-center justify-center">
+                <img
+                  *ngIf="qrCodeUrls[delivery.id]"
+                  [src]="qrCodeUrls[delivery.id]"
+                  alt="QR Code"
+                  class="h-20 w-20 object-contain border border-neutral-200 rounded-md p-1"
+                />
+                <span *ngIf="!qrCodeUrls[delivery.id]" class="text-secondary text-xs">Loading...</span>
+              </td>
+              <td class="px-4 py-3">
+                <button
+                  *ngIf="!isDeliveryAssigned(delivery.id)"
+                  (click)="assignDeliveryToVehicle(delivery)"
+                  [disabled]="!selectedVehicleByDelivery[delivery.id]"
+                  class="btn btn-primary btn-sm mr-2"
+                >
+                  Assign
+                </button>
+                <button type="button" class="btn btn-info btn-sm mr-2" (click)="openDeliveryDetails(delivery)">Details</button>
+                <button (click)="openEditDeliveryModal(delivery)" class="btn btn-secondary btn-sm mr-2">✏️ Edit</button>
+                <button (click)="confirmDeleteDelivery(delivery.id, delivery.code)" class="btn btn-danger btn-sm">🗑️ Delete</button>
+              </td>
+            </tr>
+            <tr *ngIf="filteredStandardDeliveries.length === 0">
+              <td colspan="9" class="px-4 py-6 text-center text-secondary">No standard deliveries.</td>
+            </tr>
+          </tbody>
+          </table>
+          <mat-paginator
+            [length]="filteredStandardDeliveries.length"
+            [pageSize]="pageSize"
+            [pageIndex]="standardDeliveriesPage"
+            [pageSizeOptions]="[10]"
+            showFirstLastButtons
+            (page)="standardDeliveriesPage = $event.pageIndex"
+          ></mat-paginator>
+        </div>
+      </div>
+      <div *ngIf="deliveryManagementTab === 'DELIVERED'" class="space-y-4">
+        <h1 class="text-3xl font-bold text-primary">✅ Delivered packages</h1>
+<div class="card card-lg overflow-hidden" *ngIf="filteredDeliveredAssignments.length > 0; else noDeliveredPackages">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">QR Code</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+                        </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let assignment of getPageSlice(filteredDeliveredAssignments, deliveredAssignmentsPage)" class="border-t border-neutral-200 dark:border-neutral-700">
+              <td class="px-4 py-3 text-sm font-semibold">{{ assignment.deliveryCode }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryType }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryDate }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryStatus }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.deliveryAddress }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.orderId ? '#' + assignment.orderId : '-' }}</td>
+              <td class="px-4 py-3 text-sm">{{ assignment.vehicleType }} - {{ assignment.vehicleLicensePlate }}</td>
+              <td class="px-4 py-3 flex items-center justify-center">
+                <img
+                  *ngIf="qrCodeUrls[assignment.deliveryId]"
+                  [src]="qrCodeUrls[assignment.deliveryId]"
+                  alt="QR Code"
+                  class="h-20 w-20 object-contain border border-neutral-200 rounded-md p-1"
+                />
+                <span *ngIf="!qrCodeUrls[assignment.deliveryId]" class="text-secondary text-xs">Loading...</span>
+              </td>
+              <td class="px-4 py-3">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm mr-2"
+                  (click)="openEditDeliveredAssignment(assignment)"
+                >
+                  ✏️ Edit
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-info btn-sm mr-2"
+                  (click)="openDeliveryDetails(getDeliveryDetailsCandidate(assignment))"
+                >
+                  Details
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm"
+                  (click)="confirmDeleteDelivery(assignment.deliveryId, assignment.deliveryCode)"
+                >
+                  🗑️ Delete
+                </button>
+              </td>
+               </tr>
+          </tbody>
+        </table>
+          <mat-paginator
+            [length]="filteredDeliveredAssignments.length"
+            [pageSize]="pageSize"
+            [pageIndex]="deliveredAssignmentsPage"
+            [pageSizeOptions]="[10]"
+            showFirstLastButtons
+            (page)="deliveredAssignmentsPage = $event.pageIndex"
+          ></mat-paginator>
+      </div>
+      <ng-template #noDeliveredPackages>
+        <div class="card card-md text-center text-secondary">No delivered packages yet.</div>
+      </ng-template>
+      </div>
+
+      <div *ngIf="deliveryManagementTab === 'CANCELLED'" class="space-y-4">
+        <h1 class="text-3xl font-bold text-primary">❌ Cancelled packages</h1>
+        <div class="card card-lg overflow-hidden" *ngIf="filteredCancelledAssignments.length > 0; else noCancelledPackages">
+          <table class="w-full">
+            <thead class="bg-neutral-100">
+              <tr>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Delivery</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Date</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Cancellation Reason</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Address</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Order</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Vehicle</th>
+                <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let assignment of getPageSlice(filteredCancelledAssignments, cancelledAssignmentsPage)" class="border-t border-neutral-200 dark:border-neutral-700">
+                <td class="px-4 py-3 text-sm font-semibold">{{ assignment.deliveryCode }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.deliveryType }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.deliveryDate }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.deliveryStatus }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.cancellationReason || '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.deliveryAddress }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.orderId ? '#' + assignment.orderId : '-' }}</td>
+                <td class="px-4 py-3 text-sm">{{ assignment.vehicleType }} - {{ assignment.vehicleLicensePlate }}</td>
+                <td class="px-4 py-3">
+                  <button
+                    type="button"
+                    class="btn btn-secondary btn-sm mr-2"
+                    (click)="openEditDeliveredAssignment(assignment)"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-danger btn-sm"
+                    (click)="confirmDeleteDelivery(assignment.deliveryId, assignment.deliveryCode)"
+                  >
+                    🗑️ Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+            <mat-paginator
+              [length]="filteredCancelledAssignments.length"
+              [pageSize]="pageSize"
+              [pageIndex]="cancelledAssignmentsPage"
+              [pageSizeOptions]="[10]"
+              showFirstLastButtons
+              (page)="cancelledAssignmentsPage = $event.pageIndex"
+            ></mat-paginator>
+        </div>
+        <ng-template #noCancelledPackages>
+          <div class="card card-md text-center text-secondary">No cancelled packages yet.</div>
+        </ng-template>
+      </div>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div *ngIf="activeTab === 'vehicles'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">vehicle List</h1>
+
+      <div class="card card-md mb-4">
+        <div class="border-b border-neutral-200 dark:border-neutral-700 mb-4">
+          <div class="flex flex-wrap items-center justify-center gap-1 sm:gap-6">
+            <button
+              type="button"
+              (click)="vehicleStatusFilter = 'AVAILABLE'"
+              [class.text-primary]="vehicleStatusFilter === 'AVAILABLE'"
+              [class.text-secondary]="vehicleStatusFilter !== 'AVAILABLE'"
+              class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+            >
+              <span aria-hidden="true">✅</span>
+              <span>AVAILABLE</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredAvailableVehicles.length }}</span>
+              <span *ngIf="vehicleStatusFilter === 'AVAILABLE'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+            </button>
+
+            <button
+              type="button"
+              (click)="vehicleStatusFilter = 'UNAVAILABLE'"
+              [class.text-primary]="vehicleStatusFilter === 'UNAVAILABLE'"
+              [class.text-secondary]="vehicleStatusFilter !== 'UNAVAILABLE'"
+              class="relative inline-flex items-center gap-2 px-4 py-3 text-sm sm:text-base font-semibold transition-colors duration-200 hover:text-primary"
+            >
+              <span aria-hidden="true">⛔</span>
+              <span>UNAVAILABLE</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800">{{ filteredUnavailableVehicles.length }}</span>
+              <span *ngIf="vehicleStatusFilter === 'UNAVAILABLE'" class="absolute left-0 right-0 -bottom-px h-0.5 bg-primary"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex items-center gap-3">
+            <label for="vehicleTypeFilter" class="text-sm font-medium text-secondary dark:text-neutral-300">Type</label>
+            <select
+              id="vehicleTypeFilter"
+              class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+              [(ngModel)]="vehicleTypeFilter"
+            >
+              <option value="ALL">Tous</option>
+              <option value="CAR">CAR</option>
+              <option value="MOTOR">MOTOR</option>
+              <option value="TRUCK">TRUCK</option>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <label for="vehicleRegistrationFilter" class="text-sm font-medium text-secondary dark:text-neutral-300">Registration</label>
+            <input
+              id="vehicleRegistrationFilter"
+              [(ngModel)]="vehicleRegistrationFilterTerm"
+              type="text"
+              placeholder="Search by License Plate..."
+              class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-lg overflow-hidden mb-6" *ngIf="showAvailableVehiclesTable">
+        <div class="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Tableau 1 - AVAILABLE ({{ filteredAvailableVehicles.length }})</h2>
+        </div>
+        <table class="w-full">
+          <thead class="bg-neutral-100 dark:bg-neutral-700">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Nom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Prenom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Registration</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Capacity (kg)</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Photos</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let vehicle of getPageSlice(filteredAvailableVehicles, availableVehiclesPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm">{{ getVehicleOwnerNom(vehicle) }}</td>
+              <td class="px-4 py-3 text-sm">{{ getVehicleOwnerPrenom(vehicle) }}</td>
+              <td class="px-4 py-3 text-sm">{{ vehicle.type }}</td>
+              <td class="px-4 py-3 text-sm font-semibold">{{ vehicle.licensePlate }}</td>
+              <td class="px-4 py-3 text-sm">{{ vehicle.capacity }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div class="vehicle-photo-stack">
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehiclePhotoUrl(vehicle.id) as vehiclePhotoUrl"
+                    (click)="openImagePreview(vehiclePhotoUrl, 'Photo vehicule')"
+                    aria-label="Voir photo vehicule en grand"
+                  >
+                    <img [src]="vehiclePhotoUrl" alt="Photo vehicule" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehicleRegistrationFrontUrl(vehicle.id) as registrationFrontUrl"
+                    (click)="openImagePreview(registrationFrontUrl, 'Carte grise recto')"
+                    aria-label="Voir carte grise recto en grand"
+                  >
+                    <img [src]="registrationFrontUrl" alt="Carte grise recto" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehicleRegistrationBackUrl(vehicle.id) as registrationBackUrl"
+                    (click)="openImagePreview(registrationBackUrl, 'Carte grise verso')"
+                    aria-label="Voir carte grise verso en grand"
+                  >
+                    <img [src]="registrationBackUrl" alt="Carte grise verso" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <span
+                    *ngIf="!isVehicleDocumentLoading(vehicle.id) && !getVehiclePhotoUrl(vehicle.id) && !getVehicleRegistrationFrontUrl(vehicle.id) && !getVehicleRegistrationBackUrl(vehicle.id)"
+                    class="text-secondary"
+                  >
+                    No images
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="badge"
+                  [class.badge-success]="vehicle.status === 'AVAILABLE'"
+                  [class.bg-red-500]="vehicle.status === 'UNAVAILABLE'"
+                  [class.text-white]="vehicle.status === 'UNAVAILABLE'"
+                >
+                  {{ vehicle.status }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="filteredAvailableVehicles.length === 0">
+              <td colspan="7" class="px-4 py-6 text-center text-secondary">No available vehicles.</td>
+            </tr>
+          </tbody>
+        </table>
+          <mat-paginator
+            [length]="filteredAvailableVehicles.length"
+            [pageSize]="pageSize"
+            [pageIndex]="availableVehiclesPage"
+            [pageSizeOptions]="[10]"
+            showFirstLastButtons
+            (page)="availableVehiclesPage = $event.pageIndex"
+          ></mat-paginator>
+      </div>
+
+      <div class="card card-lg overflow-hidden" *ngIf="showUnavailableVehiclesTable">
+        <div class="w-full px-4 py-3 bg-neutral-100 dark:bg-neutral-700 border-b border-neutral-200 dark:border-neutral-700">
+          <h2 class="text-lg font-semibold text-primary dark:text-white">Tableau 2 - UNAVAILABLE ({{ filteredUnavailableVehicles.length }})</h2>
+        </div>
+        <table class="w-full">
+          <thead class="bg-neutral-100 dark:bg-neutral-700">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Nom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Prenom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Type</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Registration</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Capacity (kg)</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Photos</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let vehicle of getPageSlice(filteredUnavailableVehicles, unavailableVehiclesPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm">{{ getVehicleOwnerNom(vehicle) }}</td>
+              <td class="px-4 py-3 text-sm">{{ getVehicleOwnerPrenom(vehicle) }}</td>
+              <td class="px-4 py-3 text-sm">{{ vehicle.type }}</td>
+              <td class="px-4 py-3 text-sm font-semibold">{{ vehicle.licensePlate }}</td>
+              <td class="px-4 py-3 text-sm">{{ vehicle.capacity }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div class="vehicle-photo-stack">
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehiclePhotoUrl(vehicle.id) as vehiclePhotoUrl"
+                    (click)="openImagePreview(vehiclePhotoUrl, 'Photo vehicule')"
+                    aria-label="Voir photo vehicule en grand"
+                  >
+                    <img [src]="vehiclePhotoUrl" alt="Photo vehicule" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehicleRegistrationFrontUrl(vehicle.id) as registrationFrontUrl"
+                    (click)="openImagePreview(registrationFrontUrl, 'Carte grise recto')"
+                    aria-label="Voir carte grise recto en grand"
+                  >
+                    <img [src]="registrationFrontUrl" alt="Carte grise recto" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <button
+                    type="button"
+                    class="vehicle-photo-button"
+                    *ngIf="getVehicleRegistrationBackUrl(vehicle.id) as registrationBackUrl"
+                    (click)="openImagePreview(registrationBackUrl, 'Carte grise verso')"
+                    aria-label="Voir carte grise verso en grand"
+                  >
+                    <img [src]="registrationBackUrl" alt="Carte grise verso" class="vehicle-photo-thumb" />
+                  </button>
+
+                  <span
+                    *ngIf="!isVehicleDocumentLoading(vehicle.id) && !getVehiclePhotoUrl(vehicle.id) && !getVehicleRegistrationFrontUrl(vehicle.id) && !getVehicleRegistrationBackUrl(vehicle.id)"
+                    class="text-secondary"
+                  >
+                    No images
+                  </span>
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span
+                  class="badge"
+                  [class.badge-success]="vehicle.status === 'AVAILABLE'"
+                  [class.bg-red-500]="vehicle.status === 'UNAVAILABLE'"
+                  [class.text-white]="vehicle.status === 'UNAVAILABLE'"
+                >
+                  {{ vehicle.status }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="filteredUnavailableVehicles.length === 0">
+              <td colspan="7" class="px-4 py-6 text-center text-secondary">No unavailable vehicles.</td>
+            </tr>
+          </tbody>
+        </table>
+        <mat-paginator
+          [length]="filteredUnavailableVehicles.length"
+          [pageSize]="pageSize"
+          [pageIndex]="unavailableVehiclesPage"
+          [pageSizeOptions]="[10]"
+          showFirstLastButtons
+          (page)="unavailableVehiclesPage = $event.pageIndex"
+        ></mat-paginator>
+      </div>
+    </div>
+
+
+
+ <div *ngIf="activeTab === 'Couriers'" class="animate-fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary">Available couriers</h1>
+      </div>
+
+      <div
+        *ngIf="couriersError()"
+        class="p-3 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700"
+      >
+        {{ couriersError() }}
+      </div>
+
+      <div class="card card-md mb-4">
+        <div class="flex items-center gap-3">
+          <label for="courierEmailFilter" class="text-sm font-medium text-secondary dark:text-neutral-300">Filter by Email</label>
+          <input
+            id="courierEmailFilter"
+            [(ngModel)]="courierEmailFilterTerm"
+            type="text"
+            placeholder="Search by email..."
+            class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm flex-1"
+          />
+        </div>
+      </div>
+
+      <div class="card card-lg overflow-hidden" *ngIf="filteredCouriers.length > 0; else noCouriers">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              
+              <th class="text-left px-4 py-3 text-sm font-semibold">Nom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Prenom</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Email</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Series voitures</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Permit</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let courier of getPageSlice(filteredCouriers, couriersPage)" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+             
+              <td class="px-4 py-3 text-sm">{{ courier.nom || '-' }}</td>
+              <td class="px-4 py-3 text-sm">{{ courier.prenom || '-' }}</td>
+              <td class="px-4 py-3 text-sm">{{ courier.email || '-' }}</td>
+              <td class="px-4 py-3 text-sm">
+                <div *ngIf="courier.voitures.length; else noVehicleSeries" class="flex flex-wrap gap-1">
+                  <span
+                    *ngFor="let voiture of courier.voitures"
+                    class="px-2 py-1 rounded-full text-xs font-medium bg-neutral-100 dark:bg-neutral-700 text-primary dark:text-white"
+                    [title]="voiture.serie"
+                  >
+                    {{ voiture.serie }} / ({{ voiture.type }})
+                  </span>
+                </div>
+                <ng-template #noVehicleSeries>
+                  <span class="text-secondary">-</span>
+                </ng-template>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <img
+                  *ngIf="resolvePermitImageSrc(courier.permitImage) as permitSrc; else noPermit"
+                  [src]="permitSrc"
+                  alt="Permit image"
+                  class="h-16 w-24 object-cover rounded-md border border-neutral-200 dark:border-neutral-700"
+                />
+                <ng-template #noPermit>
+                  <span class="text-secondary">No permit</span>
+                </ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <mat-paginator
+          [length]="filteredCouriers.length"
+          [pageSize]="pageSize"
+          [pageIndex]="couriersPage"
+          [pageSizeOptions]="[10]"
+          showFirstLastButtons
+          (page)="couriersPage = $event.pageIndex"
+        ></mat-paginator>
+      </div>
+
+      <ng-template #noCouriers>
+        <div class="card card-md text-center text-secondary">No couriers found.</div>
+      </ng-template>
+      </div>
+
+
+  </main>
+
+  <div
+    *ngIf="selectedPreviewImageUrl()"
+    class="vehicle-image-preview-backdrop"
+    (click)="closeImagePreview()"
+  >
+    <div class="vehicle-image-preview-card" (click)="$event.stopPropagation()">
+      <div class="vehicle-image-preview-header">
+        <h3 class="text-base font-semibold text-primary dark:text-white">{{ selectedPreviewImageLabel() }}</h3>
+        <button
+          type="button"
+          class="vehicle-image-preview-close"
+          (click)="closeImagePreview()"
+          aria-label="Fermer l apercu"
+        >
+          ✕
+        </button>
+      </div>
+      <img
+        [src]="selectedPreviewImageUrl()"
+        [alt]="selectedPreviewImageLabel() || 'Image'"
+        class="vehicle-image-preview-large"
+      />
+    </div>
+  </div>
+
+  <app-modal
+    [isOpen]="isModalOpen()"
+    [title]="isEditing() ? 'Edit delivery' : 'Create delivery'"
+    [isSubmitting]="isSubmitting()"
+    [isSubmitDisabled]="!deliveryFormComponent?.isFormValid()"
+    (close)="closeDeliveryModal()"
+    (submitted)="submitDeliveryForm()"
+  >
+    <div
+      *ngIf="errorMessage()"
+      class="p-3 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700"
+    >
+      {{ errorMessage() }}
+    </div>
+    <app-delivery-form [orders]="orderOptions" [initialOrderId]="modalOrderId()"></app-delivery-form>
+  </app-modal>
+
+  <app-modal
+    [isOpen]="isDetailsModalOpen()"
+    [title]="'Delivery details'"
+    [isSubmitting]="false"
+    (close)="closeDeliveryDetails()"
+  >
+    <div *ngIf="selectedDetailsDelivery() as details">
+      <div class="pdf-like max-w-2xl">
+        <h2 class="text-lg font-bold mb-3">Détails de livraison</h2>
+        <div class="mb-4">
+          <h3 class="font-semibold mb-2">QR Code</h3>
+          <div class="flex items-center gap-4">
+            <img
+              *ngIf="qrCodeUrls[details.id]"
+              [src]="qrCodeUrls[details.id]"
+              alt="QR Code livraison"
+              class="h-32 w-32 object-contain border border-neutral-200 rounded-md p-1 bg-white"
+            />
+            <span *ngIf="!qrCodeUrls[details.id]" class="text-secondary text-xs">QR non disponible</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-sm">
+          <div><strong>Adresse:</strong> {{ details.address || (selectedOrderDetails()?.shipping_address || '-') }}</div>
+          <div><strong>Ville:</strong> {{ details.city || selectedOrderDetails()?.city || '-' }}</div>
+          <div><strong>Code postal:</strong> {{ details.postalCode || selectedOrderDetails()?.postalCode || '-' }}</div>
+          <div><strong>Téléphone:</strong> {{ details.phoneNumber || selectedOrderDetails()?.phoneNumber || selectedOrderDetails()?.phone || '-' }}</div>
+          <div><strong>Mode de livraison:</strong> {{ details.deliveryMode || selectedOrderDetails()?.deliveryMode || 'Livraison à domicile' }}</div>
+          <div><strong>Type de livraison:</strong> {{ details.deliverytype || 'Standard' }}</div>
+          <div><strong>Poids réel:</strong> {{ formatWeightKg(details.realWeightKg) }}</div>
+        </div>
+
+        <div class="mt-4">
+          <h3 class="font-semibold">Produits commandés</h3>
+          <table class="w-full text-sm mt-2 border-collapse">
+            <thead>
+              <tr class="bg-neutral-100 text-left"><th>Qté</th><th>Produit</th><th>Prix U.</th><th>Sous-total</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="!(selectedOrderDetails()?.lines?.length) || selectedOrderDetails()?.lines?.length === 0">
+                <td colspan="4" class="py-4 text-center text-secondary">Lignes: Aucun article</td>
+              </tr>
+              <tr *ngFor="let line of selectedOrderDetails()?.lines" class="border-t">
+                <td class="py-2">{{ line.quantity }}</td>
+                <td class="py-2">{{ line.productName || line.name }}</td>
+                <td class="py-2">{{ line.unitPrice }} DT</td>
+                <td class="py-2">{{ line.subtotal }} DT</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+          <div>
+            <h4 class="font-semibold">Paiement</h4>
+            <div><strong>Mode de paiement:</strong> {{ details.paymentMode || selectedOrderDetails()?.paymentMode || selectedOrderDetails()?.paymentMethod || selectedOrderDetails()?.payment_method || '-' }}</div>
+            <div><strong>Statut:</strong> {{ selectedOrderDetails()?.status || 'Pending' }}</div>
+          </div>
+          <div class="text-right">
+            <div><strong>Sous-total produits</strong> {{ selectedOrderDetails()?.subtotal ?? selectedOrderDetails()?.amount ?? selectedOrderDetails()?.totalAmount ?? 0 }} DT</div>
+            <div><strong>Frais de livraison</strong> {{ selectedOrderDetails()?.deliveryFee ?? '-' }} DT</div>
+            <div class="text-lg font-bold"><strong>Total TTC</strong> {{ selectedOrderDetails()?.totalAmount ?? selectedOrderDetails()?.amount ?? 0 }} DT</div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-right">
+          <button type="button" class="btn btn-primary btn-sm" (click)="closeDeliveryDetails()">Fermer</button>
+        </div>
+      </div>
+    </div>
+  </app-modal>
+</div>
+
+<app-footer></app-footer>

@@ -1,0 +1,393 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-4xl mx-auto py-12 px-4">
+    <div *ngIf="isLoading()" class="text-center py-20">
+      <p class="text-secondary text-lg">Loading...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && !service()" class="text-center py-20">
+      <h2 class="text-2xl font-bold text-primary mb-4">Service not found</h2>
+      <button class="btn btn-primary" (click)="router.navigate(['/services'])">Browse Services</button>
+    </div>
+
+    <div *ngIf="!isLoading() && service() as svc">
+      <button (click)="router.navigate(['/services'])" class="text-sm text-secondary hover:text-esprit-red mb-6 inline-block transition-colors">
+        &larr; Back to services
+      </button>
+
+      <div class="grid lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+          <div *ngIf="svc.imageUrl" class="rounded-xl overflow-hidden h-64 bg-neutral-100 dark:bg-neutral-700">
+            <img [src]="svc.imageUrl" [alt]="svc.name" class="w-full h-full object-cover" />
+          </div>
+
+          <div>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-1 rounded-full bg-esprit-red/10 text-esprit-red font-semibold">{{ svc.category }}</span>
+              <span class="text-xs px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-700 text-secondary font-semibold">{{ svc.pricingType }}</span>
+              <span *ngIf="categoryDemand()?.badge && categoryDemand()?.badge !== 'NORMAL'" class="text-xs px-2 py-1 rounded-full font-semibold" [class]="demandBadgeClass(categoryDemand()?.badge)">
+                {{ categoryDemand()?.badge === 'CRITICAL' ? 'Very High Demand' : categoryDemand()?.badge === 'HIGH' ? 'High Demand' : 'Moderate Demand' }}
+              </span>
+            </div>
+            <h1 class="text-3xl font-bold text-primary dark:text-white mb-2">{{ svc.name }}</h1>
+            <p class="text-sm text-secondary">
+              by
+              <a *ngIf="svc.providerId" [routerLink]="['/services']" [queryParams]="{ provider: svc.providerId }" class="text-esprit-red hover:underline font-medium">{{ svc.providerName || 'Provider' }}</a>
+              <span *ngIf="!svc.providerId">{{ svc.providerName || 'Provider' }}</span>
+            </p>
+
+            <div *ngIf="providerStanding()" class="mt-4 p-4 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-bold text-primary dark:text-white">Provider Standing</h3>
+                <div class="flex items-center gap-1.5">
+                  <span *ngIf="providerStanding()!.level" class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        [ngClass]="{
+                          'bg-neutral-200 text-neutral-700 dark:bg-neutral-600 dark:text-neutral-200': providerStanding()!.level === 'NEW',
+                          'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': providerStanding()!.level === 'RISING',
+                          'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400': providerStanding()!.level === 'PRO',
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': providerStanding()!.level === 'TOP_RATED'
+                        }">
+                    {{ providerStanding()!.level }}
+                  </span>
+                  <span *ngIf="providerStanding()!.mlRiskLevel" class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        [ngClass]="{
+                          'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': providerStanding()!.mlRiskLevel === 'LOW',
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': providerStanding()!.mlRiskLevel === 'MEDIUM',
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': providerStanding()!.mlRiskLevel === 'HIGH' || providerStanding()!.mlRiskLevel === 'CRITICAL'
+                        }">
+                    AI: {{ providerStanding()!.mlRiskLevel }}
+                  </span>
+                </div>
+              </div>
+              <div class="grid grid-cols-4 gap-3 text-center">
+                <div>
+                  <p class="text-lg font-bold text-primary dark:text-white">{{ providerStanding()!.totalBookings ?? 0 }}</p>
+                  <p class="text-[10px] text-secondary">Bookings</p>
+                </div>
+                <div>
+                  <p class="text-lg font-bold text-primary dark:text-white">{{ providerStanding()!.averageRating ?? 'N/A' }}</p>
+                  <p class="text-[10px] text-secondary">Rating</p>
+                </div>
+                <div>
+                  <p class="text-lg font-bold text-primary dark:text-white">{{ providerStanding()!.completionRate ?? 0 }}%</p>
+                  <p class="text-[10px] text-secondary">Completion</p>
+                </div>
+                <div>
+                  <p class="text-lg font-bold text-primary dark:text-white">{{ providerStanding()!.xp ?? 0 }}</p>
+                  <p class="text-[10px] text-secondary">XP</p>
+                </div>
+              </div>
+              <div *ngIf="providerStanding()!.cancellationRate! > 0 || providerStanding()!.disputeRate! > 0" class="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+                <div class="flex gap-4 text-xs text-secondary">
+                  <span *ngIf="providerStanding()!.cancellationRate! > 0" class="text-amber-600 dark:text-amber-400">{{ providerStanding()!.cancellationRate }}% cancellation rate</span>
+                  <span *ngIf="providerStanding()!.disputeRate! > 0" class="text-red-600 dark:text-red-400">{{ providerStanding()!.disputeRate }}% dispute rate</span>
+                </div>
+              </div>
+              <p *ngIf="providerStanding()!.mlRecommendation" class="mt-2 text-xs text-secondary">{{ providerStanding()!.mlRecommendation }}</p>
+            </div>
+            <div *ngIf="standingLoading()" class="mt-4 animate-pulse h-24 bg-neutral-100 dark:bg-neutral-700 rounded-xl"></div>
+
+            <div *ngIf="compatibility()" class="mt-3 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-primary dark:text-white">How Well This Provider Fits Your Needs</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                  [ngClass]="{
+                    'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': (compatibility()!.overallScore ?? 0) >= 70,
+                    'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': (compatibility()!.overallScore ?? 0) >= 40 && (compatibility()!.overallScore ?? 0) < 70,
+                    'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': (compatibility()!.overallScore ?? 0) < 40
+                  }">
+                  {{ compatibility()!.matchLevel }}
+                </span>
+              </div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <div class="flex-1 h-2 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+                  <div class="h-full rounded-full transition-all"
+                    [style.width.%]="compatibility()!.overallScore ?? 0"
+                    [ngClass]="{
+                      'bg-green-500': (compatibility()!.overallScore ?? 0) >= 70,
+                      'bg-amber-500': (compatibility()!.overallScore ?? 0) >= 40 && (compatibility()!.overallScore ?? 0) < 70,
+                      'bg-red-500': (compatibility()!.overallScore ?? 0) < 40
+                    }"></div>
+                </div>
+                <span class="text-xs font-bold text-primary dark:text-white">{{ compatibility()!.overallScore | number:'1.0-0' }}%</span>
+              </div>
+              <div *ngIf="compatibility()!.factors" class="space-y-0.5">
+                <div *ngFor="let f of compatibility()!.factors" class="flex items-center justify-between text-[10px]">
+                  <span class="text-secondary">{{ f.name }}</span>
+                  <span class="font-semibold text-primary dark:text-white">{{ f.detail }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-lg font-semibold text-primary dark:text-white mb-2">Description</h2>
+            <p class="text-secondary">{{ svc.description || 'No description available.' }}</p>
+          </div>
+
+          <div *ngIf="svc.tags && svc.tags.length > 0">
+            <h2 class="text-lg font-semibold text-primary dark:text-white mb-2">Tags</h2>
+            <div class="flex flex-wrap gap-2">
+              <span *ngFor="let tag of svc.tags" class="text-xs px-3 py-1 rounded-full bg-neutral-100 dark:bg-neutral-700 text-secondary">{{ tag }}</span>
+            </div>
+          </div>
+
+          <ng-container *ngIf="svc.pricingType === 'PACKAGED' && svc.packages && svc.packages.length > 0">
+            <div>
+              <h2 class="text-lg font-semibold text-primary dark:text-white mb-4">Choose a Package</h2>
+              <div class="grid gap-5 md:grid-cols-3">
+                <div *ngFor="let pkg of svc.packages; let i = index"
+                     (click)="selectPackage(pkg)"
+                     class="relative rounded-2xl border-2 cursor-pointer transition-all duration-200 overflow-hidden group"
+                     [class]="selectedPackageId() === pkg.id
+                       ? 'border-esprit-red bg-white dark:bg-neutral-800 shadow-lg shadow-esprit-red/10 scale-[1.02]'
+                       : 'border-neutral-200 dark:border-neutral-700 hover:border-esprit-red/40 hover:shadow-md bg-white dark:bg-neutral-800'">
+                  <div *ngIf="pkg.recommended" class="absolute top-0 right-0 z-10">
+                    <span class="block bg-esprit-red text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">POPULAR</span>
+                  </div>
+                  <div class="p-5">
+                    <div class="mb-3">
+                      <p class="text-[10px] font-bold uppercase tracking-widest mb-1" [class]="selectedPackageId() === pkg.id ? 'text-esprit-red' : 'text-secondary'">{{ pkg.tier }}</p>
+                      <p class="text-lg font-bold text-primary dark:text-white">{{ pkg.name }}</p>
+                    </div>
+                    <p class="text-3xl font-bold text-esprit-red mb-4">{{ pkg.price }} <span class="text-sm font-normal text-secondary">TND</span></p>
+                    <p *ngIf="pkg.description" class="text-sm text-secondary mb-4 leading-relaxed">{{ pkg.description }}</p>
+                    <div class="border-t border-neutral-100 dark:border-neutral-700 pt-4 space-y-2.5">
+                      <div class="flex items-center gap-2 text-sm text-secondary">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>{{ pkg.deliveryDays }} day delivery</span>
+                      </div>
+                      <div class="flex items-center gap-2 text-sm text-secondary">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>{{ pkg.revisions === 0 ? 'Unlimited' : pkg.revisions }} revision{{ pkg.revisions !== 1 ? 's' : '' }}</span>
+                      </div>
+                      <div *ngFor="let f of pkg.features" class="flex items-start gap-2 text-sm text-secondary">
+                        <svg class="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                        <span>{{ f }}</span>
+                      </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-neutral-100 dark:border-neutral-700">
+                      <div class="w-full text-center py-2 rounded-lg text-sm font-semibold transition-colors"
+                           [class]="selectedPackageId() === pkg.id
+                             ? 'bg-esprit-red text-white'
+                             : 'bg-neutral-100 dark:bg-neutral-700 text-secondary group-hover:bg-esprit-red/10 group-hover:text-esprit-red'">
+                        {{ selectedPackageId() === pkg.id ? 'Selected' : 'Select' }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-lg font-semibold text-primary dark:text-white">Reviews ({{ reviews().length }})</h2>
+            </div>
+            <div *ngIf="reviews().length === 0" class="text-sm text-secondary">No reviews yet.</div>
+            <div class="space-y-4">
+              <div *ngFor="let review of reviews()" class="card card-md">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <p class="font-semibold text-primary dark:text-white">{{ review.userName || 'Anonymous' }}</p>
+                    <div class="flex items-center gap-2">
+                      <p class="text-xs text-secondary">{{ review.rating }}/5</p>
+                      <span *ngIf="sentimentResults()[review.id ?? 0]" class="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                        [ngClass]="{
+                          'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400': sentimentResults()[review.id ?? 0]?.sentiment === 'POSITIVE',
+                          'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': sentimentResults()[review.id ?? 0]?.sentiment === 'NEUTRAL',
+                          'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': sentimentResults()[review.id ?? 0]?.sentiment === 'NEGATIVE'
+                        }">
+                        {{ sentimentResults()[review.id ?? 0]?.sentiment }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <p *ngIf="review.comment" class="text-sm text-secondary">{{ review.comment }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="card card-md sticky top-6">
+            <div class="text-3xl font-bold text-esprit-red mb-1">
+              <span *ngIf="svc.pricingType === 'HOURLY'">{{ svc.price }} TND<span class="text-sm font-normal text-secondary">/h</span></span>
+              <span *ngIf="svc.pricingType === 'FIXED'">{{ svc.price }} TND</span>
+              <span *ngIf="svc.pricingType === 'PACKAGED' && svc.startingPrice">From {{ svc.startingPrice }} TND</span>
+              <span *ngIf="svc.pricingType === 'PACKAGED' && !svc.startingPrice">Contact for pricing</span>
+            </div>
+            <div class="flex items-center gap-1 mb-4">
+              <span class="text-sm text-secondary">{{ svc.rating || 'N/A' }}/5</span>
+            </div>
+
+            <div *ngIf="svc.pricingType === 'PACKAGED' && selectedPkg()" class="mb-4 p-3 rounded-xl border-2 border-esprit-red bg-esprit-red/5 dark:bg-esprit-red/10">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-bold text-primary dark:text-white">{{ selectedPkg()!.name }}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-esprit-red/10 text-esprit-red font-bold uppercase">{{ selectedPkg()!.tier }}</span>
+              </div>
+              <p *ngIf="selectedPkg()!.description" class="text-xs text-secondary mb-2">{{ selectedPkg()!.description }}</p>
+              <div class="flex items-center justify-between">
+                <span class="text-lg font-bold text-esprit-red">{{ selectedPkg()!.price }} TND</span>
+                <div class="flex gap-3 text-xs text-secondary">
+                  <span>{{ selectedPkg()!.deliveryDays }}d delivery</span>
+                  <span>{{ selectedPkg()!.revisions === 0 ? 'Unlimited' : selectedPkg()!.revisions }} rev.</span>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="svc.pricingType === 'PACKAGED' && !selectedPkg() && svc.packages && svc.packages.length > 0" class="mb-4 text-center">
+              <p class="text-xs text-secondary">Select a package below to continue</p>
+            </div>
+
+            <div class="flex gap-2 mb-4">
+              <button class="btn btn-primary flex-1" (click)="toggleBookingForm()">
+                {{ showBookingForm() ? 'Cancel' : 'Book Now' }}
+              </button>
+              <button
+                class="btn btn-secondary"
+                (click)="toggleFavorite()"
+                [class.text-esprit-red]="isFavorite()"
+              >
+                {{ isFavorite() ? 'Saved' : 'Save' }}
+              </button>
+            </div>
+
+            <div *ngIf="showBookingForm()" class="space-y-4 border-t border-neutral-200 pt-4">
+              <h3 class="font-semibold text-primary dark:text-white">Book this service</h3>
+
+              <div *ngIf="providerStanding()" class="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold text-secondary">Provider Track Record</span>
+                  <span *ngIf="providerStanding()!.mlRiskLevel" class="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        [ngClass]="{
+                          'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': providerStanding()!.mlRiskLevel === 'LOW',
+                          'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': providerStanding()!.mlRiskLevel === 'MEDIUM',
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': providerStanding()!.mlRiskLevel === 'HIGH' || providerStanding()!.mlRiskLevel === 'CRITICAL'
+                        }">
+                    {{ (providerStanding()!.mlReliabilityScore ?? 0) | number:'1.0-0' }}% AI reliability
+                  </span>
+                </div>
+                <div *ngIf="providerStanding()" class="flex gap-4 text-xs text-secondary">
+                  <span>{{ providerStanding()!.completionRate ?? 0 }}% completion</span>
+                  <span>{{ providerStanding()!.totalBookings ?? 0 }} bookings</span>
+                  <span *ngIf="providerStanding()!.averageRating">{{ providerStanding()!.averageRating }}/5 rating</span>
+                  <span *ngIf="providerStanding()!.level" class="font-semibold"
+                        [ngClass]="{
+                          'text-purple-600 dark:text-purple-400': providerStanding()!.level === 'PRO',
+                          'text-amber-600 dark:text-amber-400': providerStanding()!.level === 'TOP_RATED'
+                        }">{{ providerStanding()!.level }}</span>
+                </div>
+              </div>
+
+              <div *ngIf="bookingSubmitted()" class="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
+                Booking submitted successfully! The provider will review your request.
+                <button (click)="router.navigate(['/bookings'])" class="underline font-semibold ml-1">View My Bookings</button>
+              </div>
+
+              <div *ngIf="bookingError()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">
+                {{ bookingError() }}
+              </div>
+
+              <form *ngIf="!bookingSubmitted()" [formGroup]="bookingForm" (ngSubmit)="submitBooking()" class="space-y-3">
+                <div *ngIf="svc.pricingType === 'FIXED'" class="space-y-3">
+                  <div>
+                    <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Preferred Date</label>
+                    <div class="relative">
+                      <input type="date" formControlName="date"
+                        [min]="today()"
+                        class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm"
+                        [ngClass]="{
+                          'border-red-400 dark:border-red-500': dateAvailable() === false,
+                          'border-neutral-300': dateAvailable() !== false
+                        }" />
+                      <span *ngIf="dateChecking()" class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg class="animate-spin h-4 w-4 text-esprit-red" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                      </span>
+                    </div>
+                    <p *ngIf="dateAvailable() === true" class="mt-1 text-xs text-emerald-600 dark:text-emerald-400">
+                      Provider is available on this date
+                    </p>
+                    <p *ngIf="dateMessage()" class="mt-1 text-xs text-red-600 dark:text-red-400">
+                      {{ dateMessage() }}
+                    </p>
+                  </div>
+                  <div class="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                    <div class="flex justify-between text-sm">
+                      <span class="text-secondary">Fixed rate</span>
+                      <span class="font-bold text-esprit-red">{{ svc.price }} TND</span>
+                    </div>
+                  </div>
+                </div>
+                <div *ngIf="svc.pricingType === 'PACKAGED'">
+                  <div *ngIf="selectedPkg()" class="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg space-y-1">
+                    <div class="flex justify-between text-sm">
+                      <span class="text-secondary">{{ selectedPkg()!.name }}</span>
+                      <span class="font-bold text-esprit-red">{{ selectedPkg()!.price }} TND</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-secondary">
+                      <span>{{ selectedPkg()!.deliveryDays }} day delivery / {{ selectedPkg()!.revisions === 0 ? 'Unlimited' : selectedPkg()!.revisions }} revisions</span>
+                    </div>
+                    <div *ngIf="bookingForm.get('highPriority')?.value" class="flex justify-between text-xs">
+                      <span class="text-amber-600 dark:text-amber-400">High Priority (+12%)</span>
+                      <span class="font-semibold text-amber-600 dark:text-amber-400">{{ packagePriorityMarkup() }} TND</span>
+                    </div>
+                  </div>
+                  <p *ngIf="!selectedPkg() && svc.packages && svc.packages.length > 0" class="text-xs text-amber-600 dark:text-amber-400">
+                    Please select a package from the options above
+                  </p>
+                </div>
+                <ng-container *ngIf="svc.pricingType === 'HOURLY'">
+                  <app-availability-slot-picker
+                    [serviceId]="svc.id!"
+                    [duration]="selectedDuration()"
+                    (slotSelected)="onSlotSelected($event)">
+                  </app-availability-slot-picker>
+
+                  <div>
+                    <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Duration</label>
+                    <select
+                      formControlName="duration"
+                      class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm"
+                    >
+                      @for (opt of durationOptions(); track opt) {
+                        <option [value]="opt">{{ opt }} {{ opt === 1 ? 'hour' : 'hours' }}</option>
+                      }
+                    </select>
+                  </div>
+                  <div *ngIf="estimatedTotal() !== null && selectedSlotStart()" class="p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                    <div class="flex justify-between text-sm">
+                      <span class="text-secondary">{{ bookingForm.get('duration')?.value }} hours x {{ svc.price }} TND</span>
+                      <span class="font-bold text-esprit-red">{{ estimatedTotal() }} TND</span>
+                    </div>
+                    <div *ngIf="bookingForm.get('highPriority')?.value" class="flex justify-between text-xs mt-1">
+                      <span class="text-amber-600 dark:text-amber-400">High Priority markup (+12%)</span>
+                      <span class="font-semibold text-amber-600 dark:text-amber-400">{{ priorityMarkupEstimate() }} TND</span>
+                    </div>
+                  </div>
+                </ng-container>
+                <div>
+                  <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Notes (optional)</label>
+                  <textarea
+                    formControlName="notes"
+                    rows="2"
+                    class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm resize-none"
+                  ></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary w-full" [disabled]="!canSubmit">
+                  {{ submitButtonText }}
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

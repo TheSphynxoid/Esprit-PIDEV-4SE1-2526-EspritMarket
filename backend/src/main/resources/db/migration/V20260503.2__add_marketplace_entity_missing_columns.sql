@@ -1,0 +1,23 @@
+ALTER TABLE product
+    ADD COLUMN IF NOT EXISTS status VARCHAR(30) DEFAULT 'ACTIVE';
+
+UPDATE product SET status = 'ACTIVE' WHERE status IS NULL;
+
+ALTER TABLE product
+    ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP(6);
+
+UPDATE product SET updated_at = NOW() WHERE updated_at IS NULL;
+
+ALTER TABLE product
+    ALTER COLUMN image_url TYPE TEXT;
+
+ALTER TABLE product
+    ALTER COLUMN stock DROP NOT NULL;
+
+ALTER TABLE store
+    ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE NOT NULL;
+
+UPDATE store SET active = TRUE WHERE active IS NULL;
+
+ALTER TABLE store
+    ALTER COLUMN logo_url TYPE VARCHAR(2000);

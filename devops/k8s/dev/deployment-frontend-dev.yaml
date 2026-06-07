@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esprit-market-frontend-dev
+  namespace: esprit-market
+  labels:
+    app: esprit-market-frontend-dev
+    environment: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esprit-market-frontend-dev
+  template:
+    metadata:
+      labels:
+        app: esprit-market-frontend-dev
+    spec:
+      initContainers:
+        - name: fix-nginx-perms
+          image: busybox:latest
+          command: ['sh', '-c', 'mkdir -p /var/lib/nginx/logs /var/lib/nginx/tmp /var/lib/nginx/tmp/client_body /var/lib/nginx/tmp/proxy /var/lib/nginx/tmp/uwsgi /var/lib/nginx/tmp/scgi /var/lib/nginx/tmp/fastcgi 2>/dev/null; chmod -R 777 /var/lib/nginx 2>/dev/null || true']
+          volumeMounts:
+            - name: var-lib
+              mountPath: /var/lib
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+      containers:
+        - name: frontend
+          image: thesphynx2000/espritmarket-frontend:latest
+          imagePullPolicy: Always
+          command: ['sh', '-c', 'mkdir -p /var/lib/nginx/logs /var/cache/nginx /tmp/nginx 2>/dev/null; nginx -g "daemon off;"']
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-tmp
+              mountPath: /tmp/nginx
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: var-lib
+              mountPath: /var/lib
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: frontend-config-dev
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: var-lib
+          emptyDir: {}
+      terminationGracePeriodSeconds: 30

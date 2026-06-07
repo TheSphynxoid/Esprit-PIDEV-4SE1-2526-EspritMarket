@@ -1,0 +1,183 @@
+<app-header></app-header>
+<section class="store-page" [ngStyle]="themeVars" *ngIf="profile as shop; else notFound">
+
+  <div class="bg-glow"></div>
+
+  <main class="store-shell">
+    <header class="hero" [style.background-image]="'url(' + heroImage + ')'">
+      <div class="hero-overlay"></div>
+      <img [src]="shop.logoDataUrl" [alt]="'Logo de ' + shop.name" class="shop-logo" />
+      <p class="chip">{{ theme.name }}</p>
+      <h1>{{ shop.name }}</h1>
+      <p class="hero-subtitle">{{ theme.vibe }}</p>
+    </header>
+
+    <section class="store-card details-card">
+      <div class="row">
+        <span class="label">Category</span>
+        <span class="value">{{ shop.categoryLabel }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Telephone</span>
+        <span class="value">{{ shop.phone }}</span>
+      </div>
+      <div class="row description-row">
+        <span class="label">Description</span>
+        <p class="description">{{ shop.description }}</p>
+      </div>
+
+      <div class="row description-row">
+        <span class="label">Store reviews</span>
+        <div>
+          <p class="description" style="margin-bottom: 8px;">
+            Average rating: {{ storeAverageRating | number:'1.1-1' }} / 5 ({{ storeReviewCount }} reviews)
+          </p>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button
+              *ngFor="let star of getStoreStars()"
+              type="button"
+              (click)="rateStore(star)"
+              style="border: none; background: transparent; cursor: pointer; font-size: 22px; line-height: 1;"
+              [style.opacity]="star <= visitorStoreRating ? 1 : 0.35"
+            >
+              *
+            </button>
+            <span style="font-size: 12px; color: var(--store-muted);" *ngIf="visitorStoreRating > 0">Your rating: {{ visitorStoreRating }}/5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <a routerLink="/marketplace" class="action-button ghost">View marketplace</a>
+        <button type="button" class="action-button primary" (click)="goToMarketplace()">View other stores</button>
+        <button
+          *ngIf="isOwner"
+          type="button"
+          class="action-button primary"
+          (click)="openAddProductModalForOwner()"
+        >
+          Add new product
+        </button>
+        <button
+          *ngIf="isOwner"
+          type="button"
+          class="action-button ghost"
+          (click)="openEditStoreForOwner()"
+        >
+          Edit my store
+        </button>
+        <button
+          *ngIf="canDeleteStoreAsAdmin"
+          type="button"
+          class="action-button danger"
+          (click)="deleteStoreAsAdmin()"
+        >
+          Delete this store
+        </button>
+      </div>
+    </section>
+
+    <section class="store-products card-block">
+      <div class="section-head">
+        <h2>Store products</h2>
+        <p>Discover all products from {{ shop.name }}</p>
+      </div>
+
+      <div class="product-grid" *ngIf="storeProducts.length > 0; else emptyState">
+        <article 
+          class="product-card" 
+          *ngFor="let product of storeProducts"
+          (click)="onProductClick(product)"
+          [class.editable]="isOwner"
+          style="cursor: pointer;"
+        >
+
+          <div class="product-image-wrap">
+            <img *ngIf="isImageSource(product.image)" [src]="product.image" [alt]="product.name" class="product-image" />
+            <div *ngIf="!isImageSource(product.image)" class="product-emoji">{{ product.image || 'IMG' }}</div>
+            <div class="promo-badge" *ngIf="product.isPromotionActive">-{{ product.discountPercent }}%</div>
+            <div class="sold-out" *ngIf="product.stock === 0">Product ended</div>
+          </div>
+
+          <div class="product-body">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+
+            <div style="display: flex; align-items: center; gap: 4px; margin: 8px 0 10px;">
+              <button
+                *ngFor="let star of [1,2,3,4,5]"
+                type="button"
+                (click)="rateProductFromStore(product.id, star)"
+                style="border: none; background: transparent; cursor: pointer; font-size: 18px; line-height: 1;"
+                [style.opacity]="star <= getVisitorProductRating(product.id) ? 1 : 0.35"
+              >
+                *
+              </button>
+              <span style="font-size: 12px; color: var(--store-muted); margin-left: 6px;">
+                {{ product.rating | number:'1.1-1' }} ({{ product.reviews }})
+              </span>
+            </div>
+
+            <div class="promo-banner" *ngIf="product.isPromotionActive">
+              <span class="promo-title">Active promotion until {{ formatPromoEndDate(product.promoEndAt) }}</span>
+              <span class="promo-timer">Time left: {{ formatTimeLeft(product.remainingSeconds) }}</span>
+            </div>
+
+            <div class="price-container">
+              <span class="old-price-strikethrough" *ngIf="product.isPromotionActive">{{ product.price }} DT</span>
+              <span class="price-label-small" *ngIf="product.isPromotionActive">A PARTIR DE</span>
+              <span class="big-orange-price">
+                {{ product.isPromotionActive ? product.discountedPrice : product.price }}
+              </span>
+              <span class="currency-label-bold">TND</span>
+            </div>
+            
+            <div class="product-metadata">
+              <div class="metadata-item">
+                <span class="meta-label">Stock :</span>
+                <span class="meta-value">{{ product.stock }} items</span>
+              </div>
+              <div class="metadata-item">
+
+                <span class="meta-label">Dimensions :</span>
+                <span class="meta-value">{{ product.dimensionsLabel || 'N/A' }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="meta-label">Poids :</span>
+                <span class="meta-value">{{ product.weight ? (product.weight + ' kg') : 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+        </article>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="empty-products">
+          <p>No products for this store at the moment.</p>
+        </div>
+      </ng-template>
+    </section>
+  </main>
+</section>
+<app-footer></app-footer>
+
+
+<ng-template #notFound>
+  <section class="store-page">
+    <div class="bg-glow"></div>
+
+    <main class="store-shell">
+      <section class="store-card details-card" style="text-align: center; padding: 60px 20px;">
+        <h2 style="font-size: 2rem; margin-bottom: 20px;">Store not found</h2>
+        <p style="font-size: 1rem; color: var(--store-muted); margin-bottom: 30px;">
+          The store "{{ storeName }}" does not exist or has been removed.
+        </p>
+        <a routerLink="/marketplace" class="action-button primary">Back to marketplace</a>
+      </section>
+    </main>
+  </section>
+</ng-template>
+<app-footer></app-footer>
+
+

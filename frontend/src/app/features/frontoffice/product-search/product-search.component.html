@@ -1,0 +1,83 @@
+<app-header></app-header>
+
+<div class="search-page">
+  <div class="search-shell">
+    <h1>Advanced Product Search</h1>
+
+    <section class="filters">
+      <div class="field query">
+        <label>Keyword</label>
+        <input
+          type="text"
+          [formControl]="queryControl"
+          placeholder="Search product, store, category..."
+        />
+      </div>
+
+      <div class="field">
+        <label>Min price</label>
+        <input type="number" min="0" [formControl]="minPriceControl" placeholder="0" />
+      </div>
+
+      <div class="field">
+        <label>Max price</label>
+        <input type="number" min="0" [formControl]="maxPriceControl" placeholder="1000" />
+      </div>
+
+      <div class="field">
+        <label>Category</label>
+        <select [formControl]="categoryControl">
+          <option value="">All categories</option>
+          <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+
+      <div class="field action">
+        <button type="button" (click)="resetFilters()">Reset</button>
+      </div>
+    </section>
+
+    <div class="status" *ngIf="loading$ | async">Searching...</div>
+    <div class="status error" *ngIf="error$ | async as errorMessage">{{ errorMessage }}</div>
+
+    <ng-container *ngIf="resultsPage$ | async as page">
+      <p class="summary">
+        {{ page.totalElements }} result(s) found
+      </p>
+
+      <div class="results" *ngIf="page.content.length > 0; else noResults">
+        <article class="result-card" *ngFor="let item of page.content">
+          <h3>{{ item.name }}</h3>
+          <p><strong>Price:</strong> {{ item.price | number:'1.0-2' }} DT</p>
+          <p><strong>Store:</strong> {{ item.storeName || 'N/A' }}</p>
+          <p><strong>Category:</strong> {{ item.categoryName || 'N/A' }}</p>
+          <p><strong>ID:</strong> {{ item.productId }}</p>
+        </article>
+      </div>
+
+      <ng-template #noResults>
+        <p class="status">No products match the current filters.</p>
+      </ng-template>
+
+      <nav class="pagination" *ngIf="page.totalPages > 1">
+        <button type="button" [disabled]="page.first" (click)="goToPage(page.number - 1)">
+          Prev
+        </button>
+
+        <button
+          type="button"
+          *ngFor="let p of getPageNumbers(page)"
+          [class.active]="p === (page.number + 1)"
+          (click)="goToPage(p - 1)">
+          {{ p }}
+        </button>
+
+        <button type="button" [disabled]="page.last" (click)="goToPage(page.number + 1)">
+          Next
+        </button>
+      </nav>
+    </ng-container>
+  </div>
+</div>
+
+<app-footer></app-footer>

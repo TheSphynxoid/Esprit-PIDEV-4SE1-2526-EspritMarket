@@ -1,0 +1,144 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-12 px-4">
+    <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+      <div>
+        <h1 class="text-4xl font-bold text-primary dark:text-white mb-2">Services</h1>
+        <p class="text-secondary">Browse services and jump to bookings directly from here.</p>
+      </div>
+      <div class="flex gap-2">
+        <button class="btn btn-secondary" (click)="goToProjects()">Projects</button>
+        <button class="btn btn-primary" (click)="goToBookings()">Bookings</button>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+      <div class="flex-1 relative">
+        <input
+          type="text"
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)"
+          (keyup.enter)="onSearch()"
+          placeholder="Search services..."
+          class="w-full px-4 py-2 pl-10 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 transition-colors"
+        />
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+      </div>
+      <select
+        [value]="selectedCategory()"
+        (change)="selectedCategory.set($any($event.target).value); onCategoryFilter()"
+        class="px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 transition-colors"
+      >
+        <option value="">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat | titlecase }}</option>
+      </select>
+      <div class="flex gap-1 border border-neutral-300 dark:border-neutral-600 rounded-lg overflow-hidden">
+        <button
+          (click)="viewMode.set('grid')"
+          [class.bg-esprit-red]="viewMode() === 'grid'"
+          [class.text-white]="viewMode() === 'grid'"
+          [class.bg-white]="viewMode() !== 'grid'"
+          [class.dark:bg-neutral-700]="viewMode() !== 'grid'"
+          class="px-3 py-2 text-sm transition-colors"
+          title="Grid view"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        </button>
+        <button
+          (click)="viewMode.set('list')"
+          [class.bg-esprit-red]="viewMode() === 'list'"
+          [class.text-white]="viewMode() === 'list'"
+          [class.bg-white]="viewMode() !== 'list'"
+          [class.dark:bg-neutral-700]="viewMode() !== 'list'"
+          class="px-3 py-2 text-sm transition-colors"
+          title="List view"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex flex-col sm:flex-row gap-3 mb-6 items-end">
+      <div class="flex gap-2 items-center">
+        <label class="text-sm text-secondary whitespace-nowrap">Price:</label>
+        <input type="number" placeholder="Min" min="0" [value]="minPrice() ?? ''" (input)="minPrice.set($any($event.target).value ? +$any($event.target).value : null)" class="w-24 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" />
+        <span class="text-secondary text-sm">-</span>
+        <input type="number" placeholder="Max" min="0" [value]="maxPrice() ?? ''" (input)="maxPrice.set($any($event.target).value ? +$any($event.target).value : null)" class="w-24 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" />
+      </div>
+      <div class="flex gap-2">
+        <button (click)="onPriceFilter()" class="btn btn-primary px-4 py-2 text-sm">Apply</button>
+        <button *ngIf="searchTerm() || selectedCategory() || minPrice() !== null || maxPrice() !== null" (click)="clearFilters()" class="btn btn-secondary px-4 py-2 text-sm">Clear</button>
+      </div>
+      <div *ngIf="totalElements() > 0" class="text-sm text-secondary ml-auto">{{ totalElements() }} service{{ totalElements() !== 1 ? 's' : '' }} found</div>
+    </div>
+
+    <ng-container *ngIf="loading()">
+      <div [class]="viewMode() === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'">
+        @for (s of [1,2,3,4,5,6]; track s) {
+          <div class="card card-md flex flex-col gap-3 p-4" [class.flex-row]="viewMode() === 'list'" [class.gap-4]="viewMode() === 'list'">
+            <div [class.w-32]="viewMode() === 'list'" [class.h-24]="viewMode() === 'list'" [class.flex-shrink-0]="viewMode() === 'list'">
+              <app-skeleton variant="card"></app-skeleton>
+            </div>
+            <div class="flex-1 flex flex-col">
+              <app-skeleton variant="text"></app-skeleton>
+              <app-skeleton variant="text" style="width: 60%"></app-skeleton>
+              <div class="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                <app-skeleton variant="text" style="width: 40%"></app-skeleton>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    </ng-container>
+
+    <div *ngIf="!loading()">
+      <div [class]="viewMode() === 'grid' ? 'grid md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'">
+        <div *ngFor="let service of services()" class="group card card-md hover:shadow-lg transition-all duration-300 flex flex-col relative" [class.hover:-translate-y-1]="viewMode() === 'grid'" [class.flex-row]="viewMode() === 'list'" [class.gap-4]="viewMode() === 'list'" (click)="goToServiceDetail(service.id)">
+          <button (click)="$event.stopPropagation(); comparison.toggleCompare(service.id, service.name)" class="absolute top-3 right-3 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-all" [class.bg-esprit-red]="comparison.isInComparison(service.id)" [class.text-white]="comparison.isInComparison(service.id)" [class.bg-white/80]="!comparison.isInComparison(service.id)" [class.dark:bg-neutral-700/80]="!comparison.isInComparison(service.id)" [class.shadow-sm]="!comparison.isInComparison(service.id)" [title]="comparison.isInComparison(service.id) ? 'Remove from compare' : 'Add to compare'">
+            <svg *ngIf="comparison.isInComparison(service.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            <svg *ngIf="!comparison.isInComparison(service.id)" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          </button>
+          <div *ngIf="service.imageUrl" class="rounded-lg overflow-hidden bg-neutral-100 dark:bg-neutral-700" [class.mb-3]="viewMode() === 'grid'" [class.h-40]="viewMode() === 'grid'" [class.w-32]="viewMode() === 'list'" [class.h-24]="viewMode() === 'list'" [class.flex-shrink-0]="viewMode() === 'list'">
+            <img [src]="service.imageUrl" [alt]="service.name" class="w-full h-full object-cover" />
+          </div>
+          <div class="flex-1 flex flex-col">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-xs px-2 py-1 rounded-full bg-esprit-red/10 text-esprit-red font-semibold">{{ service.category }}</span>
+              <span *ngIf="service.pricingType === 'PACKAGED'" class="text-xs px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold">PACKAGED</span>
+              <span *ngIf="service.pricingType !== 'PACKAGED'" class="text-xs px-2 py-1 rounded-full bg-neutral-100 dark:bg-neutral-700 text-secondary font-semibold">{{ service.pricingType }}</span>
+            </div>
+            <h3 class="text-lg font-bold text-primary mb-1 group-hover:text-esprit-red transition-colors">{{ service.name }}</h3>
+            <p class="text-xs text-secondary mb-2">by {{ service.providerName }}</p>
+            <p *ngIf="viewMode() === 'list'" class="text-sm text-secondary mb-2 flex-1">{{ service.description }}</p>
+            <div class="flex items-center gap-4 border-t border-neutral-200 pt-3 mt-auto">
+              <span class="text-sm text-secondary">{{ service.rating }}/5</span>
+              <span class="text-sm font-bold text-esprit-red">
+                <span *ngIf="service.pricingType === 'PACKAGED'">From {{ service.startingPrice }} TND</span>
+                <span *ngIf="service.pricingType === 'HOURLY'">{{ service.price }} TND/h</span>
+                <span *ngIf="service.pricingType === 'FIXED'">{{ service.price }} TND</span>
+              </span>
+              <button class="btn btn-primary text-sm ml-auto px-4 py-1" (click)="goToServiceDetail(service.id); $event.stopPropagation()">Book</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="!loading() && services().length === 0" class="text-center py-12">
+      <p class="text-secondary text-lg">No services found.</p>
+    </div>
+
+    <div *ngIf="totalPages() > 1" class="flex items-center justify-center gap-4 mt-8">
+      <button (click)="prevPage()" [disabled]="!hasPrevPage()" class="btn btn-secondary px-4 py-2 text-sm" [class.opacity-50]="!hasPrevPage()" [class.cursor-not-allowed]="!hasPrevPage()">Previous</button>
+      <span class="text-sm text-secondary">Page {{ pageNumber() }} of {{ totalPages() }}</span>
+      <button (click)="nextPage()" [disabled]="!hasNextPage()" class="btn btn-secondary px-4 py-2 text-sm" [class.opacity-50]="!hasNextPage()" [class.cursor-not-allowed]="!hasNextPage()">Next</button>
+    </div>
+  </div>
+</div>
+
+<app-service-comparison #comparison></app-service-comparison>
+
+<app-footer></app-footer>

@@ -1,0 +1,108 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esprit-market-frontend
+  namespace: esprit-market
+  labels:
+    app: esprit-market-frontend
+    version: v1
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: esprit-market-frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: esprit-market-frontend
+        version: v1
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      initContainers:
+        - name: fix-nginx-perms
+          image: busybox:latest
+          command: ['sh', '-c', 'chmod -R 777 /var/lib/nginx 2>/dev/null || true']
+          volumeMounts:
+            - name: var-lib
+              mountPath: /var/lib
+          securityContext:
+            runAsUser: 0
+            runAsNonRoot: false
+      containers:
+        - name: frontend
+          image: thesphynx2000/espritmarket-frontend:latest
+          imagePullPolicy: Always
+          command: ['sh', '-c', 'mkdir -p /var/lib/nginx/logs && chmod 777 /var/lib/nginx/logs && nginx -g "daemon off;"']
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 1001
+          volumeMounts:
+            - name: nginx-tmp
+              mountPath: /tmp/nginx
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: var-lib
+              mountPath: /var/lib
+      volumes:
+        - name: nginx-tmp
+          emptyDir: {}
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: frontend-config
+        - name: var-lib
+          emptyDir: {}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: esprit-market-frontend
+                topologyKey: kubernetes.io/hostname

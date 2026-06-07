@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: esprit-market
+
+resources:
+  - namespace.yaml
+  - cert-issuer.yaml
+  - backend/backend-configmap.yaml
+  - backend/backend-secret.yaml
+  - backend/uploads-pvc.yaml
+  - backend/postgres.yaml
+  - backend/backend-deployment.yaml
+  - backend/backend-service.yaml
+  - backend/backend-hpa.yaml
+  - backend/backend-pdb.yaml
+  - frontend/frontend-configmap.yaml
+  - frontend/frontend-deployment.yaml
+  - frontend/frontend-service.yaml
+  - frontend/frontend-hpa.yaml
+  - frontend/frontend-pdb.yaml
+  - monitoring/prometheus-config.yaml
+  - monitoring/prometheus.yaml
+  - network-policy.yaml
+  - ingress.yaml
+
+images:
+  - name: thesphynx2000/espritmarket-backend
+    newTag: latest
+  - name: thesphynx2000/espritmarket-frontend
+    newTag: latest

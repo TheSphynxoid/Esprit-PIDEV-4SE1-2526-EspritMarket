@@ -1,0 +1,17 @@
+<div class="notification-stack" *ngIf="notificationService.notifications().length > 0">
+	<article
+		class="notification-toast"
+		*ngFor="let notification of notificationService.notifications(); trackBy: trackByNotificationId"
+	>
+		<div class="notification-content">
+			<p class="notification-title">{{ notification.title }}</p>
+			<p class="notification-message">{{ notification.message }}</p>
+		</div>
+		<button type="button" class="notification-close" (click)="dismissNotification(notification.id)">
+			×
+		</button>
+	</article>
+</div>
+
+<router-outlet></router-outlet>
+

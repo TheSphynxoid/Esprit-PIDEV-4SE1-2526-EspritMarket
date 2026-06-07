@@ -1,0 +1,49 @@
+@startuml services-sequence-book-service
+title Services & Projects: Book a Service
+
+actor Client
+participant "Frontend\n(Angular)" as FE
+participant "Backend API\n(Spring Boot)" as API
+participant "Auth Service\n(JWT)" as AUTH
+participant "Schedule Service" as SCHED
+database "PostgreSQL" as DB
+
+Client -> FE: Browse services list
+FE -> API: GET /api/services
+API -> DB: SELECT services
+DB --> API: Service list
+API --> FE: 200 OK (services)
+FE --> Client: Display service cards
+
+Client -> FE: Click on a service
+FE -> API: GET /api/services/{id}
+API -> DB: SELECT service, provider
+DB --> API: Service details
+API --> FE: 200 OK (service details)
+FE --> Client: Display service page\nwith availability calendar
+
+Client -> FE: Select date and time slot
+FE -> API: GET /api/services/{id}/availability?date=...
+API -> SCHED: Check slot availability
+SCHED -> DB: SELECT availability_slots\nWHERE date = ? AND service_id = ?
+DB --> SCHED: Available slots
+SCHED --> API: Slot is available
+API --> FE: 200 OK (slot confirmed available)
+
+Client -> FE: Click "Book"
+FE -> API: POST /api/bookings\n{serviceId, date, timeSlotId}
+API -> AUTH: Validate JWT token
+AUTH --> API: Token valid (clientId)
+
+API -> SCHED: Validate no conflict
+SCHED -> DB: SELECT bookings\nWHERE slot overlaps
+DB --> SCHED: No conflicts
+SCHED --> API: Conflict check passed
+
+API -> DB: INSERT booking\nSET status = CONFIRMED
+DB --> API: Booking created
+API --> FE: 201 Created (booking)
+FE --> Client: Booking confirmation\ndisplayed with details
+
+API -> DB: INSERT notification\n(provider + client)
+@enduml

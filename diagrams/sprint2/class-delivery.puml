@@ -1,0 +1,34 @@
+@startuml delivery-sprint2-class
+
+class WebSocketTrackingSession {
+    - sessionId: String
+    - deliveryOrderId: Long
+    - connectedAt: LocalDateTime
+    - lastUpdate: LocalDateTime
+    + pushLocation(lat: double, lng: double): void
+    + close(): void
+}
+
+class DeliveryMetrics {
+    - id: Long
+    - averageDeliveryTime: double
+    - onTimeRate: double
+    - customerSatisfaction: double
+    - totalDeliveries: int
+    + calculateKPIs(): Map<String, Double>
+}
+
+class DemandPricingFactor {
+    - id: Long
+    - zone: String
+    - hourOfDay: int
+    - demandLevel: double
+    - priceMultiplier: double
+    + getCurrentMultiplier(zone: String): double
+}
+
+DeliveryOrder "1" -- "0..1" WebSocketTrackingSession : has >
+CourierProfile "1" -- "0..1" DeliveryMetrics : has >
+DeliveryPricing "1" -- "0..*" DemandPricingFactor : uses >
+
+@enduml

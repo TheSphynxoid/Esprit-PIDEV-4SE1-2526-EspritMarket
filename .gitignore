@@ -1,0 +1,78 @@
+# Environment
+.env
+*.env.local
+
+# Inner git repos (these are separate GitHub repos)
+backend/.git
+frontend/.git
+devops/.git
+
+# AI tool configs
+.opencode/
+opencode.json
+
+# Logs
+*.log
+
+# Cookies
+cookies.txt
+
+# Node
+node_modules/
+dist/
+
+# Java / Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+.classpath
+.factorypath
+.project
+.settings/
+*.jar
+*.war
+*.class
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Python
+__pycache__/
+*.pyc
+venv/
+*.egg-info/
+
+# ML models (host externally, not in git)
+ml-service/models/*.joblib
+ml-service/models/*.pkl
+ml-service/models/*.h5
+ml-service/models/*.pt
+
+# ML data (regenerated at startup or downloaded)
+ml-service/data/*.csv
+
+# Uploads
+backend/uploads/
+
+# Temp files
+backend/0
+backend/build.log
+backend/startup.log
+backend/startup2.log
+
+# Angular
+frontend/.angular/
+frontend/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# LaTeX auxiliary
+*.aux
+*.toc
+*.out
+*.synctex.gz

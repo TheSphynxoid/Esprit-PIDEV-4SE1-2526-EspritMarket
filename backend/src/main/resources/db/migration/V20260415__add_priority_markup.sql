@@ -1,0 +1,3 @@
+ALTER TABLE booking ADD COLUMN IF NOT EXISTS priority_markup NUMERIC(10, 2) DEFAULT 0.00;
+
+ALTER TABLE slot_allocation_audit ADD COLUMN IF NOT EXISTS priority_markup_applied BOOLEAN DEFAULT FALSE;

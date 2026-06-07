@@ -1,0 +1,136 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 py-10 px-4">
+  <div class="container-wide max-w-4xl mx-auto">
+    <h1 class="text-4xl font-bold text-primary dark:text-white mb-8">
+      🛒 Mon Panier
+    </h1>
+
+    <!-- Panier vide -->
+    <div *ngIf="cartItems().length === 0" class="card card-lg text-center">
+      <p class="text-secondary">Votre panier est vide.</p>
+      <a routerLink="/marketplace" class="btn btn-primary mt-6 inline-flex">
+        Continuer les achats
+      </a>
+    </div>
+
+    <!-- Panier rempli -->
+    <div *ngIf="cartItems().length > 0" class="space-y-6">
+
+      <!-- Liste des produits -->
+      <section class="card card-lg">
+        <h2 class="text-xl font-bold text-primary dark:text-white mb-4">Produits</h2>
+        <div class="space-y-4">
+          <article
+            *ngFor="let item of cartItems()"
+            class="p-4 rounded-xl border border-neutral-200 dark:border-neutral-700 flex flex-col sm:flex-row gap-4"
+          >
+            <!-- Image -->
+            <div class="w-20 h-20 rounded-lg bg-neutral-100 overflow-hidden flex items-center justify-center">
+              <img
+                *ngIf="isImageSource(item.product.image)"
+                [src]="item.product.image"
+                [alt]="item.product.name"
+                class="w-full h-full object-cover"
+              />
+              <span *ngIf="!isImageSource(item.product.image)" class="text-3xl">
+                {{ item.product.image }}
+              </span>
+            </div>
+
+            <!-- Infos produit -->
+            <div class="flex-1">
+              <h3 class="font-semibold text-primary dark:text-white">
+                {{ item.product.name }}
+              </h3>
+              <p class="text-sm text-secondary">{{ item.product.seller }}</p>
+              <p class="text-sm font-semibold text-esprit-red mt-1">
+                {{ item.product.price }} DT
+              </p>
+
+              <!-- ✅ Dimensions et poids -->
+              <div class="mt-2 grid grid-cols-2 gap-1 text-xs text-secondary">
+                <p>
+                  <strong>Dimensions:</strong>
+                  {{ getProductDimensionsLabel(item.product) }}
+                </p>
+                <p>
+                  <strong>Poids:</strong>
+                  {{ getProductWeightLabel(item.product) }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Quantité -->
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-secondary px-3"
+                (click)="decrease(item.product.id)"
+              >-</button>
+              <span class="w-10 text-center font-semibold">{{ item.quantity }}</span>
+              <button
+                type="button"
+                class="btn btn-secondary px-3"
+                [disabled]="item.quantity >= item.product.stock"
+                (click)="increase(item.product.id)"
+              >+</button>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="remove(item.product.id)"
+            >Supprimer</button>
+          </article>
+        </div>
+      </section>
+
+      <!-- Résumé total -->
+      <section class="card card-lg">
+        <div class="mb-4 rounded-xl border border-sky-200 bg-sky-50 p-4 dark:border-sky-900/40 dark:bg-sky-950/25">
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700 dark:text-sky-300">Colis détecté</p>
+          <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="rounded-lg bg-white/80 px-3 py-2 shadow-sm dark:bg-neutral-900/80">
+              <p class="text-xs text-secondary">Dimensions</p>
+              <p class="text-sm font-semibold text-primary dark:text-white">{{ packageDimensionsLabel }}</p>
+            </div>
+            <div class="rounded-lg bg-white/80 px-3 py-2 shadow-sm dark:bg-neutral-900/80">
+              <p class="text-xs text-secondary">Poids total</p>
+              <p class="text-sm font-semibold text-primary dark:text-white">{{ packageWeightLabel }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <span>Sous-total</span>
+            <span>{{ summary().subtotal }} DT</span>
+          </div>
+          <div class="flex justify-between font-bold text-base pt-2 border-t border-neutral-200">
+            <span>Total</span>
+            <span class="text-esprit-red">{{ grandTotal() }} DT</span>
+          </div>
+        </div>
+
+        <!-- Message erreur -->
+        <div *ngIf="errorMessage()" class="text-red-500 text-sm mt-3">
+          {{ errorMessage() }}
+        </div>
+
+        <!-- Bouton commander -->
+        <button
+          class="btn btn-primary w-full mt-4"
+          [disabled]="isSubmitting()"
+          (click)="placeOrder()"
+        >
+          <span *ngIf="!isSubmitting()">✅ Passer la commande</span>
+          <span *ngIf="isSubmitting()">En cours...</span>
+        </button>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

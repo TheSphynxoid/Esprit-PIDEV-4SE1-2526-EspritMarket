@@ -1,0 +1,59 @@
+@startuml delivery-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Buyer
+actor Courier
+actor Administrator
+
+rectangle "Delivery Module" {
+    usecase "Create Delivery Request" as UC1
+    usecase "Select Address" as UC2
+    usecase "Select Delivery Method" as UC3
+    usecase "Auto-Calculate Price" as UC4
+    usecase "Auto-Select Vehicle" as UC5
+    usecase "Assign Courier" as UC6
+    usecase "Pay for Delivery" as UC7
+    usecase "Track Delivery on Map" as UC8
+    usecase "View Order History" as UC9
+    usecase "Rate Courier" as UC10
+    usecase "Register as Courier" as UC11
+    usecase "Take Validation Quiz" as UC12
+    usecase "Register Vehicle" as UC13
+    usecase "View Available Orders" as UC14
+    usecase "Accept Delivery" as UC15
+    usecase "View Delivery History" as UC16
+    usecase "Rate User" as UC17
+    usecase "Manage Delivery Personnel" as UC18
+    usecase "View Orders by Zone" as UC19
+    usecase "Assign Vehicle to Delivery" as UC20
+    usecase "Manage Vehicle Fleet" as UC21
+}
+
+Buyer --> UC1
+Buyer --> UC2
+Buyer --> UC3
+Buyer --> UC7
+Buyer --> UC8
+Buyer --> UC9
+Buyer --> UC10
+
+Courier --> UC11
+Courier --> UC12
+Courier --> UC13
+Courier --> UC14
+Courier --> UC15
+Courier --> UC16
+Courier --> UC17
+
+Administrator --> UC18
+Administrator --> UC19
+Administrator --> UC20
+Administrator --> UC21
+
+UC1 ..> UC4 : <<include>>
+UC1 ..> UC5 : <<include>>
+UC1 ..> UC6 : <<include>>
+UC15 ..> UC8 : <<extend>>
+@enduml

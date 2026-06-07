@@ -1,0 +1,145 @@
+<div class="interview-layout">
+
+  <!-- Full Screen Loader or Error -->
+  <div *ngIf="loading || errorMessage" class="overlay-state">
+    <div *ngIf="loading" class="loader-container">
+      <div class="spinner"></div>
+      <h2>Preparing Interview Room...</h2>
+      <p>Connecting to secure server</p>
+    </div>
+    
+    <div *ngIf="errorMessage" class="error-container">
+      <div class="error-icon">⚠️</div>
+      <h2>Access Denied</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="btn btn-primary mt-4" (click)="leaveRoom()">Go Back</button>
+    </div>
+  </div>
+
+  <!-- Main Room Content (when loaded and no error) -->
+  <div class="room-content" *ngIf="!loading && !errorMessage && interview">
+    
+    <!-- Top Header -->
+    <header class="room-header">
+      <div class="brand">
+        <span class="logo">🏢</span>
+        <h1>Esprit Market Video Interview</h1>
+      </div>
+      <div class="header-actions">
+        <div class="status-badge live-badge">● LIVE</div>
+        <button class="btn btn-danger btn-leave" (click)="leaveRoom()">
+          Leave Room
+        </button>
+      </div>
+    </header>
+
+    <div class="split-view">
+      
+      <!-- Jitsi Video Area -->
+      <div class="video-section">
+        <!-- If interview is completed, hide Jitsi and show a message -->
+        <div *ngIf="interview.status === 'COMPLETED'" class="completed-overlay">
+          <div class="completed-content">
+            <span class="check-icon">✅</span>
+            <h2>Interview Completed</h2>
+            <p>The recruiter has finalized the result for this interview.</p>
+            <button class="btn btn-primary" (click)="leaveRoom()">Return to Dashboard</button>
+          </div>
+        </div>
+        
+        <!-- Jitsi iframe container -->
+        <iframe 
+          *ngIf="jitsiRoomUrl && interview.status !== 'COMPLETED'" 
+          [src]="jitsiRoomUrl" 
+          class="jitsi-container" 
+          allow="camera; microphone; fullscreen; display-capture; autoplay">
+        </iframe>
+      </div>
+
+      <!-- Side Panel (Differs by Role) -->
+      <div class="side-panel">
+        
+        <!-- STUDENT VIEW -->
+        <div *ngIf="!isRecruiter" class="student-panel">
+          <div class="panel-card info-card">
+            <h3>Job Details</h3>
+            <p class="job-title">{{ interview.jobTitle }}</p>
+            <p class="company">Company: ESPRIT Market Partner</p>
+            <div class="divider"></div>
+            <p class="tip"><strong>Tip:</strong> Ensure your microphone and camera are working properly. Good luck!</p>
+          </div>
+        </div>
+
+        <!-- RECRUITER VIEW -->
+        <div *ngIf="isRecruiter" class="recruiter-panel">
+          
+          <div class="panel-card candidate-card">
+            <h3>Candidate Information</h3>
+            <p class="applicant-name">🧑‍🎓 {{ interview.studentFirstName }} {{ interview.studentLastName }}</p>
+            
+            <div class="motivation-box mt-3">
+              <strong>Info:</strong>
+              <div class="motivation-text">Conduct the interview and assess the candidate's skills for the {{ interview.jobTitle }} position.</div>
+            </div>
+          </div>
+
+          <div class="panel-card action-card">
+            <h3>Finalize Interview</h3>
+            <p class="hint">Fill this out during or immediately after the call.</p>
+            
+            <form [formGroup]="resultForm" (ngSubmit)="saveInterviewResult()">
+              
+              <div class="form-group">
+                <label>Result Decision *</label>
+                <div class="result-options">
+                  <label class="radio-label accept-label">
+                    <input type="radio" formControlName="result" value="ACCEPTED">
+                    <span>✅ Accept</span>
+                  </label>
+                  <label class="radio-label reject-label">
+                    <input type="radio" formControlName="result" value="REJECTED">
+                    <span>❌ Reject</span>
+                  </label>
+                  <label class="radio-label wait-label">
+                    <input type="radio" formControlName="result" value="WAITING_LIST">
+                    <span>⏳ Waitlist</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group mt-3">
+                <label>Private Notes</label>
+                <textarea 
+                  formControlName="resultNotes" 
+                  class="form-control" 
+                  rows="4" 
+                  placeholder="Take notes during the interview... (Candidate will not see this)">
+                </textarea>
+              </div>
+
+              <button 
+                type="submit" 
+                class="btn btn-primary btn-block mt-3"
+                [disabled]="resultForm.invalid || savingResult || interview.status === 'COMPLETED'">
+                <span *ngIf="savingResult" class="spinner-sm"></span>
+                {{ savingResult ? 'Saving...' : 'End & Save Result' }}
+              </button>
+            </form>
+          </div>
+          
+        </div> <!-- End Recruiter View -->
+        
+      </div> <!-- End Side Panel -->
+    </div> <!-- End Split View -->
+
+    <!-- Success Toast overlay -->
+    <div *ngIf="showSuccessToast" class="toast-overlay">
+      <div class="toast-box">
+        <span class="check-large">✅</span>
+        <h3>Result Saved!</h3>
+        <p>Redirecting to dashboard...</p>
+      </div>
+    </div>
+
+  </div>
+</div>

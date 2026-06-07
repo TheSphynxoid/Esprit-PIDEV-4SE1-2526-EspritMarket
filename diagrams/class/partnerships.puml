@@ -1,0 +1,104 @@
+@startuml partnerships-class
+
+class User {
+    - id: Long
+    - email: String
+    - firstName: String
+    - lastName: String
+    - role: UserRole
+    - skills: List<String>
+}
+
+class Company {
+    - id: Long
+    - name: String
+    - industry: String
+    - description: String
+    - logo: String
+    - website: String
+    - isActive: boolean
+    + deactivate(): void
+    + update(details: CompanyDetails): void
+}
+
+class JobOffer {
+    - id: Long
+    - title: String
+    - description: String
+    - type: OfferType
+    - requirements: String
+    - duration: String
+    - deadline: LocalDate
+    - status: OfferStatus
+    + close(): void
+    + getApplicationCount(): int
+}
+
+class Application {
+    - id: Long
+    - motivation: String
+    - cvUrl: String
+    - matchingScore: double
+    - status: ApplicationStatus
+    - appliedAt: LocalDateTime
+    + shortlist(): void
+    + accept(): void
+    + reject(): void
+}
+
+class Interview {
+    - id: Long
+    - title: String
+    - date: LocalDate
+    - time: LocalTime
+    - location: String
+    - meetingLink: String
+    - status: InterviewStatus
+    - notes: String
+    + complete(notes: String): void
+}
+
+class MatchingModel {
+    - modelVersion: String
+    - accuracy: double
+    + calculateScore(application: Application): double
+    + getCriteria(): List<String>
+}
+
+enum OfferType {
+    INTERNSHIP
+    PROJECT
+    SERVICE_TASK
+}
+
+enum OfferStatus {
+    OPEN
+    CLOSED
+    EXPIRED
+}
+
+enum ApplicationStatus {
+    PENDING
+    SHORTLISTED
+    ACCEPTED
+    REJECTED
+}
+
+enum InterviewStatus {
+    SCHEDULED
+    COMPLETED
+    CANCELLED
+}
+
+User "1" -- "0..*" Application : submits >
+
+Company "1" -- "0..*" JobOffer : publishes >
+Company "1" -- "0..*" Interview : schedules >
+
+JobOffer "1" -- "0..*" Application : receives >
+JobOffer "1" --> MatchingModel : uses >
+
+Application "1" -- "0..*" Interview : leads to >
+Application "1" --> MatchingModel : scored by >
+
+@enduml

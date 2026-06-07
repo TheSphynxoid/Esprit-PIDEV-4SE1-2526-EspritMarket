@@ -1,0 +1,79 @@
+@startuml marketplace-sprint2-sequence-review
+skinparam style strictuml
+
+actor Buyer
+participant "ReviewController" as RC
+participant "ReviewService" as RS
+participant "ProductService" as PS
+participant "ReviewRepository" as RR
+database "Database" as DB
+
+Buyer -> RC : POST /api/reviews\n{productId, rating, title, comment}
+activate RC
+
+RC -> RS : submitReview(reviewDTO, buyerId)
+activate RS
+
+RS -> PS : validateProduct(productId)
+activate PS
+PS -> DB : findById(productId)
+activate DB
+DB --> PS : Product
+deactivate DB
+PS --> RS : productValid
+deactivate PS
+
+RS -> RS : checkDuplicateReview(buyerId, productId)
+
+RS -> RR : save(review)
+activate RR
+RR -> DB : INSERT INTO reviews
+activate DB
+DB --> RR : review (with id)
+deactivate DB
+RR --> RS : savedReview
+deactivate RR
+
+RS -> RS : updateProductAverageRating(productId)
+
+RS --> RC : ReviewDTO
+deactivate RS
+
+RC --> Buyer : 201 Created\n{reviewId, rating, title, comment, createdAt}
+deactivate RC
+
+== Optional: Upload Review Images ==
+
+Buyer -> RC : POST /api/reviews/{reviewId}/images\nmultipart/form-data
+activate RC
+
+RC -> RS : attachImage(reviewId, imageFile)
+activate RS
+
+RS -> RR : findById(reviewId)
+activate RR
+RR -> DB : SELECT FROM reviews
+activate DB
+DB --> RR : Review
+deactivate DB
+RR --> RS : review
+deactivate RR
+
+RS -> RS : storeImage(imageFile)\nimageUrl = /uploads/reviews/...
+
+RS -> RR : save(review)
+activate RR
+RR -> DB : UPDATE reviews SET imageUrl
+activate DB
+DB --> RR : ok
+deactivate DB
+RR --> RS : updatedReview
+deactivate RR
+
+RS --> RC : ReviewDTO (with imageUrl)
+deactivate RS
+
+RC --> Buyer : 200 OK\n{reviewId, imageUrl}
+deactivate RC
+
+@enduml

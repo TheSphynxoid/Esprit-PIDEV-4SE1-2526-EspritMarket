@@ -1,0 +1,480 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-4xl mx-auto py-12 px-4">
+    <div class="flex items-center gap-4 mb-8">
+      <button class="btn btn-secondary btn-sm" (click)="goBack()">Back</button>
+      <h1 class="text-2xl font-bold text-primary dark:text-white">Booking Workspace</h1>
+    </div>
+
+    <div *ngIf="isLoading()" class="text-center py-20">
+      <p class="text-secondary text-lg">Loading...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && !booking()" class="card card-md text-center">
+      <p class="text-secondary mb-4">Booking not found.</p>
+      <button class="btn btn-primary" (click)="goBack()">Back to Bookings</button>
+    </div>
+
+    <div *ngIf="!isLoading() && booking() as b">
+      <div *ngIf="error()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm mb-4">
+        {{ error() }}
+      </div>
+
+      <div *ngIf="b.status === 'COMPLETED' && relatedServices().length > 0" class="card card-md p-4 mb-4 border-esprit-red/30">
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="text-sm font-bold text-primary dark:text-white">Booking Complete</h4>
+          <button class="text-xs text-esprit-red hover:underline" (click)="hideRelatedServices()">Dismiss</button>
+        </div>
+        <p class="text-xs text-secondary mb-3">You might also need:</p>
+        <div class="space-y-2">
+          <div *ngFor="let svc of relatedServices()" class="flex items-center gap-3 p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-esprit-red/50 transition-colors cursor-pointer" (click)="goToService(svc.id)">
+            <div *ngIf="svc.imageUrl" class="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-700 flex-shrink-0 overflow-hidden">
+              <img [src]="svc.imageUrl" class="w-full h-full object-cover" alt="" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-primary dark:text-white truncate">{{ svc.name }}</p>
+              <p class="text-xs text-secondary truncate">{{ svc.category }} &middot; <span *ngIf="svc.pricingType === 'HOURLY'">{{ svc.price }}/h</span><span *ngIf="svc.pricingType === 'FIXED' || svc.pricingType === 'PACKAGED'">{{ svc.startingPrice ?? svc.price }} TND</span></p>
+            </div>
+            <span class="text-xs font-bold text-esprit-red whitespace-nowrap">Book</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Header -->
+      <div class="card card-md mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <div>
+            <div *ngIf="b.projectId" class="flex items-center gap-1.5 mb-1">
+              <span class="text-xs text-secondary">Project:</span>
+              <a [routerLink]="['/projects', b.projectId]" class="text-xs font-medium text-esprit-red hover:underline">{{ b.projectTitle || 'View Project' }}</a>
+            </div>
+            <h2 class="text-xl font-bold text-primary dark:text-white">{{ b.serviceName || 'Service' }}</h2>
+            <p class="text-sm text-secondary mt-1">{{ b.date | date:'medium' }} &middot; {{ b.duration }}h</p>
+            <p *ngIf="b.totalPrice" class="text-sm font-semibold text-esprit-red mt-1">{{ b.totalPrice }} TND</p>
+          </div>
+          <span class="text-xs px-3 py-1.5 rounded-full font-semibold self-start" [ngClass]="getStatusClass(b.status)">
+            {{ b.status | titlecase }}
+          </span>
+          <span *ngIf="bookingPrediction()" class="text-[10px] px-2 py-0.5 rounded-full font-bold self-start"
+                [ngClass]="{
+                  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': bookingPrediction()!.riskLevel === 'LOW',
+                  'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': bookingPrediction()!.riskLevel === 'MEDIUM',
+                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': bookingPrediction()!.riskLevel === 'HIGH' || bookingPrediction()!.riskLevel === 'CRITICAL'
+                }">
+            AI: {{ bookingPrediction()!.riskLevel }}
+            ({{ (bookingPrediction()!.completionProbability ?? 0) * 100 | number:'1.0-0' }}% success)
+          </span>
+          <p *ngIf="bookingPrediction()" class="text-xs text-secondary mt-1 max-w-xs">{{ bookingPrediction()!.recommendation }}</p>
+        </div>
+        <div *ngIf="b.notes" class="text-sm text-secondary pt-3 border-t border-neutral-200 dark:border-neutral-700">
+          {{ b.notes }}
+        </div>
+      </div>
+
+      <!-- Reschedule Section -->
+      <div class="card card-md mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-primary dark:text-white">Reschedule</h3>
+          <button
+            *ngIf="canRequestReschedule || activeReschedule() || rescheduleHistory().length > 0"
+            type="button"
+            class="btn btn-secondary btn-sm"
+            (click)="toggleReschedule()">
+            {{ showReschedule() ? 'Hide' : 'Show' }} Details
+          </button>
+        </div>
+
+        <!-- Active Reschedule Request -->
+        <div *ngIf="activeReschedule() as req" class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-4">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs px-2 py-1 rounded-full bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-200 font-semibold">Pending Request</span>
+            <span class="text-xs text-secondary">
+              by {{ req.requestedByName || 'User' }} on {{ req.createdAt | date:'short' }}
+            </span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-sm mb-3">
+            <div>
+              <p class="text-secondary">Original</p>
+              <p class="font-medium text-primary dark:text-white">{{ req.originalDate | date:'short' }} &middot; {{ req.originalDuration }}h</p>
+            </div>
+            <div>
+              <p class="text-secondary">Proposed</p>
+              <p class="font-medium text-primary dark:text-white">{{ req.proposedDate | date:'short' }} &middot; {{ req.proposedDuration }}h</p>
+            </div>
+          </div>
+          <p *ngIf="req.reason" class="text-sm text-secondary mb-1">Reason: {{ req.reason }}</p>
+          <p *ngIf="req.message" class="text-sm text-secondary mb-3 italic">"{{ req.message }}"</p>
+          <div *ngIf="canActOnReschedule" class="flex gap-2">
+            <button class="btn btn-sm bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" [disabled]="rescheduleLoading()" (click)="acceptReschedule()">Accept</button>
+            <button class="btn btn-sm bg-rose-600 hover:bg-rose-700 text-white border border-rose-700" [disabled]="rescheduleLoading()" (click)="rejectReschedule()">Reject</button>
+            <button *ngIf="activeReschedule().requestedBy === currentUserId()" class="btn btn-sm btn-secondary" [disabled]="rescheduleLoading()" (click)="cancelReschedule()">Cancel Request</button>
+          </div>
+          <p *ngIf="rescheduleLoading()" class="text-sm text-secondary mt-2">Processing...</p>
+        </div>
+
+        <!-- Expandable Details -->
+        <div *ngIf="showReschedule()">
+          <!-- Request Form -->
+          <div *ngIf="canRequestReschedule" [formGroup]="rescheduleForm" class="space-y-3 mb-4">
+            <h4 class="text-sm font-semibold text-primary dark:text-white">Request Reschedule</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-primary dark:text-white mb-1">Proposed Date & Time</label>
+                <input type="datetime-local" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" formControlName="proposedDate" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-primary dark:text-white mb-1">Duration (hours)</label>
+                <input type="number" min="0.5" step="0.5" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" formControlName="proposedDuration" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-primary dark:text-white mb-1">Reason</label>
+                <select class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" formControlName="reason">
+                  <option value="SCHEDULING_CONFLICT">Scheduling Conflict</option>
+                  <option value="DELAY">Delay</option>
+                  <option value="CLIENT_REQUEST">Client Request</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-primary dark:text-white mb-1">Message (optional)</label>
+                <input type="text" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm" formControlName="message" placeholder="Explain the reschedule..." />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" [disabled]="rescheduleLoading() || rescheduleForm.invalid" (click)="submitReschedule()">
+              {{ rescheduleLoading() ? 'Submitting...' : 'Submit Request' }}
+            </button>
+          </div>
+
+          <!-- History -->
+          <div *ngIf="rescheduleHistory().length > 0">
+            <h4 class="text-sm font-semibold text-primary dark:text-white mb-2">History</h4>
+            <div class="space-y-2">
+              <div *ngFor="let h of rescheduleHistory()" class="p-2 text-sm rounded-lg bg-neutral-100 dark:bg-neutral-700">
+                <div class="flex items-center justify-between">
+                  <span class="font-medium text-primary dark:text-white">{{ h.originalDate | date:'short' }} &rarr; {{ h.proposedDate | date:'short' }}</span>
+                  <span class="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    [ngClass]="{
+                      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': h.status === 'ACCEPTED',
+                      'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400': h.status === 'REJECTED',
+                      'bg-neutral-200 text-neutral-700 dark:bg-neutral-600 dark:text-neutral-300': h.status === 'CANCELLED'
+                    }">
+                    {{ h.status }}
+                  </span>
+                </div>
+                <p *ngIf="h.responseMessage" class="text-xs text-secondary mt-1">Response: "{{ h.responseMessage }}"</p>
+                <p class="text-xs text-secondary mt-0.5">{{ h.createdAt | date:'short' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!canRequestReschedule && !activeReschedule() && rescheduleHistory().length === 0" class="text-sm text-secondary">
+            No reschedule history. Reschedule is available for pending or approved bookings.
+          </div>
+        </div>
+      </div>
+
+      <!-- Shared Files -->
+      <div class="card card-md mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-primary dark:text-white">Shared Files</h3>
+          <label class="btn btn-secondary btn-sm cursor-pointer">
+            Upload File
+            <input type="file" class="hidden" (change)="onSharedFileSelected($event)" [disabled]="isUploadingFile()" />
+          </label>
+        </div>
+
+        <div *ngIf="isUploadingFile()" class="text-sm text-secondary mb-3">Uploading...</div>
+
+        <div *ngIf="sharedFiles().length === 0" class="text-sm text-secondary">
+          No shared files yet. Both parties can upload files here.
+        </div>
+
+        <div *ngIf="sharedFiles().length > 0" class="space-y-2">
+          <div *ngFor="let f of sharedFiles()" class="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+            <div class="flex-1 min-w-0">
+              <button type="button" *ngIf="f.fileUrl && getPreviewUrl(f.fileUrl, f.fileType, f.fileName) as preview" (click)="downloadFile(f.fileUrl, f.fileName)" class="block mb-2">
+                <img [src]="preview" [alt]="f.fileName || 'Image preview'" class="w-24 h-24 object-cover rounded border border-neutral-300 dark:border-neutral-600" />
+              </button>
+              <p class="text-sm font-medium text-primary dark:text-white truncate">{{ f.fileName || 'File' }}</p>
+              <p *ngIf="hasFailedPreview(f.fileUrl)" class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                Preview unavailable (file missing on server)
+              </p>
+              <p class="text-xs text-secondary">
+                {{ f.uploadedByName || 'Unknown' }} &middot; {{ f.uploadedAt | date:'short' }}
+                <span *ngIf="f.fileSize"> &middot; {{ f.fileSize | number }} bytes</span>
+              </p>
+            </div>
+            <div class="flex items-center gap-2 ml-3">
+              <button *ngIf="f.fileUrl" type="button" (click)="downloadFile(f.fileUrl, f.fileName)" class="btn btn-secondary btn-sm">Download</button>
+              <button *ngIf="f.uploadedBy === currentUserId()" class="text-red-500 hover:text-red-700 text-sm" (click)="deleteSharedFile(f.id)">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deliverable Section -->
+      <div class="card card-md mb-6">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">Deliverable</h3>
+
+        <!-- No deliverable + Provider can create -->
+        <div *ngIf="deliverables().length === 0 && canCreateDeliverable">
+          <form [formGroup]="deliverableForm" (ngSubmit)="createAndSubmitDeliverable()" class="space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Title</label>
+              <input
+                type="text"
+                formControlName="title"
+                class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm"
+                placeholder="Deliverable title"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Description</label>
+              <textarea
+                formControlName="description"
+                rows="3"
+                class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm resize-none"
+                placeholder="Describe the deliverable..."
+              ></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Attachments</label>
+              <input type="file" multiple class="w-full text-sm" (change)="onDeliverableFilesSelected($event)" />
+              <div *ngIf="selectedFiles().length > 0" class="mt-2 space-y-1">
+                <div *ngFor="let file of selectedFiles(); let i = index" class="flex items-center justify-between text-xs text-secondary">
+                  <span>{{ file.name }}</span>
+                  <button type="button" class="text-red-500" (click)="removeDeliverableFile(i)">Remove</button>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" [disabled]="!deliverableForm.valid || isSubmittingDeliverable()">
+              {{ isSubmittingDeliverable() ? 'Submitting...' : 'Create & Submit' }}
+            </button>
+          </form>
+        </div>
+
+        <!-- No deliverable + Provider cannot create (not in progress or already has one) -->
+        <div *ngIf="deliverables().length === 0 && !canCreateDeliverable" class="text-sm text-secondary">
+          No deliverable has been submitted yet.
+        </div>
+
+        <!-- Existing deliverable -->
+        <ng-container *ngIf="deliverables().length > 0">
+          <div *ngIf="deliverables()[0] as del">
+          <div class="flex items-start justify-between mb-3 gap-3">
+            <div>
+              <h4 class="font-semibold text-primary dark:text-white">{{ del.title || 'Untitled Deliverable' }}</h4>
+              <p class="text-xs text-secondary mt-1" *ngIf="del.attachments && del.attachments.length > 0">
+                {{ del.attachments.length }} file{{ del.attachments.length > 1 ? 's' : '' }} attached
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                *ngIf="del.attachments && del.attachments.length > 0"
+                (click)="downloadLatestDeliverable()">
+                Download
+              </button>
+              <span class="text-xs px-2 py-1 rounded-full font-semibold" [ngClass]="getDeliverableStatusClass(del.status)">
+                {{ del.status | titlecase }}
+              </span>
+            </div>
+          </div>
+
+          <div *ngIf="del.description" class="text-sm text-secondary mb-3">{{ del.description }}</div>
+
+          <div class="grid grid-cols-2 gap-3 text-sm mb-3">
+            <div>
+              <p class="text-secondary">Version</p>
+              <p class="font-medium text-primary dark:text-white">{{ del.version || 1 }}</p>
+            </div>
+            <div>
+              <p class="text-secondary">Created</p>
+              <p class="font-medium text-primary dark:text-white">{{ del.createdAt | date:'short' }}</p>
+            </div>
+          </div>
+
+          <!-- Deliverable Attachments -->
+          <div *ngIf="del.attachments && del.attachments.length > 0" class="mb-4 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+            <div class="flex items-center justify-between mb-2">
+              <p class="text-sm font-semibold text-primary dark:text-white">Attachments</p>
+              <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 font-semibold">
+                Version {{ del.version || 1 }}
+              </span>
+            </div>
+            <div class="space-y-1">
+              <div *ngFor="let att of del.attachments" class="p-2 bg-neutral-100 dark:bg-neutral-700 rounded">
+                <button type="button" *ngIf="att.fileUrl && getPreviewUrl(att.fileUrl, att.fileType, att.fileName) as preview" (click)="downloadFile(att.fileUrl, att.fileName)" class="block mb-2">
+                  <img [src]="preview" [alt]="att.fileName || 'Attachment preview'" class="w-28 h-28 object-cover rounded border border-neutral-300 dark:border-neutral-600" />
+                </button>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-sm text-primary dark:text-white truncate">{{ att.fileName || 'File' }}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 font-semibold whitespace-nowrap">
+                      v{{ del.version || 1 }}
+                    </span>
+                  </div>
+                  <span *ngIf="hasFailedPreview(att.fileUrl)" class="text-xs text-amber-600 dark:text-amber-400 mr-2">
+                    Preview unavailable
+                  </span>
+                  <button *ngIf="att.fileUrl" type="button" (click)="downloadFile(att.fileUrl, att.fileName)" class="btn btn-secondary btn-sm ml-2">Download</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Provider: Submit button for draft/revision -->
+          <div *ngIf="canSubmitDeliverable" class="pt-3 border-t border-neutral-200 dark:border-neutral-700">
+            <div class="mb-3">
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Add files for this submission</label>
+              <input type="file" multiple class="w-full text-sm" (change)="onExistingDeliverableFilesSelected($event)" />
+              <div *ngIf="existingDeliverableFiles().length > 0" class="mt-2 space-y-1">
+                <div *ngFor="let file of existingDeliverableFiles(); let i = index" class="flex items-center justify-between text-xs text-secondary">
+                  <span>{{ file.name }}</span>
+                  <button type="button" class="text-red-500" (click)="removeExistingDeliverableFile(i)">Remove</button>
+                </div>
+              </div>
+            </div>
+            <button class="btn btn-primary" [disabled]="isSubmittingDeliverable()" (click)="submitExistingDeliverable()">
+              {{ isSubmittingDeliverable() ? 'Submitting...' : 'Submit for Review' }}
+            </button>
+          </div>
+
+          <!-- Client: Review form -->
+          <div *ngIf="canReviewDeliverable" class="pt-3 border-t border-neutral-200 dark:border-neutral-700 space-y-3">
+            <p class="text-sm font-semibold text-primary dark:text-white">Review Deliverable</p>
+            <div class="flex gap-3">
+              <label class="flex items-center gap-2 text-sm">
+                <input type="radio" name="decision" value="ACCEPTED" [checked]="reviewDecision() === 'ACCEPTED'" (change)="reviewDecision.set('ACCEPTED')" />
+                Accept
+              </label>
+              <label class="flex items-center gap-2 text-sm">
+                <input type="radio" name="decision" value="REVISION_REQUESTED" [checked]="reviewDecision() === 'REVISION_REQUESTED'" (change)="reviewDecision.set('REVISION_REQUESTED')" />
+                Request Revision
+              </label>
+            </div>
+            <textarea
+              rows="2"
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm resize-none"
+              placeholder="Comment (optional)"
+              [value]="reviewComment()"
+              (input)="reviewComment.set($any($event.target).value)"
+            ></textarea>
+            <button class="btn btn-primary" [disabled]="!reviewDecision() || isSubmittingReview()" (click)="reviewDeliverable()">
+              {{ isSubmittingReview() ? 'Submitting...' : 'Submit Review' }}
+            </button>
+          </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Activity Timeline -->
+      <div *ngIf="history().length > 0" class="card card-md">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">Activity Timeline</h3>
+        <div class="space-y-4">
+          <div *ngFor="let review of history()" class="flex gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-700 last:border-0 last:pb-0">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center text-xs font-bold text-primary dark:text-white">
+                {{ (review.reviewerName || '?')[0] | uppercase }}
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-primary dark:text-white">{{ review.reviewerName || 'Reviewer' }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-semibold" [ngClass]="getDeliverableStatusClass(review.decision)">
+                  {{ review.decision }}
+                </span>
+              </div>
+              <p *ngIf="review.comment" class="text-sm text-secondary">{{ review.comment }}</p>
+              <p *ngIf="review.reviewedAt" class="text-xs text-secondary mt-1">{{ review.reviewedAt | date:'medium' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version History -->
+      <div *ngIf="versions().length > 0" class="card card-md mt-6">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">Deliverable Versions</h3>
+        <div class="space-y-3">
+          <div *ngFor="let v of versions()" class="p-3 rounded-lg bg-neutral-100 dark:bg-neutral-700">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 font-semibold">v{{ v.versionNumber || 1 }}</span>
+                <span class="text-xs px-2 py-1 rounded-full font-semibold" [ngClass]="getDeliverableStatusClass(v.status)">{{ v.status || 'UNKNOWN' }}</span>
+              </div>
+              <span class="text-xs text-secondary">{{ (v.submittedAt || v.createdAt) | date:'short' }}</span>
+            </div>
+            <div *ngIf="v.attachments && v.attachments.length > 0" class="flex flex-wrap gap-2">
+              <button
+                *ngFor="let va of v.attachments"
+                type="button"
+                class="btn btn-secondary btn-sm"
+                (click)="downloadFile(va.fileUrl, va.fileName || ('version-' + (v.versionNumber || 1)))">
+                Download {{ va.fileName || ('v' + (v.versionNumber || 1)) }}
+              </button>
+            </div>
+            <p *ngIf="!v.attachments || v.attachments.length === 0" class="text-xs text-secondary">No files for this version.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Floating Workspace Chat -->
+<button
+  type="button"
+  class="fixed bottom-6 right-6 z-50 inline-flex items-center gap-2 px-5 py-3 rounded-full bg-esprit-red text-white font-semibold shadow-2xl ring-4 ring-esprit-red/20 hover:scale-105 transition-transform"
+  (click)="toggleChat()">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+  </svg>
+  {{ isChatOpen() ? 'Close Chat' : 'Workspace Chat' }}
+</button>
+
+<div
+  *ngIf="isChatOpen()"
+  class="fixed bottom-20 right-6 z-40 w-[92vw] max-w-sm card card-md shadow-2xl border border-neutral-200 dark:border-neutral-700">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-base font-semibold text-primary dark:text-white">Workspace Chat</h3>
+    <button type="button" class="text-xs text-secondary hover:text-primary" (click)="toggleChat()">Close</button>
+  </div>
+
+  <div class="space-y-2 max-h-72 overflow-y-auto pr-1 mb-3">
+    <div class="flex justify-center" *ngIf="hasOlderMessages()">
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="isLoadingOlderMessages()" (click)="loadOlderMessages()">
+        {{ isLoadingOlderMessages() ? 'Loading...' : 'Load older messages' }}
+      </button>
+    </div>
+    <div *ngIf="messages().length === 0" class="text-sm text-secondary">No messages yet.</div>
+     <div *ngFor="let msg of messages()" class="flex" [class.justify-end]="msg.senderId == currentUserId()">
+      <div class="max-w-[80%] p-2 rounded-lg" [class.bg-esprit-red]="msg.senderId == currentUserId()" [class.text-white]="msg.senderId == currentUserId()" [class.bg-neutral-100]="msg.senderId != currentUserId()" [class.dark:bg-neutral-700]="msg.senderId != currentUserId()">
+        <div class="flex items-center justify-between mb-1 gap-2">
+          <p class="text-[11px] font-semibold" [class.text-white]="msg.senderId == currentUserId()" [class.text-primary]="msg.senderId != currentUserId()" [class.dark:text-white]="msg.senderId != currentUserId()">{{ msg.senderName || 'User' }}</p>
+          <p class="text-[10px]" [class.text-white/70]="msg.senderId == currentUserId()" [class.text-secondary]="msg.senderId != currentUserId()">{{ msg.createdAt | date:'short' }}</p>
+        </div>
+        <p class="text-sm whitespace-pre-wrap" [class.text-white]="msg.senderId == currentUserId()" [class.text-primary]="msg.senderId != currentUserId()" [class.dark:text-white]="msg.senderId != currentUserId()">{{ msg.message }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-2">
+    <textarea
+      rows="2"
+      class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm resize-none"
+      placeholder="Write a message..."
+      [value]="chatMessage()"
+      (input)="chatMessage.set($any($event.target).value)">
+    </textarea>
+    <button class="btn btn-primary self-end" [disabled]="isSendingMessage() || !chatMessage().trim()" (click)="sendMessage()">
+      {{ isSendingMessage() ? 'Sending...' : 'Send' }}
+    </button>
+  </div>
+</div>
+
+<app-footer></app-footer>

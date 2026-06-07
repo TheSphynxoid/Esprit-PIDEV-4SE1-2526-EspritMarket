@@ -1,0 +1,33 @@
+@startuml partnerships-sprint2-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Candidate
+actor Company
+actor System
+
+rectangle "Partnerships Enhancements (Sprint 2)" {
+    usecase "Calculate ML Matching Score" as UC1
+    usecase "View Compatibility Report" as UC2
+    usecase "Schedule Interview" as UC3
+    usecase "Calendar Integration" as UC4
+    usecase "Send Interview Invite" as UC5
+    usecase "View Interview Schedule" as UC6
+}
+
+System --> UC1
+Candidate --> UC2
+Company --> UC2
+Company --> UC3
+Company --> UC4
+Company --> UC5
+
+Candidate --> UC6
+Company --> UC6
+
+UC1 ..> UC2 : <<include>>
+UC3 ..> UC4 : <<include>>
+UC3 ..> UC5 : <<include>>
+UC3 ..> UC6 : <<include>>
+@enduml

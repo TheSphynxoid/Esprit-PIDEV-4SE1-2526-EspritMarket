@@ -1,0 +1,48 @@
+@startuml marketplace-sequence-place-order
+title Marketplace: Place an Order
+
+actor Buyer
+participant "Frontend\n(Angular)" as FE
+participant "Backend API\n(Spring Boot)" as API
+participant "Auth Service\n(JWT)" as AUTH
+database "PostgreSQL" as DB
+
+Buyer -> FE: Navigate to Marketplace
+FE -> API: GET /api/products
+API -> DB: SELECT products
+DB --> API: Product list
+API --> FE: 200 OK (products)
+FE --> Buyer: Display product grid
+
+Buyer -> FE: Click "Add to Cart"
+FE -> API: POST /api/cart/items\n{productId, quantity}
+API -> AUTH: Validate JWT token
+AUTH --> API: Token valid (userId)
+API -> DB: INSERT/UPDATE cart_item
+DB --> API: Cart updated
+API --> FE: 200 OK (cart)
+FE --> Buyer: Cart badge updated
+
+Buyer -> FE: Click "Proceed to Checkout"
+FE -> API: GET /api/cart
+API -> DB: SELECT cart_items
+DB --> API: Cart items
+API --> FE: 200 OK (cart with totals)
+FE --> Buyer: Display cart summary
+
+Buyer -> FE: Select delivery address\nand payment method
+FE -> API: POST /api/orders\n{cartId, addressId, paymentMethod}
+API -> AUTH: Validate JWT token
+AUTH --> API: Token valid
+
+API -> DB: BEGIN TRANSACTION
+API -> DB: INSERT order
+API -> DB: INSERT order_lines
+API -> DB: UPDATE product stock
+API -> DB: DELETE cart_items
+API -> DB: COMMIT
+
+DB --> API: Order created
+API --> FE: 201 Created (orderReference)
+FE --> Buyer: Order confirmation\ndisplayed with reference number
+@enduml

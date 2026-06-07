@@ -1,0 +1,49 @@
+@startuml services-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Client
+actor ServiceProvider
+actor User
+
+rectangle "Services & Projects Module" {
+    usecase "Create Service" as UC1
+    usecase "Update Service" as UC2
+    usecase "Delete Service" as UC3
+    usecase "Define Availability" as UC4
+    usecase "Manage Schedule" as UC5
+    usecase "View Bookings" as UC6
+    usecase "Accept/Decline Booking" as UC7
+    usecase "Browse Services" as UC8
+    usecase "View Service Details" as UC9
+    usecase "Book Service" as UC10
+    usecase "Cancel Booking" as UC11
+    usecase "Create Project" as UC12
+    usecase "Assign Project Members" as UC13
+    usecase "Track Milestones" as UC14
+    usecase "Use Chat" as UC15
+    usecase "Detect Scheduling Conflicts" as UC16
+}
+
+ServiceProvider --> UC1
+ServiceProvider --> UC2
+ServiceProvider --> UC3
+ServiceProvider --> UC4
+ServiceProvider --> UC5
+ServiceProvider --> UC6
+ServiceProvider --> UC7
+
+Client --> UC8
+Client --> UC9
+Client --> UC10
+Client --> UC11
+Client --> UC15
+
+User --> UC12
+User --> UC13
+User --> UC14
+
+UC10 ..> UC16 : <<include>>
+UC4 ..> UC16 : <<include>>
+@enduml

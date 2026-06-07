@@ -1,0 +1,232 @@
+<header class="sticky top-0 z-50 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 shadow-sm transition-colors duration-200">
+  <div class="container-wide">
+    <div class="flex justify-between items-center h-16 gap-4 overflow-visible">
+      <a [routerLink]="getBrandRoute()"
+        (click)="onBrandClick($event)"
+        class="flex items-center gap-3 flex-shrink-0 hover:opacity-80 transition-opacity mr-6">
+        <img src="assets/logo.png" alt="Logo" class="w-10 h-10 object-contain" />
+        <span class="text-lg font-bold text-primary dark:text-white hidden sm:inline">
+          ESPRIT Market
+        </span>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav class="hidden lg:flex gap-4 flex-1 justify-center min-w-0">
+        <ng-container *ngIf="hasDashboardAccess() && !hideCartAndDashboard">
+          <a [routerLink]="getDashboardRoute()"
+            class="nav-link"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: true }">
+            Dashboard
+          </a>
+        </ng-container>
+
+        <ng-container *ngIf="!hasDashboardAccess() && authService.isLoggedIn()">
+          <a routerLink="/marketplace" class="nav-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Shop
+          </a>
+          <a routerLink="/packages" class="nav-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            My Packages
+          </a>
+          <a routerLink="/projects" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            Projects
+          </a>
+          <a routerLink="/services" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14-4H5m14 8H5m14 4H5"/></svg>
+            Services
+          </a>
+          <a routerLink="/tracking" class="nav-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Tracking
+          </a>
+          <div class="relative" data-more-menu>
+            <button (click)="toggleMoreMenu()" class="nav-link flex items-center gap-1">
+              More
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 transition-transform" [class.rotate-180]="moreMenuOpen()" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div *ngIf="moreMenuOpen()" class="more-dropdown">
+              <a routerLink="/visual-search" (click)="moreMenuOpen.set(false)" class="more-dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Visual Search
+              </a>
+              <a routerLink="/intelligent-search" (click)="moreMenuOpen.set(false)" class="more-dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                Smart Search
+              </a>
+              <a routerLink="/offers" (click)="moreMenuOpen.set(false)" class="more-dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Offers
+              </a>
+              <a routerLink="/events" (click)="moreMenuOpen.set(false)" class="more-dropdown-item">
+                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+                Events
+              </a>
+              <a routerLink="/my-deliveries" (click)="moreMenuOpen.set(false)" class="more-dropdown-item" *ngIf="authService.isLoggedIn()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+                My Deliveries
+              </a>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="!authService.isLoggedIn()">
+          <a routerLink="/home" class="nav-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Home
+          </a>
+          <a routerLink="/marketplace" class="nav-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="nav-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Shop
+          </a>
+        </ng-container>
+      </nav>
+
+      <!-- User Section -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <button (click)="toggleTheme()"
+          class="p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors duration-200"
+          [attr.aria-label]="themeService.isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'">
+          <svg *ngIf="themeService.isDarkMode()" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+          </svg>
+          <svg *ngIf="!themeService.isDarkMode()" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+          </svg>
+        </button>
+
+        <button *ngIf="authService.isLoggedIn() && !hideCartAndDashboard"
+          routerLink="/checkout"
+          class="relative p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+          aria-label="Open cart">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-neutral-600 dark:text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+          </svg>
+          <span *ngIf="cartService.cartCount() > 0" class="absolute -top-0.5 -right-0.5 bg-esprit-red text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center leading-none">
+            {{ cartService.cartCount() }}
+          </span>
+        </button>
+
+        <div *ngIf="authService.isLoggedIn()" class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-sm font-bold">
+            {{ getUserInitials() }}
+          </div>
+          <div class="hidden lg:flex flex-col">
+            <span class="text-sm font-semibold dark:text-white leading-tight">
+              {{ authService.currentUser()?.name }}
+            </span>
+            <span class="text-xs text-secondary dark:text-neutral-400 leading-tight">
+              {{ getRoleLabel() }}
+            </span>
+          </div>
+        </div>
+
+        <div *ngIf="authService.isLoggedIn()" class="relative" appNotificationBell></div>
+
+        <button *ngIf="authService.isLoggedIn()"
+          (click)="logout()"
+          class="text-sm font-medium text-esprit-red px-3 py-1.5 rounded-lg border border-esprit-red/20 hover:bg-esprit-red/10 transition-colors">
+          Logout
+        </button>
+
+        <a *ngIf="!authService.isLoggedIn()"
+          routerLink="/login"
+          class="btn btn-primary text-sm px-4 py-2">
+          Login
+        </a>
+
+        <a *ngIf="authService.isLoggedIn()"
+          href=""
+          (click)="onSellClick($event)"
+          class="btn btn-secondary text-sm px-4 py-2">
+          Sell
+        </a>
+
+        <a *ngIf="!authService.isLoggedIn()"
+          href=""
+          (click)="onSellClick($event)"
+          class="btn btn-secondary text-sm px-4 py-2">
+          Sell
+        </a>
+
+        <button (click)="toggleMobileMenu()"
+          class="lg:hidden p-2 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg"
+          [attr.aria-label]="mobileMenuOpen() ? 'Close menu' : 'Open menu'">
+          <svg *ngIf="!mobileMenuOpen()" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-neutral-700 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+          <svg *ngIf="mobileMenuOpen()" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-neutral-700 dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div *ngIf="mobileMenuOpen()" class="lg:hidden pb-4 mobile-menu-enter">
+      <nav class="flex flex-col gap-2 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+        <ng-container *ngIf="hasDashboardAccess() && !hideCartAndDashboard">
+          <a [routerLink]="getDashboardRoute()" (click)="closeMobileMenu()" class="mobile-link">
+            Dashboard
+          </a>
+        </ng-container>
+
+        <ng-container *ngIf="!hasDashboardAccess() && authService.isLoggedIn()">
+          <a routerLink="/marketplace" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Shop
+          </a>
+          <a routerLink="/packages" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+            My Packages
+          </a>
+          <a routerLink="/projects" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
+            Projects
+          </a>
+          <a routerLink="/services" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14-4H5m14 8H5m14 4H5"/></svg>
+            Services
+          </a>
+          <a routerLink="/tracking" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            Tracking
+          </a>
+          <a routerLink="/visual-search" (click)="closeMobileMenu()" class="mobile-link">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            Visual Search
+          </a>
+          <a routerLink="/intelligent-search" (click)="closeMobileMenu()" class="mobile-link">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            Smart Search
+          </a>
+          <a routerLink="/offers" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            Offers
+          </a>
+          <a routerLink="/events" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg>
+            Events
+          </a>
+          <a routerLink="/my-deliveries" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            My Deliveries
+          </a>
+        </ng-container>
+
+        <ng-container *ngIf="!authService.isLoggedIn()">
+          <a routerLink="/home" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+            Home
+          </a>
+          <a routerLink="/marketplace" (click)="closeMobileMenu()" class="mobile-link" routerLinkActive="active">
+            <svg xmlns="http://www.w3.org/2000/svg" class="mobile-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+            Shop
+          </a>
+        </ng-container>
+      </nav>
+    </div>
+  </div>
+</header>

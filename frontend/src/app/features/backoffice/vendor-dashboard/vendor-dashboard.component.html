@@ -1,0 +1,561 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200 vendor-themed"
+  [ngStyle]="themeStyle">
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 hidden lg:block transition-colors duration-200">
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">{{ dashboardTitle() }}</h2>
+    <nav class="space-y-2">
+      <button (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium">
+        Overview
+      </button>
+      <button (click)="activeTab = 'products'"
+        [class.bg-esprit-red]="activeTab === 'products'"
+        [class.text-white]="activeTab === 'products'"
+        [class.text-secondary]="activeTab !== 'products'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium">
+        My Products
+      </button>
+      <button (click)="activeTab = 'orders'"
+        [class.bg-esprit-red]="activeTab === 'orders'"
+        [class.text-white]="activeTab === 'orders'"
+        [class.text-secondary]="activeTab !== 'orders'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium">
+        Orders
+      </button>
+      <button (click)="activeTab = 'sales'"
+        [class.bg-esprit-red]="activeTab === 'sales'"
+        [class.text-white]="activeTab === 'sales'"
+        [class.text-secondary]="activeTab !== 'sales'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium">
+        Sales
+      </button>
+    </nav>
+
+    <div class="mt-8 pt-6 border-t border-neutral-200 dark:border-neutral-700 space-y-2">
+      <button *ngIf="canAccessMyShop()" (click)="goToMyShop()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium text-esprit-red">
+        🏪 My shop
+      </button>
+      <button (click)="goToMarketplace()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium text-secondary">
+        Market
+      </button>
+      <button (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium text-red-600">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 lg:p-8">
+
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary dark:text-white mb-6">Overview</h1>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Sales</h3>
+          <p class="text-3xl font-bold text-esprit-red">
+            {{ overviewTotalSales | number:'1.0-2' }} DT
+          </p>
+          <p class="text-xs text-secondary mt-2">All shops combined</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Products</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ products.length }}</p>
+          <p class="text-xs text-secondary mt-2">Online</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Rating</h3>
+          <p class="text-3xl font-bold text-esprit-red">
+            {{ overviewAverageRating ? (overviewAverageRating | number:'1.1-1') : '0.0' }}/5
+          </p>
+          <p class="text-xs text-secondary mt-2">Average across your shops</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Orders</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ overviewTotalOrders }}</p>
+          <p class="text-xs text-secondary mt-2">All shops combined</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Tab -->
+    <div *ngIf="activeTab === 'products'" class="animate-fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary dark:text-white">My Products</h1>
+        <div class="flex items-center gap-2">
+          <button
+            class="btn btn-secondary"
+            (click)="createMyStore()"
+            [disabled]="!canCreateMoreStores || creatingStore">
+            {{ canCreateMoreStores ? 'Create new shop' : '3 shops max' }}
+          </button>
+          <button class="btn btn-primary themed-action" (click)="openCreateProductModal()">
+            Add product
+          </button>
+        </div>
+      </div>
+
+      <div class="card card-md mb-4" *ngIf="storeLoading">
+        <p class="text-sm text-secondary">Loading your shops...</p>
+      </div>
+      <div class="card card-md mb-4" *ngIf="!storeLoading && !myStore && !isNoStoreProductFlow">
+        <p class="text-sm text-secondary mb-3">You do not have a private store yet.</p>
+        <button class="btn btn-primary" (click)="createMyStore()" [disabled]="creatingStore">
+          {{ creatingStore ? 'Opening...' : 'Create my first shop' }}
+        </button>
+      </div>
+      <div class="card card-md mb-4" *ngIf="myStore && !isNoStoreProductFlow">
+        <p class="text-sm text-secondary mb-3">
+          Shops: <strong>{{ myStores.length }}/{{ maxStoresPerSeller }}</strong>
+        </p>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <button
+            *ngFor="let store of myStores; let idx = index"
+            class="btn btn-secondary btn-sm"
+            [class.bg-esprit-red]="activeStoreId === store.id"
+            [class.text-white]="activeStoreId === store.id"
+            (click)="openShop(store.id)">
+            Shop {{ idx + 1 }}
+          </button>
+        </div>
+        <p class="text-sm text-secondary">
+          Active store: <strong>{{ myStore.name }}</strong> (ID: {{ myStore.id }})
+        </p>
+        <p class="text-xs text-secondary mt-1">
+          Showing products from all your shops.
+        </p>
+      </div>
+      <div class="card card-md mb-4" *ngIf="isNoStoreProductFlow">
+        <p class="text-sm text-secondary">
+          Product mode is enabled without opening a private store.
+        </p>
+      </div>
+      <div class="card card-md mb-4" *ngIf="storeError">
+        <p class="text-sm text-red-600">{{ storeError }}</p>
+      </div>
+
+      <div class="card overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-neutral-50 dark:bg-neutral-700">
+            <tr>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Image</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Name</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Category</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Dimensions</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Weight</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Price</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Promotion</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Stock</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Sales</th>
+              <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let product of products"
+              class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
+
+              <!-- ✅ Image avec fallback et gestion d'erreur -->
+              <td class="p-3">
+                <img
+                  *ngIf="product.imageUrl && product.imageUrl.length > 0"
+                  [src]="product.imageUrl"
+                  [alt]="product.name"
+                  (error)="product.imageUrl = ''"
+                  style="width:48px; height:48px; object-fit:cover; border-radius:6px; display:block;"
+                />
+                <div
+                  *ngIf="!product.imageUrl || product.imageUrl.length === 0"
+                  style="width:48px; height:48px; background:#f3f4f6; border-radius:6px;
+                         display:flex; align-items:center; justify-content:center;">
+                  <svg style="width:24px;height:24px;color:#9ca3af;"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+              </td>
+
+              <td class="p-3 text-sm text-primary dark:text-white">{{ product.name }}</td>
+
+              <!-- ✅ Category normalisée via titlecase -->
+              <td class="p-3 text-sm text-primary dark:text-white">
+                {{ product.category | titlecase }}
+              </td>
+
+              <!-- ✅ Dimensions : "Not specified" si non renseigné -->
+              <td class="p-3 text-sm text-primary dark:text-white">
+                {{ (product.dimensionsLabel && product.dimensionsLabel !== 'Not specified')
+                    ? product.dimensionsLabel : 'Not specified' }}
+              </td>
+
+              <!-- ✅ Weight : "Not specified" si 0 ou null -->
+              <td class="p-3 text-sm text-primary dark:text-white">
+                {{ (product.weight && product.weight > 0)
+                    ? (product.weight + ' kg') : 'Not specified' }}
+              </td>
+
+              <td class="p-3 text-sm font-semibold text-esprit-red">
+                <div *ngIf="product.isPromotionActive; else regularPrice">
+                  <span class="line-through text-secondary text-xs mr-2">
+                    {{ product.originalPrice || product.price }} DT
+                  </span>
+                  <span>{{ product.price }} DT</span>
+                </div>
+                <ng-template #regularPrice>{{ product.price }} DT</ng-template>
+              </td>
+
+              <td class="p-3 text-sm text-primary dark:text-white">
+                <div *ngIf="product.isPromotionActive; else noPromo">
+                  <span class="text-green-600 font-semibold">-{{ product.discountPercent }}%</span>
+                  <div class="text-xs text-secondary">
+                    Until {{ product.promoEndAt | date:'short' }}
+                  </div>
+                </div>
+                <ng-template #noPromo>
+                  <span class="text-secondary">None</span>
+                </ng-template>
+              </td>
+
+              <td class="p-3 text-sm text-primary dark:text-white">{{ product.stock }}</td>
+              <td class="p-3 text-sm text-primary dark:text-white">{{ product.sales }}</td>
+
+              <td class="p-3 text-sm space-x-2">
+                <button class="btn btn-secondary btn-sm px-2 py-1 text-xs"
+                  (click)="openEditProductModal(product.id)" title="Edit">Edit</button>
+                <button class="btn btn-danger btn-sm px-2 py-1 text-xs"
+                  (click)="confirmDeleteProduct(product.id, product.name)" title="Delete">Delete</button>
+                <button class="btn btn-primary btn-sm px-2 py-1 text-xs"
+                  (click)="openPromotionModal(product.id)" title="Promotion">%</button>
+                <button *ngIf="product.isPromotionActive"
+                  class="btn btn-secondary btn-sm px-2 py-1 text-xs"
+                  (click)="removePromotion(product.id)" title="Remove promotion">Remove</button>
+              </td>
+            </tr>
+            <tr *ngIf="products.length === 0">
+              <td colspan="10" class="p-6 text-center text-secondary">
+                No products. Start by adding one.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div *ngIf="activeTab === 'orders'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary dark:text-white mb-6">Received Orders</h1>
+      <div class="space-y-4">
+        <div *ngFor="let order of orders" class="card card-md">
+          <div class="flex justify-between items-start mb-3">
+            <strong class="text-primary dark:text-white">Order #{{ order.id }}</strong>
+            <span class="badge badge-success">{{ order.status }}</span>
+          </div>
+          <p class="text-sm text-secondary">
+            Customer: {{ order.customer }} |
+            Amount: <span class="font-bold text-esprit-red">{{ order.amount }} DT</span>
+          </p>
+          <p class="text-sm text-secondary mt-1">{{ order.items }}</p>
+
+          <div class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <div *ngFor="let product of order.products"
+              class="mb-3 pb-3 last:mb-0 last:pb-0 border-b border-neutral-100 dark:border-neutral-700 last:border-b-0">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-primary dark:text-white">
+                    {{ product.name }}
+                  </p>
+                  <p class="text-xs text-secondary mt-1">
+                    Quantity: <span class="font-medium">{{ product.quantity }}</span> |
+                    Price: <span class="font-medium text-esprit-red">{{ product.price }} DT</span>
+                  </p>
+                </div>
+              </div>
+              <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-secondary">
+                <p><strong>Dimensions:</strong> {{ product.dimensionsLabel }}</p>
+                <p><strong>Weight:</strong>
+                  <span *ngIf="product.weight > 0">{{ product.weight }} kg</span>
+                  <span *ngIf="product.weight === 0">N/A</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="orders.length === 0" class="card card-md text-center">
+          <p class="text-secondary">No orders at the moment.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sales Tab -->
+    <div *ngIf="activeTab === 'sales'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary dark:text-white mb-6">Sales Statistics</h1>
+      <p class="text-xs text-secondary mb-4">Aggregated across all your shops.</p>
+
+      <div class="card card-md mb-4" *ngIf="isStoreStatsLoading">
+        <p class="text-sm text-secondary">Loading store statistics...</p>
+      </div>
+
+      <div class="card card-md mb-4" *ngIf="!isStoreStatsLoading && storeStatsError">
+        <p class="text-sm text-red-600">{{ storeStatsError }}</p>
+      </div>
+
+      <div *ngIf="!isStoreStatsLoading && !storeStatsError && storeStats" class="space-y-4">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="card card-md text-center">
+            <h3 class="text-sm text-secondary mb-2">Total Revenue</h3>
+            <p class="text-3xl font-bold text-esprit-red">{{ storeStats.totalRevenue | number:'1.0-2' }} DT</p>
+          </div>
+
+          <div class="card card-md text-center">
+            <h3 class="text-sm text-secondary mb-2">Total Orders</h3>
+            <p class="text-3xl font-bold text-esprit-red">{{ storeStats.totalOrders }}</p>
+          </div>
+
+          <div class="card card-md text-center">
+            <h3 class="text-sm text-secondary mb-2">Best Seller</h3>
+            <p class="text-base font-semibold text-primary dark:text-white">
+              {{ storeStats.bestSeller?.productName || 'No sales yet' }}
+            </p>
+            <p class="text-xs text-secondary mt-1" *ngIf="storeStats.bestSeller">
+              Qty: {{ storeStats.bestSeller.totalQuantity }} |
+              {{ storeStats.bestSeller.revenue | number:'1.0-2' }} DT
+            </p>
+          </div>
+
+          <div class="card card-md text-center">
+            <h3 class="text-sm text-secondary mb-2">Average Order</h3>
+            <p class="text-3xl font-bold text-esprit-red">
+              {{ storeStats.totalOrders > 0
+                  ? (storeStats.totalRevenue / storeStats.totalOrders | number:'1.0-2')
+                  : '0.00' }} DT
+            </p>
+          </div>
+        </div>
+
+        <div class="card overflow-x-auto">
+          <h3 class="text-base font-semibold text-primary dark:text-white p-4 pb-0">Monthly Revenue</h3>
+          <table class="w-full mt-2" *ngIf="storeStats.monthlyRevenue.length > 0; else noMonthlyRevenue">
+            <thead class="bg-neutral-50 dark:bg-neutral-700">
+              <tr>
+                <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Month</th>
+                <th class="text-left p-3 text-sm font-semibold text-primary dark:text-white">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of storeStats.monthlyRevenue"
+                  class="border-t border-neutral-200 dark:border-neutral-700">
+                <td class="p-3 text-sm text-primary dark:text-white">{{ item.month }}</td>
+                <td class="p-3 text-sm font-semibold text-esprit-red">{{ item.revenue | number:'1.0-2' }} DT</td>
+              </tr>
+            </tbody>
+          </table>
+          <ng-template #noMonthlyRevenue>
+            <p class="p-4 text-sm text-secondary">No monthly revenue data yet.</p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ─── Create Product Modal ──────────────────────────────────────── -->
+<div *ngIf="isProductModalOpen && !isEditingProduct"
+  class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 animate-in fade-in">
+  <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg max-w-2xl w-full animate-in zoom-in-95">
+    <div class="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700">
+      <h2 class="text-lg font-bold text-primary dark:text-white">New product</h2>
+      <button (click)="closeProductModal()"
+        class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 text-2xl leading-none">
+        ×
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+          Product name <span class="text-red-500">*</span>
+        </label>
+        <input type="text" [(ngModel)]="createProductForm.name" (input)="onFormInput()"
+          placeholder="Product name" class="form-input w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+          Description <span class="text-red-500">*</span>
+        </label>
+        <textarea rows="3" [(ngModel)]="createProductForm.description" (input)="onFormInput()"
+          placeholder="Detailed description" class="form-input w-full"></textarea>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Price <span class="text-red-500">*</span>
+          </label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="createProductForm.price"
+            (input)="onFormInput()" class="form-input w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Stock <span class="text-red-500">*</span>
+          </label>
+          <input type="number" min="0" step="1" [(ngModel)]="createProductForm.stock"
+            (input)="onFormInput()" class="form-input w-full" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Dimensions <span class="text-secondary font-normal">(optional)</span>
+          </label>
+          <input type="text" [(ngModel)]="createProductForm.dimensions"
+            placeholder="Ex: 30 x 20 x 10 cm" class="form-input w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Weight (kg) <span class="text-secondary font-normal">(optional)</span>
+          </label>
+          <input type="number" min="0" step="0.1" [(ngModel)]="createProductForm.weight"
+            class="form-input w-full" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+          Product photo <span class="text-red-500">*</span>
+        </label>
+        <input type="file" accept="image/*" (change)="onCreateProductImageSelected($event)"
+          class="form-input w-full" />
+        <!-- ✅ Prévisualisation de l'image sélectionnée -->
+        <div *ngIf="createProductForm.imageDataUrl" class="mt-2">
+          <img [src]="createProductForm.imageDataUrl" alt="Preview"
+            style="width:80px; height:80px; object-fit:cover; border-radius:6px; border:1px solid #e5e7eb;" />
+        </div>
+      </div>
+      <p *ngIf="createProductError" class="text-sm text-red-600">{{ createProductError }}</p>
+    </div>
+    <div class="flex justify-end gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700 rounded-b-lg">
+      <button (click)="closeProductModal()" class="btn btn-secondary text-sm"
+        [disabled]="isSubmittingProduct">Cancel</button>
+      <button (click)="submitCreateProductFromModal()"
+        [disabled]="isSubmittingProduct || !isCreateProductFormValid()"
+        class="btn btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+        {{ isSubmittingProduct ? 'Processing...' : 'Confirm' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Edit Product Modal ────────────────────────────────────────── -->
+<div *ngIf="isProductModalOpen && isEditingProduct"
+  class="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4 animate-in fade-in">
+  <div class="bg-white dark:bg-neutral-800 rounded-lg shadow-lg max-w-2xl w-full animate-in zoom-in-95">
+    <div class="flex justify-between items-center p-6 border-b border-neutral-200 dark:border-neutral-700">
+      <h2 class="text-lg font-bold text-primary dark:text-white">Edit product</h2>
+      <button (click)="closeProductModal()"
+        class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 text-2xl leading-none">
+        ×
+      </button>
+    </div>
+    <div class="p-6 space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Product name</label>
+        <input type="text" [(ngModel)]="editProductForm.name" class="form-input w-full" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Description</label>
+        <textarea rows="4" [(ngModel)]="editProductForm.description" class="form-input w-full"></textarea>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Price</label>
+          <input type="number" min="0" step="0.01" [(ngModel)]="editProductForm.price"
+            class="form-input w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Stock</label>
+          <input type="number" min="0" step="1" [(ngModel)]="editProductForm.stock"
+            class="form-input w-full" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Discount (%)</label>
+          <input type="number" min="0" max="100" step="1"
+            [(ngModel)]="editProductForm.discountPercent" class="form-input w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Promotion end</label>
+          <input type="datetime-local" [(ngModel)]="editProductForm.promoEndAt"
+            class="form-input w-full" />
+        </div>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Dimensions <span class="text-secondary font-normal">(optional)</span>
+          </label>
+          <input type="text" [(ngModel)]="editProductForm.dimensions"
+            placeholder="Ex: 30 x 20 x 10 cm" class="form-input w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">
+            Weight (kg) <span class="text-secondary font-normal">(optional)</span>
+          </label>
+          <input type="number" min="0" step="0.1" [(ngModel)]="editProductForm.weight"
+            class="form-input w-full" />
+        </div>
+      </div>
+      <p *ngIf="editProductError" class="text-sm text-red-600">{{ editProductError }}</p>
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-700 rounded-b-lg">
+      <button (click)="deleteEditedProductFromModal()" [disabled]="isSubmittingProduct"
+        class="btn btn-danger text-sm disabled:opacity-50 disabled:cursor-not-allowed">Delete</button>
+      <div class="flex gap-3 ml-auto">
+        <button (click)="closeProductModal()" class="btn btn-secondary text-sm"
+          [disabled]="isSubmittingProduct">Cancel</button>
+        <button (click)="submitDashboardEditProduct()" [disabled]="isSubmittingProduct"
+          class="btn btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ isSubmittingProduct ? 'Processing...' : 'Save' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Delete Confirmation Modal ─────────────────────────────────── -->
+<app-modal
+  [isOpen]="isDeleteConfirmOpen"
+  title="Delete product?"
+  submitLabel="Delete"
+  [isSubmitting]="isSubmittingDelete"
+  (close)="closeDeleteConfirm()"
+  (submitted)="confirmDelete()">
+  <p class="text-sm text-secondary">
+    Are you sure you want to delete <strong>{{ deletingProductName }}</strong>?
+  </p>
+  <p class="text-xs text-secondary mt-3">This action is irreversible.</p>
+</app-modal>
+
+<!-- ─── Promotion Modal ───────────────────────────────────────────── -->
+<app-modal
+  [isOpen]="isPromotionModalOpen"
+  title="Apply a promotion"
+  submitLabel="Confirm"
+  [isSubmitting]="isSubmittingPromotion"
+  (close)="closePromotionModal()"
+  (submitted)="submitPromotion()">
+  <div class="space-y-4">
+    <p class="text-sm text-secondary">Product: <strong>{{ promotionProductName }}</strong></p>
+    <label class="block text-sm font-semibold text-primary dark:text-white">Discount (%)</label>
+    <input type="number" min="1" max="100" [(ngModel)]="promotionDiscountPercent"
+      class="form-input w-full" />
+    <label class="block text-sm font-semibold text-primary dark:text-white">End date</label>
+    <input type="datetime-local" [(ngModel)]="promotionEndAt" class="form-input w-full" />
+    <p *ngIf="promotionError" class="text-sm text-red-600">{{ promotionError }}</p>
+  </div>
+</app-modal>

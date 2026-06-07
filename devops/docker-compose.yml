@@ -1,0 +1,125 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: esprit-market-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: esprit_market
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d esprit_market"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: esprit-market-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8088:8088"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    networks:
+      - backend-network
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: esprit-market-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:8080"
+    networks:
+      - backend-network
+
+  ml-service:
+    build:
+      context: ../ml-service
+      dockerfile: Dockerfile
+    container_name: esprit-market-ml
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ML_DB_PASSWORD: ${ML_DB_PASSWORD:-postgres}
+      ML_DB_URL: postgresql://postgres:${ML_DB_PASSWORD:-postgres}@db:5432/esprit_market
+      BOOKING_MODEL_PATH: models/booking_completion_model.joblib
+      PROJECT_MODEL_PATH: models/project_delay_model.joblib
+      SENTIMENT_MODEL_PATH: models/sentiment_model.joblib
+      ML_DATA_DIR: data
+      RETRAIN_THRESHOLD: 5
+    ports:
+      - "8000:8000"
+    networks:
+      - backend-network
+
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: esprit-market-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    ports:
+      - "9090:9090"
+    networks:
+      - backend-network
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: esprit-market-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - backend-network
+
+volumes:
+  postgres_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  backend-network:
+    driver: bridge

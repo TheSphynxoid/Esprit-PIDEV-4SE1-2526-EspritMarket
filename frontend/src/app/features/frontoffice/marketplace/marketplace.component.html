@@ -1,0 +1,172 @@
+<app-header></app-header>
+
+<div class="market-shell bg-neutral-50 dark:bg-neutral-900">
+  <div class="market-container">
+    <div class="market-head">
+      <div class="market-head-left">
+        <h1 class="market-title">ESPRIT Marketplace</h1>
+        <p class="market-subtitle">Catalogue professionnel - {{ productService.totalResults() }} produits disponibles</p>
+      </div>
+      <div class="market-head-actions">
+        <button type="button" class="btn" (click)="goToVisualSearch()">
+          Recherche visuelle
+        </button>
+        <button *ngIf="canOpenQuickAddProduct()" type="button" class="btn btn-primary" (click)="openQuickAddProduct()">
+          Add product
+        </button>
+        <button *ngIf="hasMyStore() && !canOpenQuickAddProduct()" type="button" class="market-my-store" (click)="goToMyStore()">
+          My store
+        </button>
+      </div>
+    </div>
+
+    <div class="market-layout">
+      <aside class="market-filter">
+        <button class="filter-button" type="button" (click)="onResetFilters()">Filtrer</button>
+
+        <div class="filter-group">
+          <label class="filter-label">Recherche</label>
+          <div class="search-input-wrapper">
+            <input
+              type="text"
+              placeholder="Ex: tenue mariage été"
+              [value]="searchQuery()"
+              (input)="onSearch($event)"
+              (keyup.enter)="onSemanticSearch()"
+              class="filter-input"
+            />
+            <button class="smart-search-btn" (click)="onSemanticSearch()" [disabled]="isSemanticLoading()">
+              <span *ngIf="!isSemanticLoading()">🧠</span>
+              <span *ngIf="isSemanticLoading()" class="spinner"></span>
+            </button>
+          </div>
+          <small class="smart-hint" *ngIf="!isSemanticMode()">Appuyez sur 🧠 pour la recherche IA</small>
+          <small class="smart-hint active" *ngIf="isSemanticMode()" (click)="onResetFilters()">✨ Mode IA Actif (cliquez pour reset)</small>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Prix</label>
+          <div class="price-range-labels">
+            <span>{{ priceMin() }} DT</span>
+            <span>{{ priceMax() }} DT</span>
+          </div>
+          <input type="range" [min]="productService.priceRange().min" [max]="productService.priceRange().max" [value]="priceMin()" (input)="onPriceMinChange($event)" class="price-range" />
+          <input type="range" [min]="productService.priceRange().min" [max]="productService.priceRange().max" [value]="priceMax()" (input)="onPriceMaxChange($event)" class="price-range" />
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Categorie</label>
+          <select (change)="onCategoryChange($event)" class="filter-input">
+            <option value="">Toutes les categories</option>
+            <option *ngFor="let cat of productService.categories()" [value]="cat">{{ cat | titlecase }}</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Note minimale</label>
+          <div class="rating-filter">
+            <button type="button" *ngFor="let i of [0,1,2,3,4]" (click)="onRatingChange(i + 1)" [class.inactive]="i >= minRating()">★</button>
+          </div>
+        </div>
+
+        <div class="filter-group compact">
+          <p class="filter-subtitle">Disponibilite</p>
+          <label><input type="checkbox"> En stock</label>
+          <label><input type="checkbox"> En arrivage</label>
+          <label><input type="checkbox"> Sur commande</label>
+        </div>
+
+      </aside>
+
+      <main class="market-products">
+        <div class="tools-row">
+          <div class="tools-left">Tri par:</div>
+          <select (change)="onSortChange($event)" class="sort-select">
+            <option value="price-asc">Prix Croissant</option>
+            <option value="price-desc">Prix Decroissant</option>
+            <option value="popular">Popularite</option>
+            <option value="newest">Plus recent</option>
+            <option value="rating">Mieux notes</option>
+          </select>
+          <div class="tools-right" *ngIf="productService.totalPages() > 1">
+            <button type="button" [disabled]="productService.currentPageNumber() === 1" (click)="productService.previousPage()">‹</button>
+            <ng-container *ngFor="let page of getPageNumbers()">
+              <button
+                *ngIf="page > 0"
+                type="button"
+                [class.active]="page === productService.currentPageNumber()"
+                (click)="productService.setPage(page)">
+                {{ page }}
+              </button>
+              <span *ngIf="page < 0" class="ellipsis">...</span>
+            </ng-container>
+            <button type="button" [disabled]="productService.currentPageNumber() === productService.totalPages()" (click)="productService.nextPage()">›</button>
+          </div>
+        </div>
+
+        <div *ngIf="displayProducts().length === 0" class="empty-state">
+          <h3>Aucun produit trouve</h3>
+          <p>Modifiez vos filtres pour afficher des resultats.</p>
+          <button type="button" class="btn btn-primary" (click)="onResetFilters()">Reset</button>
+        </div>
+
+        <div *ngIf="displayProducts().length > 0" class="product-grid">
+          <article
+            *ngFor="let product of displayProducts()"
+            class="product-card"
+            [class.product-card-disabled]="isProductDisabled(product)"
+            [attr.aria-disabled]="isProductDisabled(product)"
+            (click)="onProductCardClick(product)">
+
+            <div class="product-image-wrap">
+              <img *ngIf="isImageSource(product.image)" [src]="product.image" [alt]="product.name" class="product-image" />
+              <span *ngIf="!isImageSource(product.image)" class="product-emoji">{{ product.image }}</span>
+              <div *ngIf="product.stock === 0" class="stock-overlay">Rupture</div>
+            </div>
+
+            <div class="product-body">
+              <h3 class="product-name">{{ product.name }}</h3>
+              <p class="product-category">{{ getCategoryLabel(product) }}</p>
+              <p class="product-desc">{{ cleanProductDescription(product) }}</p>
+              <p class="product-meta">Dimensions: {{ product.dimensionsLabel || 'N/A' }}</p>
+              <p class="product-meta">Poids: {{ (product.weight && product.weight > 0) ? product.weight + ' kg' : 'N/A' }}</p>
+
+              <div class="seller-row">
+                <span>Vendeur:</span>
+                <button type="button" [disabled]="isProductDisabled(product)" (click)="goToStore(product.seller, $event)">{{ product.seller }}</button>
+              </div>
+
+              <div class="stock-badge" [class.empty]="product.stock === 0">Disponibilite: {{ product.stock > 0 ? 'En stock' : 'Epuisé' }}</div>
+
+              <div *ngIf="isPromotionVisible(product)" class="promo-box">
+                <p>-{{ product.discountPercent || 0 }}% jusqu'a {{ product.promoEndAt | date:'short' }}</p>
+                <p>Temps restant: {{ formatRemainingTime(getRemainingSeconds(product)) }}</p>
+              </div>
+
+              <div class="card-bottom">
+                <div class="price-zone">
+                  <div *ngIf="isPromotionVisible(product); else regularPrice" class="price-with-promo">
+                    <span class="old-price">{{ formatPrice(product.originalPrice || product.price) }} DT</span>
+                    <span class="new-price">{{ formatPrice(product.discountedPrice || product.price) }} DT</span>
+                  </div>
+                  <ng-template #regularPrice>
+                    <span class="new-price">{{ formatPrice(product.price) }} DT</span>
+                  </ng-template>
+                </div>
+
+                <div class="action-zone">
+                  <button *ngIf="canDeleteProductsAsAdmin" type="button" class="small-btn danger" (click)="deleteProductAsAdmin(product.id, product.name, $event)">Delete</button>
+                  <button type="button" class="small-btn primary" (click)="$event.stopPropagation(); onAddToCart(product)" [disabled]="isProductDisabled(product)">
+                    {{ cartService.hasItem(product.id) ? 'Added' : 'Add' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

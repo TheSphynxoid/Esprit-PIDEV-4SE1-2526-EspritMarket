@@ -1,0 +1,51 @@
+---
+# StorageClass for local storage
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+
+---
+# PersistentVolume for product image uploads
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: esprit-market-uploads-pv
+  labels:
+    type: local
+    app: esprit-market-backend
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-storage
+  local:
+    path: /mnt/data/esprit-market/uploads
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - vps-bd775d1f-vps-ovh-net  # Will be auto-patched by setup script
+
+---
+# PersistentVolumeClaim for backend pod
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: esprit-market-uploads-pvc
+  namespace: esprit-market
+  labels:
+    app: esprit-market-backend
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-storage
+  resources:
+    requests:
+      storage: 5Gi

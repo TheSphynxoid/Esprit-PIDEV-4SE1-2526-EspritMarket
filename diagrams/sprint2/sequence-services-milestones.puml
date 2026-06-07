@@ -1,0 +1,85 @@
+@startuml services-sprint2-sequence-milestones
+skinparam style strictuml
+
+actor Client
+participant "ProjectController" as PC
+participant "MilestoneService" as MS
+participant "NotificationService" as NS
+participant "MilestoneRepository" as MR
+database "Database" as DB
+
+Client -> PC : POST /api/projects/{id}/milestones\n{title, description, dueDate}
+activate PC
+
+PC -> MS : createMilestone(projectId, milestoneDTO)
+activate MS
+
+MS -> MR : findByProjectId(projectId)
+activate MR
+MR -> DB : SELECT FROM projects WHERE id = ?
+activate DB
+DB --> MR : Project
+deactivate DB
+MR --> MS : existingMilestones
+deactivate MR
+
+MS -> MS : validateMilestoneOrder(milestone, existingMilestones)
+
+MS -> MR : save(milestone)
+activate MR
+MR -> DB : INSERT INTO milestones
+activate DB
+DB --> MR : milestone (with id)
+deactivate DB
+MR --> MS : savedMilestone
+deactivate MR
+
+MS --> PC : MilestoneDTO
+deactivate MS
+
+PC --> Client : 201 Created\n{milestoneId, title, dueDate, status}
+deactivate PC
+
+== Update Milestone Status ==
+
+actor Provider
+
+Provider -> PC : PUT /api/milestones/{id}/status\n{status: "COMPLETED"}
+activate PC
+
+PC -> MS : updateStatus(milestoneId, "COMPLETED")
+activate MS
+
+MS -> MR : findById(milestoneId)
+activate MR
+MR -> DB : SELECT FROM milestones
+activate DB
+DB --> MR : Milestone
+deactivate DB
+MR --> MS : milestone
+deactivate MR
+
+MS -> MS : milestone.markComplete()
+
+MS -> MR : save(milestone)
+activate MR
+MR -> DB : UPDATE milestones SET status, completedAt
+activate DB
+DB --> MR : ok
+deactivate DB
+MR --> MS : updated
+deactivate MR
+
+MS -> NS : notifyProjectMembers(projectId, "Milestone completed")
+activate NS
+NS -> NS : sendEmail(projectMembers, notification)
+NS --> MS : sent
+deactivate NS
+
+MS --> PC : MilestoneDTO
+deactivate MS
+
+PC --> Provider : 200 OK\n{milestoneId, status: "COMPLETED"}
+deactivate PC
+
+@enduml

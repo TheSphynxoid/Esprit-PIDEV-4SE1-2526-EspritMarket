@@ -1,0 +1,62 @@
+<app-header></app-header>
+
+<div class="search-container bg-neutral-50 dark:bg-neutral-900 min-h-screen">
+  <div class="search-box">
+    <h1>Recherche Intelligente (IA)</h1>
+    <p>Décrivez ce que vous cherchez (ex: "tenue mariage été", "chaussures sport noir", "costum marrige")</p>
+    
+    <div class="input-group">
+      <input 
+        type="text" 
+        [(ngModel)]="query" 
+        (keyup.enter)="onSearch()" 
+        placeholder="Tapez votre recherche ici..."
+        class="search-input"
+      />
+      <button (click)="onSearch()" [disabled]="loading" class="search-btn">
+        <span *ngIf="!loading">🔍 Analyser & Chercher</span>
+        <span *ngIf="loading">🤖 IA en cours...</span>
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+  <div *ngIf="response" class="results-area">
+    <div class="analysis-card" *ngIf="response.extractedKeywords.length > 0">
+      <h3>🧠 Analyse de l'IA</h3>
+      <div class="tags">
+        <span class="tag"><b>Occasion:</b> {{ response.occasion }}</span>
+        <span class="tag"><b>Saison:</b> {{ response.season }}</span>
+        <span class="tag"><b>Catégorie:</b> {{ response.category }}</span>
+      </div>
+      <p class="keywords"><b>Mots-clés extraits :</b> {{ response.extractedKeywords.join(', ') }}</p>
+    </div>
+
+    <h2 class="results-title">
+      Résultats pour "{{ response.originalQuery }}"
+      <span class="count">({{ response.products.length }} produits trouvés)</span>
+    </h2>
+
+    <div class="product-grid" *ngIf="response.products.length > 0; else noResults">
+      <div class="is-product-card" *ngFor="let product of response.products">
+      <div class="is-badge" *ngIf="product.discountPercent">-%{{ product.discountPercent }}</div>
+      <img [src]="resolveImageUrl(product.imageUrl)" [alt]="product.name">
+      <div class="is-card-body">
+        <h4>{{ product.name }}</h4>
+        <p class="is-price">{{ product.price }} DT</p>
+        <p class="is-store">Boutique: {{ product.store?.name }}</p>
+      </div>
+    </div>
+    </div>
+
+    <ng-template #noResults>
+      <div class="no-results">
+        <p>Désolé, l'IA n'a pas trouvé de produits correspondant exactement à votre demande.</p>
+        <button (click)="query='vêtements'; onSearch()">Voir tout le catalogue</button>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<app-footer></app-footer>

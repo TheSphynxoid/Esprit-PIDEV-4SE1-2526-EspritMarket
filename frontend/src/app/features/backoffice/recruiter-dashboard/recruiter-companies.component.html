@@ -1,0 +1,144 @@
+<div class="recruiter-companies">
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Form Section -->
+  <div class="form-section">
+    <h2>{{ isEditMode ? 'Edit Company' : 'Create Company' }}</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Name Field -->
+      <div class="form-group">
+        <label for="name">Company Name *</label>
+        <input 
+          id="name" 
+          type="text" 
+          formControlName="name" 
+          placeholder="Enter company name"
+          class="form-control"
+        />
+        <small class="error" *ngIf="getFieldError('name')">
+          {{ getFieldError('name') }}
+        </small>
+      </div>
+
+      <!-- Sector Field -->
+      <div class="form-group">
+        <label for="sector">Sector</label>
+        <input 
+          id="sector" 
+          type="text" 
+          formControlName="sector" 
+          placeholder="e.g., Technology, Finance"
+          class="form-control"
+        />
+      </div>
+
+      <!-- Contact Email Field -->
+      <div class="form-group">
+        <label for="contactEmail">Contact Email *</label>
+        <input 
+          id="contactEmail" 
+          type="email" 
+          formControlName="contactEmail" 
+          placeholder="contact@company.com"
+          class="form-control"
+        />
+        <small class="error" *ngIf="getFieldError('contactEmail')">
+          {{ getFieldError('contactEmail') }}
+        </small>
+      </div>
+
+      <!-- Partnership Status Field -->
+      <div class="form-group">
+        <label for="partnershipStatus">Partnership Status *</label>
+        <select 
+          id="partnershipStatus" 
+          formControlName="partnershipStatus"
+          class="form-control"
+        >
+          <option *ngFor="let status of statuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('partnershipStatus')">
+          {{ getFieldError('partnershipStatus') }}
+        </small>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="form.invalid"
+        >
+          {{ isEditMode ? 'Update Company' : 'Create Company' }}
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="resetForm()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Companies List Section -->
+  <div class="list-section">
+    <h2>Companies List</h2>
+    
+    <div *ngIf="loading" class="loading">Loading companies...</div>
+    
+    <div *ngIf="!loading && companies.length === 0" class="empty-state">
+      No companies found. Create one to get started.
+    </div>
+
+    <table *ngIf="!loading && companies.length > 0" class="companies-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Sector</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let company of companies">
+          <td>{{ company.name }}</td>
+          <td>{{ company.sector || '-' }}</td>
+          <td>{{ company.contactEmail }}</td>
+          <td>
+            <span class="status-badge" [ngClass]="'status-' + company.partnershipStatus.toLowerCase()">
+              {{ company.partnershipStatus }}
+            </span>
+          </td>
+          <td class="actions">
+            <button 
+              class="btn btn-sm btn-edit"
+              (click)="editCompany(company)"
+              title="Edit"
+            >
+              Edit
+            </button>
+            <button 
+              class="btn btn-sm btn-delete"
+              (click)="deleteCompany(company.id)"
+              title="Delete"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

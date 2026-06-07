@@ -1,0 +1,228 @@
+<div class="recruiter-joboffers">
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Form Section -->
+  <div class="form-section">
+    <h2>{{ isEditMode ? 'Edit Job Offer' : 'Post New Job Offer' }}</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <!-- Company Field -->
+      <div class="form-group">
+        <label for="companyId">Company *</label>
+        <select 
+          id="companyId" 
+          formControlName="companyId"
+          class="form-control"
+        >
+          <option value="">Select a company</option>
+          <option *ngFor="let company of companies" [value]="company.id">
+            {{ company.name }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('companyId')">
+          {{ getFieldError('companyId') }}
+        </small>
+      </div>
+
+      <!-- Title Field -->
+      <div class="form-group">
+        <label for="title">Job Title *</label>
+        <input 
+          id="title" 
+          type="text" 
+          formControlName="title" 
+          placeholder="e.g., Senior Software Engineer"
+          class="form-control"
+        />
+        <small class="error" *ngIf="getFieldError('title')">
+          {{ getFieldError('title') }}
+        </small>
+      </div>
+
+      <!-- Description Field -->
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea 
+          id="description" 
+          formControlName="description" 
+          placeholder="Job description..."
+          class="form-control"
+          rows="4"
+        ></textarea>
+        <small class="error" *ngIf="getFieldError('description')">
+          {{ getFieldError('description') }}
+        </small>
+      </div>
+
+      <!-- Type Field -->
+      <div class="form-group">
+        <label for="type">Job Type *</label>
+        <select 
+          id="type" 
+          formControlName="type"
+          class="form-control"
+        >
+          <option *ngFor="let type of types" [value]="type">
+            {{ type.replace(/_/g, ' ') }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('type')">
+          {{ getFieldError('type') }}
+        </small>
+      </div>
+
+      <!-- Experience Level Field -->
+      <div class="form-group">
+        <label for="experienceLevel">Experience Level *</label>
+        <select
+          id="experienceLevel"
+          formControlName="experienceLevel"
+          class="form-control"
+        >
+          <option *ngFor="let level of experienceLevels" [value]="level">
+            {{ level }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('experienceLevel')">
+          {{ getFieldError('experienceLevel') }}
+        </small>
+      </div>
+
+      <!-- Required Skills Field -->
+      <div class="form-group">
+        <label for="requiredSkillsInput">Required Skills</label>
+        <div class="skill-input-row">
+          <input
+            id="requiredSkillsInput"
+            type="text"
+            [value]="newSkillInput"
+            (input)="onSkillInputChange($event)"
+            (keydown)="onSkillInputKeyDown($event)"
+            placeholder="Type a skill and press Enter"
+            class="form-control"
+          />
+          <button type="button" class="btn btn-primary add-skill-btn" (click)="addSkill()">
+            +
+          </button>
+        </div>
+        <div class="skills-chip-list" *ngIf="requiredSkills.length > 0">
+          <span class="skill-chip" *ngFor="let skill of requiredSkills">
+            {{ skill }}
+            <button type="button" class="remove-chip-btn" (click)="removeSkill(skill)">x</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- Status Field -->
+      <div class="form-group">
+        <label for="status">Status *</label>
+        <select 
+          id="status" 
+          formControlName="status"
+          class="form-control"
+        >
+          <option *ngFor="let status of statuses" [value]="status">
+            {{ status }}
+          </option>
+        </select>
+        <small class="error" *ngIf="getFieldError('status')">
+          {{ getFieldError('status') }}
+        </small>
+      </div>
+
+      <!-- Location Field -->
+      <div class="form-group">
+        <label for="location">Location *</label>
+        <input
+          id="location"
+          type="text"
+          formControlName="location"
+          placeholder="e.g., Tunis, Sousse, Remote"
+          class="form-control"
+        />
+        <small class="error" *ngIf="getFieldError('location')">
+          {{ getFieldError('location') }}
+        </small>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button 
+          type="submit" 
+          class="btn btn-primary"
+          [disabled]="form.invalid"
+        >
+          {{ isEditMode ? 'Update Job Offer' : 'Post Job Offer' }}
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary"
+          (click)="resetForm()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Job Offers List Section -->
+  <div class="list-section">
+    <h2>Job Offers</h2>
+    
+    <div *ngIf="loading" class="loading">Loading job offers...</div>
+    
+    <div *ngIf="!loading && jobOffers.length === 0" class="empty-state">
+      No job offers found. Post one to get started.
+    </div>
+
+    <table *ngIf="!loading && jobOffers.length > 0" class="joboffers-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let offer of jobOffers">
+          <td>{{ offer.title }}</td>
+          <td>{{ getCompanyName(offer.company?.id) }}</td>
+          <td>
+            <span class="type-badge" [ngClass]="'type-' + offer.type.toLowerCase()">
+              {{ offer.type.replace(/_/g, ' ') }}
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="'status-' + offer.status.toLowerCase()">
+              {{ offer.status }}
+            </span>
+          </td>
+          <td class="actions">
+            <button 
+              class="btn btn-sm btn-edit"
+              (click)="editJobOffer(offer)"
+              title="Edit"
+            >
+              Edit
+            </button>
+            <button 
+              class="btn btn-sm btn-delete"
+              (click)="deleteJobOffer(offer.id)"
+              title="Delete"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

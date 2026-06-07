@@ -1,0 +1,233 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm"><img 
+            src="assets/logo.png"
+            alt="ESPRIT Logo"
+            class="w-full h-full object-contain"
+          /></div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+    
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Admin Companies</h2>
+    <nav class="space-y-2">
+      <button 
+        (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        📊 Overview
+      </button>
+      <button 
+        (click)="activeTab = 'companies'"
+        [class.bg-esprit-red]="activeTab === 'companies'"
+        [class.text-white]="activeTab === 'companies'"
+        [class.text-secondary]="activeTab !== 'companies'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        🏢 Companies
+      </button>
+      <button 
+        (click)="activeTab = 'partnerships'"
+        [class.bg-esprit-red]="activeTab === 'partnerships'"
+        [class.text-white]="activeTab === 'partnerships'"
+        [class.text-secondary]="activeTab !== 'partnerships'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        🤝 Partnerships
+      </button>
+      <button 
+        (click)="activeTab = 'applications'"
+        [class.bg-esprit-red]="activeTab === 'applications'"
+        [class.text-white]="activeTab === 'applications'"
+        [class.text-secondary]="activeTab !== 'applications'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        📋 Applications
+      </button>
+      <hr class="my-4 border-neutral-200">
+      <button 
+        (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 text-sm font-medium text-red-600"
+      >
+        🚪 Logout
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-64 p-6 lg:p-8">
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Companies Overview</h1>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">🏢 Companies</h3>
+          <p class="text-3xl font-bold text-esprit-red">67</p>
+          <p class="text-xs text-secondary mt-2">Partners</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">💼 Offers</h3>
+          <p class="text-3xl font-bold text-esprit-red">124</p>
+          <p class="text-xs text-secondary mt-2">Active</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">📋 Applications</h3>
+          <p class="text-3xl font-bold text-esprit-red">15</p>
+          <p class="text-xs text-secondary mt-2">Pending</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">✅ Placements</h3>
+          <p class="text-3xl font-bold text-esprit-red">89</p>
+          <p class="text-xs text-secondary mt-2">This year</p>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="card card-lg">
+          <h2 class="text-xl font-bold text-primary mb-4">New Companies</h2>
+          <div class="space-y-3">
+            <div class="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg transition-colors duration-200">
+              <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center text-white font-bold">T</div>
+              <div class="flex-1">
+                <p class="font-semibold text-sm">TechCorp Tunisia</p>
+                <p class="text-xs text-secondary">IT & Consulting</p>
+              </div>
+              <span class="badge badge-success">New</span>
+            </div>
+            <div class="flex items-center gap-3 p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg transition-colors duration-200">
+              <div class="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center text-white font-bold">S</div>
+              <div class="flex-1">
+                <p class="font-semibold text-sm">StartupHub</p>
+                <p class="text-xs text-secondary">Innovation</p>
+              </div>
+              <span class="badge badge-success">New</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-lg">
+          <h2 class="text-xl font-bold text-primary mb-4">Top Recruiters</h2>
+          <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg transition-colors duration-200">
+              <div>
+                <p class="font-semibold text-sm">Digital Factory</p>
+                <p class="text-xs text-secondary">25 placements</p>
+              </div>
+              <span class="text-esprit-red font-bold">🏆</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-neutral-50 dark:bg-neutral-700 rounded-lg transition-colors duration-200">
+              <div>
+                <p class="font-semibold text-sm">Innovate Solutions</p>
+                <p class="text-xs text-secondary">18 placements</p>
+              </div>
+              <span class="text-esprit-red font-bold">🥈</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Companies Tab -->
+    <div *ngIf="activeTab === 'companies'" class="animate-fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary">Companies Management</h1>
+        <button class="btn btn-primary">➕ New Company</button>
+      </div>
+
+      <div class="card card-lg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Company</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Sector</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Contact</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Offers</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let company of companies" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3">
+                <div class="flex items-center gap-2">
+                  <div class="w-8 h-8 bg-gradient-to-br from-esprit-red to-esprit-700 rounded-lg flex items-center justify-center text-white text-xs font-bold">
+                    {{ company.initials }}
+                  </div>
+                  <span class="text-sm font-semibold">{{ company.name }}</span>
+                </div>
+              </td>
+              <td class="px-4 py-3 text-sm">{{ company.sector }}</td>
+              <td class="px-4 py-3 text-sm">{{ company.contact }}</td>
+              <td class="px-4 py-3 text-sm">{{ company.offers }}</td>
+              <td class="px-4 py-3">
+                <span class="badge" [class.badge-success]="company.status === 'active'" [class.badge-warning]="company.status === 'pending'">
+                  {{ company.status }}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                <button class="btn btn-secondary btn-sm mr-2">✏️ Edit</button>
+                <button class="btn btn-ghost btn-sm">👁️ View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Partnerships Tab -->
+    <div *ngIf="activeTab === 'partnerships'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Active Partnerships</h1>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div *ngFor="let partnership of partnerships" class="card card-md">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 bg-gradient-to-br from-esprit-red to-esprit-700 rounded-lg flex items-center justify-center text-white font-bold">
+              {{ partnership.initials }}
+            </div>
+            <div>
+              <h3 class="font-bold text-primary">{{ partnership.company }}</h3>
+              <p class="text-xs text-secondary">{{ partnership.type }}</p>
+            </div>
+          </div>
+          <div class="text-xs text-secondary mb-3">
+            <p>📅 Since {{ partnership.since }}</p>
+            <p>💼 {{ partnership.opportunities }} opportunities</p>
+          </div>
+          <button class="btn btn-secondary btn-sm w-full">Manage partnership</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Applications Tab -->
+    <div *ngIf="activeTab === 'applications'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Company Applications</h1>
+      <div class="space-y-4">
+        <div *ngFor="let application of applications" class="card card-md">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-primary">{{ application.company }}</h3>
+              <p class="text-sm text-secondary mb-2">{{ application.description }}</p>
+              <div class="text-xs text-secondary">
+                <span>🏢 {{ application.sector }}</span>
+                <span class="ml-3">📧 {{ application.email }}</span>
+              </div>
+            </div>
+            <span class="badge badge-warning">Pending</span>
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-neutral-200">
+            <span class="text-xs text-secondary">Submitted on {{ application.date }}</span>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm">✅ Approve</button>
+              <button class="btn btn-danger btn-sm">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<app-footer></app-footer>

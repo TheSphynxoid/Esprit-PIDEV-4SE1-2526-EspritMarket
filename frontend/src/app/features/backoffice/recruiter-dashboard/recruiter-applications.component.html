@@ -1,0 +1,175 @@
+<div class="recruiter-applications">
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="alert alert-error">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <!-- Applications List Section -->
+  <div class="list-section">
+    <h2>Applications Management</h2>
+    
+    <div *ngIf="loading" class="loading">Loading applications...</div>
+    
+    <div *ngIf="!loading && applications.length === 0" class="empty-state">
+      No applications found.
+    </div>
+
+    <table *ngIf="!loading && applications.length > 0" class="applications-table">
+      <thead>
+        <tr>
+          <th>Job Offer</th>
+          <th>Applicant Name</th>
+          <th>Matching Score</th>
+          <th>Status</th>
+          <th>Activity</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let app of applications">
+        <tr>
+          <td>{{ getJobOfferTitle(app.jobOffer?.id) }}</td>
+          <td>{{ app.applicant?.name || 'N/A' }}</td>
+          <td>
+            <span class="score-badge" [ngClass]="getScoreClass(app.matchingScore)">{{ app.matchingScore }}%</span>
+          </td>
+          <td>
+            <span *ngIf="editingApplicationId !== app.id" 
+                  class="status-badge" 
+                  [ngClass]="'status-' + app.status.toLowerCase()">
+              {{ app.status }}
+            </span>
+            <div *ngIf="editingApplicationId === app.id" class="inline-edit">
+              <select 
+                [formControl]="$any(form.get('status'))"
+                class="form-control"
+              >
+                <option *ngFor="let status of statuses" [value]="status">
+                  {{ status }}
+                </option>
+              </select>
+            </div>
+          </td>
+          <td>
+            <span class="activity-badge" 
+                  [ngClass]="'activity-' + (app.activityStatus || 'ACTIVE').toLowerCase()">
+              {{ app.activityStatus || 'ACTIVE' }}
+            </span>
+          </td>
+          <td class="actions">
+            <button
+              *ngIf="editingApplicationId !== app.id && deleteConfirmationId !== app.id"
+              class="btn btn-sm btn-outline"
+              (click)="toggleProfile(app.id)"
+              title="View Profile Details"
+            >
+              {{ expandedApplicationId === app.id ? 'Hide Profile' : 'View Profile' }}
+            </button>
+            <button 
+              *ngIf="editingApplicationId !== app.id && deleteConfirmationId !== app.id"
+              class="btn btn-sm btn-edit"
+              (click)="startEditStatus(app)"
+              title="Edit Status"
+            >
+              Edit Status
+            </button>
+            <button 
+              *ngIf="editingApplicationId !== app.id && deleteConfirmationId !== app.id"
+              class="btn btn-sm btn-delete"
+              (click)="confirmDelete(app.id)"
+              title="Delete Application"
+              [disabled]="deletingApplicationId === app.id"
+            >
+              {{ deletingApplicationId === app.id ? 'Deleting...' : 'Delete' }}
+            </button>
+            <div *ngIf="editingApplicationId === app.id" class="action-group">
+              <button 
+                class="btn btn-sm btn-save"
+                (click)="updateStatus()"
+                title="Save"
+              >
+                Save
+              </button>
+              <button 
+                class="btn btn-sm btn-cancel"
+                (click)="cancelEditStatus()"
+                title="Cancel"
+              >
+                Cancel
+              </button>
+            </div>
+            <!-- Delete Confirmation -->
+            <div *ngIf="deleteConfirmationId === app.id" class="action-group delete-confirmation">
+              <p class="confirmation-text">Delete this application?</p>
+              <button 
+                class="btn btn-sm btn-confirm-delete"
+                (click)="deleteApplication(app.id)"
+                title="Confirm Delete"
+              >
+                Confirm Delete
+              </button>
+              <button 
+                class="btn btn-sm btn-cancel"
+                (click)="cancelDelete()"
+                title="Cancel"
+              >
+                Cancel
+              </button>
+            </div>
+          </td>
+        <!-- Expanded Profile View -->
+        <tr *ngIf="expandedApplicationId === app.id" class="expanded-row">
+          <td colspan="6" class="p-4 bg-neutral-50 border-b border-neutral-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white rounded-lg shadow-sm border border-neutral-100">
+              
+              <div class="col-span-full">
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Motivation</h4>
+                <p class="text-sm text-neutral-700 whitespace-pre-wrap bg-neutral-50 p-3 rounded border border-neutral-200">{{ app.motivation || 'No motivation provided.' }}</p>
+              </div>
+
+              <div>
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Experience Level</h4>
+                <p class="text-sm text-neutral-700">{{ app.experienceLevel || 'Not specified' }}</p>
+              </div>
+
+              <div>
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Years of Experience</h4>
+                <p class="text-sm text-neutral-700">{{ app.yearsOfExperience || 'Not specified' }}</p>
+              </div>
+
+              <div class="col-span-full">
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Field of Study</h4>
+                <p class="text-sm text-neutral-700">{{ app.fieldOfStudy || 'Not specified' }}</p>
+              </div>
+
+              <div class="col-span-full">
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Skills</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span *ngIf="!app.skills || app.skills.length === 0" class="text-sm text-neutral-500 italic">No skills listed</span>
+                  <span *ngFor="let skill of app.skills" class="px-2 py-1 bg-primary/10 text-primary border border-primary/20 rounded-md text-xs font-medium">
+                    {{ skill }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="col-span-full">
+                <h4 class="text-sm font-bold text-primary mb-2 uppercase tracking-wider">Languages</h4>
+                <div class="flex flex-wrap gap-2">
+                  <span *ngIf="!app.languages || app.languages.length === 0" class="text-sm text-neutral-500 italic">No languages listed</span>
+                  <span *ngFor="let lang of app.languages" class="px-2 py-1 bg-teal-100 text-teal-800 border border-teal-200 rounded-md text-xs font-medium">
+                    {{ lang }}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </td>
+        </tr>
+      </ng-container>
+      </tbody>
+    </table>
+  </div>
+</div>

@@ -1,0 +1,1147 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <!-- Toast Notifications -->
+  <app-toast-container></app-toast-container>
+
+  <!-- Sidebar -->
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm"><img 
+            src="assets/logo.png"
+            alt="ESPRIT Logo"
+            class="w-full h-full object-contain"
+          /></div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+    
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Events Admin</h2>
+    <nav class="space-y-2">
+      <button 
+        (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        📊 Overview
+      </button>
+      <button 
+        (click)="activeTab = 'events'"
+        [class.bg-esprit-red]="activeTab === 'events'"
+        [class.text-white]="activeTab === 'events'"
+        [class.text-secondary]="activeTab !== 'events'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        🎪 Events
+      </button>
+      <button 
+        (click)="activeTab = 'reservations'"
+        [class.bg-esprit-red]="activeTab === 'reservations'"
+        [class.text-white]="activeTab === 'reservations'"
+        [class.text-secondary]="activeTab !== 'reservations'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        📝 Reservations
+      </button>
+      <button 
+        (click)="activeTab = 'organizers'"
+        [class.bg-esprit-red]="activeTab === 'organizers'"
+        [class.text-white]="activeTab === 'organizers'"
+        [class.text-secondary]="activeTab !== 'organizers'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        👥 Organizers
+      </button>
+      <button 
+        (click)="activeTab = 'submissions'"
+        [class.bg-esprit-red]="activeTab === 'submissions'"
+        [class.text-white]="activeTab === 'submissions'"
+        [class.text-secondary]="activeTab !== 'submissions'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 text-sm font-medium"
+      >
+        📋 Submissions
+      </button>
+      <hr class="my-4 border-neutral-200">
+      <button 
+        (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 text-sm font-medium text-red-600"
+      >
+        🚪 Logout
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 ml-64 p-6 lg:p-8">
+    <!-- Overview Tab -->
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <h1 class="text-3xl font-bold text-primary">📊 Events Overview</h1>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="card card-md text-center hover:shadow-lg transition-shadow">
+          <p class="text-sm text-secondary mb-2">🎪 Total Events</p>
+          <p class="text-4xl font-bold text-esprit-red">{{ totalEvents }}</p>
+          <p class="text-xs text-secondary mt-2">All events</p>
+        </div>
+        <div class="card card-md text-center hover:shadow-lg transition-shadow">
+          <p class="text-sm text-secondary mb-2">💻 Online Events</p>
+          <p class="text-4xl font-bold text-blue-600">{{ onlineEvents }}</p>
+          <p class="text-xs text-secondary mt-2">Virtual</p>
+        </div>
+        <div class="card card-md text-center hover:shadow-lg transition-shadow">
+          <p class="text-sm text-secondary mb-2">📍 In-Person Events</p>
+          <p class="text-4xl font-bold text-emerald-600">{{ offlineEvents }}</p>
+          <p class="text-xs text-secondary mt-2">Physical</p>
+        </div>
+        <div class="card card-md text-center hover:shadow-lg transition-shadow">
+          <p class="text-sm text-secondary mb-2">⭐ Quick Stats</p>
+          <p class="text-4xl font-bold text-amber-600">{{ (totalEvents * 85) / 100 }}</p>
+          <p class="text-xs text-secondary mt-2">Registered</p>
+        </div>
+      </div>
+
+      <!-- Filters & Search -->
+      <div class="mb-6 space-y-4">
+        <div class="card card-md">
+          <h3 class="text-lg font-semibold text-primary mb-4">🔍 Filters & Search</h3>
+          
+          <div class="mb-4">
+            <p class="text-sm font-medium text-secondary mb-2">Filter by event type</p>
+            <div class="flex flex-wrap gap-2">
+              <button 
+                class="px-4 py-2 rounded-lg border-2 font-medium transition-all"
+                [class.border-esprit-red]="selectedType === 'all'"
+                [class.bg-red-100]="selectedType === 'all'"
+                [class.text-esprit-red]="selectedType === 'all'"
+                [class.border-neutral-300]="selectedType !== 'all'"
+                [class.text-secondary]="selectedType !== 'all'"
+                (click)="selectedType = 'all'; applyFilters()">
+                🎪 All ({{ totalEvents }})
+              </button>
+              <button 
+                class="px-4 py-2 rounded-lg border-2 font-medium transition-all"
+                [class.border-blue-600]="selectedType === 'online'"
+                [class.bg-blue-100]="selectedType === 'online'"
+                [class.text-blue-700]="selectedType === 'online'"
+                [class.border-neutral-300]="selectedType !== 'online'"
+                [class.text-secondary]="selectedType !== 'online'"
+                (click)="selectedType = 'online'; applyFilters()">
+                💻 Online ({{ onlineEvents }})
+              </button>
+              <button 
+                class="px-4 py-2 rounded-lg border-2 font-medium transition-all"
+                [class.border-emerald-600]="selectedType === 'offline'"
+                [class.bg-emerald-100]="selectedType === 'offline'"
+                [class.text-emerald-700]="selectedType === 'offline'"
+                [class.border-neutral-300]="selectedType !== 'offline'"
+                [class.text-secondary]="selectedType !== 'offline'"
+                (click)="selectedType = 'offline'; applyFilters()">
+                📍 In-Person ({{ offlineEvents }})
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-sm font-medium text-secondary mb-2">Search Events</p>
+            <input 
+              type="search" 
+              placeholder="Search by name, location or date..." 
+              [(ngModel)]="searchQuery" 
+              (input)="applyFilters()" 
+              class="input w-full" 
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Grid -->
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 mb-8">
+        <ng-container *ngIf="filteredEvents.length > 0; else emptyState">
+          <article *ngFor="let event of filteredEvents.slice(0, 6)" class="card card-md shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex flex-col h-full">
+              <div class="flex items-center justify-between mb-3">
+                <h2 class="text-lg font-semibold text-primary">{{ event.name }}</h2>
+                <span class="badge text-xs" [ngClass]="event.online ? 'badge-blue' : 'badge-green'">
+                  {{ event.online ? '💻 Online' : '📍 In-Person' }}
+                </span>
+              </div>
+              <p class="text-sm text-secondary mb-3">{{ event.description || 'No description' }}</p>
+              <div class="space-y-2 text-sm mb-4 flex-grow">
+                <p>📅 {{ event.date | date:'mediumDate' }}</p>
+                <p>📍 {{ event.location || 'N/A' }}</p>
+              </div>
+            </div>
+          </article>
+        </ng-container>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="col-span-full p-8 text-center">
+          <p class="text-secondary text-lg">📭 No events found. Try another filter or create a new one.</p>
+        </div>
+      </ng-template>
+
+      <!-- Recent Events List -->
+      <div *ngIf="recentEvents.length > 0" class="card card-lg">
+        <h3 class="text-lg font-bold text-primary mb-4">📌 Recent Events</h3>
+        <div class="space-y-3">
+          <ng-container *ngFor="let event of recentEvents.slice(0, 5)">
+            <div class="p-4 rounded-lg border border-neutral-200 dark:border-neutral-700 hover:border-esprit-red/50 transition-colors">
+              <div class="flex justify-between items-start">
+                <div class="flex-grow">
+                  <p class="font-semibold text-primary">{{ event.name }}</p>
+                  <p class="text-sm text-secondary mt-1">{{ event.date | date:'mediumDate' }} • {{ event.location }}</p>
+                </div>
+                <span class="badge text-xs ml-3" [ngClass]="event.online ? 'badge-blue' : 'badge-green'">
+                  {{ event.online ? '💻 Online' : '📍 In-Person' }}
+                </span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Tab -->
+    <div *ngIf="activeTab === 'events'" class="animate-fade-in">
+      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+        <div>
+          <h1 class="text-4xl font-bold bg-gradient-to-r from-esprit-red to-purple-600 bg-clip-text text-transparent">🎪 Events Dashboard</h1>
+          <p class="text-secondary text-sm mt-1">Manage and organize your events</p>
+        </div>
+        <button class="btn btn-primary shadow-lg hover:shadow-xl transition-shadow" (click)="openCreateModal()">
+          ✨ Create New Event
+        </button>
+      </div>
+
+      <!-- Events Sub-Tabs -->
+      <div class="flex gap-2 mb-6 border-b-2 border-neutral-200 dark:border-neutral-700">
+        <button 
+          (click)="eventsSubTab = 'events'"
+          [class.border-b-2]="eventsSubTab === 'events'"
+          [class.border-esprit-red]="eventsSubTab === 'events'"
+          [class.text-esprit-red]="eventsSubTab === 'events'"
+          [class.text-secondary]="eventsSubTab !== 'events'"
+          class="px-4 py-3 font-medium transition-all duration-300 focus:outline-none hover:text-esprit-red">
+          🎪 Events
+        </button>
+      </div>
+
+      <!-- Events Sub-Tab Content -->
+      <div *ngIf="eventsSubTab === 'events'" class="animate-fade-in">
+
+      <!-- Upcoming Event Alerts -->
+      <div *ngIf="upcomingAlerts.length > 0" class="mb-8">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">⏰ Upcoming Event Alerts</h3>
+        <div class="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div *ngFor="let alert of upcomingAlerts" class="card bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 shadow-md hover:shadow-lg transition-shadow">
+            <div class="card-body">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex-1">
+                  <h4 class="card-title text-lg font-bold text-amber-900 dark:text-amber-100">{{ alert.name }}</h4>
+                  <p class="text-sm text-amber-800 dark:text-amber-200 mt-1">
+                    <strong>📅 {{ alert.daysText | uppercase }}</strong> 
+                    ({{ alert.date | date: 'dd MMM yyyy' }})
+                  </p>
+                  <p class="text-sm text-amber-700 dark:text-amber-300 mt-2">
+                    <span class="badge" [class]="alert.online ? 'badge-info' : 'badge-warning'">
+                      {{ alert.online ? '🌐 Online' : '📍 In-Person' }}
+                    </span>
+                    <span class="ml-2 text-xs">📍 {{ alert.location }}</span>
+                  </p>
+                  <p class="text-sm text-amber-700 dark:text-amber-300 mt-2">
+                    🎟️ {{ alert.nbTickets }} tickets sold
+                  </p>
+                </div>
+                <div class="text-3xl">⚠️</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards with Gradients -->
+      <div class="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+        <div class="card card-md text-center hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-900/10">
+          <p class="text-2xl mb-2">🎪</p>
+          <p class="text-sm text-secondary mb-2">Total Events</p>
+          <p class="text-5xl font-bold text-esprit-red">{{ totalEvents }}</p>
+          <p class="text-xs text-secondary mt-2">All your events</p>
+        </div>
+        <div class="card card-md text-center hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-900/10">
+          <p class="text-2xl mb-2">💻</p>
+          <p class="text-sm text-secondary mb-2">Online Events</p>
+          <p class="text-5xl font-bold text-blue-600">{{ onlineEvents }}</p>
+          <p class="text-xs text-secondary mt-2">Virtual</p>
+        </div>
+        <div class="card card-md text-center hover:shadow-lg transition-all hover:scale-105 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-900/10">
+          <p class="text-2xl mb-2">📍</p>
+          <p class="text-sm text-secondary mb-2">In-Person Events</p>
+          <p class="text-5xl font-bold text-emerald-600">{{ offlineEvents }}</p>
+          <p class="text-xs text-secondary mt-2">Physical</p>
+        </div>
+      </div>
+
+      <!-- Filters & Search Section -->
+      <div class="mb-8 space-y-4">
+        <div class="card card-md shadow-md">
+          <h3 class="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+            <span>🎯</span> Smart Filters & Search
+          </h3>
+          
+          <div class="mb-6">
+            <p class="text-sm font-medium text-secondary mb-3">📌 Quick Filter by Type</p>
+            <div class="flex flex-wrap gap-3">
+              <button 
+                class="px-5 py-3 rounded-xl border-2 font-semibold transition-all transform hover:scale-105 active:scale-95"
+                [class.border-esprit-red]="selectedType === 'all'"
+                [class.bg-red-50]="selectedType === 'all'"
+                [class.text-esprit-red]="selectedType === 'all'"
+                [class.shadow-lg]="selectedType === 'all'"
+                [class.border-neutral-300]="selectedType !== 'all'"
+                [class.text-secondary]="selectedType !== 'all'"
+                [class.hover:border-esprit-red/50]="selectedType !== 'all'"
+                (click)="selectedType = 'all'; applyFilters()">
+                🎪 All <span class="ml-2 badge badge-sm badge-outline">{{ totalEvents }}</span>
+              </button>
+              <button 
+                class="px-5 py-3 rounded-xl border-2 font-semibold transition-all transform hover:scale-105 active:scale-95"
+                [class.border-blue-600]="selectedType === 'online'"
+                [class.bg-blue-50]="selectedType === 'online'"
+                [class.text-blue-700]="selectedType === 'online'"
+                [class.shadow-lg]="selectedType === 'online'"
+                [class.border-neutral-300]="selectedType !== 'online'"
+                [class.text-secondary]="selectedType !== 'online'"
+                [class.hover:border-blue-600/50]="selectedType !== 'online'"
+                (click)="selectedType = 'online'; applyFilters()">
+                💻 Online <span class="ml-2 badge badge-sm badge-blue">{{ onlineEvents }}</span>
+              </button>
+              <button 
+                class="px-5 py-3 rounded-xl border-2 font-semibold transition-all transform hover:scale-105 active:scale-95"
+                [class.border-emerald-600]="selectedType === 'offline'"
+                [class.bg-emerald-50]="selectedType === 'offline'"
+                [class.text-emerald-700]="selectedType === 'offline'"
+                [class.shadow-lg]="selectedType === 'offline'"
+                [class.border-neutral-300]="selectedType !== 'offline'"
+                [class.text-secondary]="selectedType !== 'offline'"
+                [class.hover:border-emerald-600/50]="selectedType !== 'offline'"
+                (click)="selectedType = 'offline'; applyFilters()">
+                📍 In-Person <span class="ml-2 badge badge-sm badge-success">{{ offlineEvents }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="relative">
+            <span class="absolute left-3 top-3 text-lg">🔍</span>
+            <input 
+              type="search" 
+              placeholder="Search events by name, location or date..." 
+              [(ngModel)]="searchQuery" 
+              (input)="applyFilters()" 
+              class="input input-bordered w-full pl-10 bg-neutral-50 dark:bg-neutral-700 focus:bg-white dark:focus:bg-neutral-800 transition-colors" 
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Events Grid with Enhanced Cards -->
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3 mb-8">
+        <ng-container *ngIf="filteredEvents.length > 0; else emptyState">
+          <article *ngFor="let event of filteredEvents" class="card card-md shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1 overflow-hidden border border-neutral-100 dark:border-neutral-700">
+            <!-- Card Header with Color Bar -->
+            <div [class]="event.online ? 'h-1 bg-gradient-to-r from-blue-500 to-blue-600' : 'h-1 bg-gradient-to-r from-emerald-500 to-emerald-600'"></div>
+            
+            <div class="flex flex-col h-full">
+              <!-- Title & Badge -->
+              <div class="flex items-start justify-between mb-4 gap-3">
+                <h2 class="text-lg font-bold text-primary flex-1 line-clamp-2">{{ event.name }}</h2>
+                <span class="badge text-xs flex-shrink-0 whitespace-nowrap" [ngClass]="event.online ? 'badge-blue' : 'badge-success'">
+                  {{ event.online ? '💻 Virtual' : '📍 In-Person' }}
+                </span>
+              </div>
+
+              <!-- Description -->
+              <p class="text-sm text-secondary mb-4 line-clamp-2 flex-grow">{{ event.description || '—' }}</p>
+
+              <!-- Event Details with Icons -->
+              <div class="space-y-2 mb-5 p-3 bg-neutral-50 dark:bg-neutral-700/50 rounded-lg">
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">📅</span>
+                  <span class="text-sm font-medium">{{ event.date | date:'mediumDate' }}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-lg">📍</span>
+                  <span class="text-sm font-medium">{{ event.location || 'Virtual' }}</span>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="mt-auto flex gap-2">
+                <button class="btn btn-primary btn-sm flex-1 transition-all hover:shadow-md" (click)="openEditModal(event)">
+                  ✏️ Edit
+                </button>
+                <button class="btn btn-secondary btn-sm flex-1 transition-all hover:shadow-md" (click)="openViewModal(event)">
+                  👁️ View
+                </button>
+                <button class="btn btn-error btn-sm transition-all hover:shadow-md" (click)="deleteEvent(event.id)" title="Delete event">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          </article>
+        </ng-container>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="col-span-full p-12 text-center">
+          <p class="text-6xl mb-4">😌</p>
+          <p class="text-lg font-semibold text-primary mb-2">No events found</p>
+          <p class="text-secondary mb-6">Try adjusting your filters or create a new event to get started!</p>
+          <button class="btn btn-primary" (click)="openCreateModal()">✨ Create Your First Event</button>
+        </div>
+      </ng-template>
+
+      <!-- Recent Events Showcase -->
+      <div *ngIf="recentEvents.length > 0" class="card card-lg shadow-lg bg-gradient-to-br from-neutral-50 to-neutral-100 dark:from-neutral-800 dark:to-neutral-700 border-0">
+        <div class="flex items-center justify-between mb-8">
+          <h3 class="text-2xl font-bold text-primary flex items-center gap-3">
+            <span class="text-3xl">📌</span> Recent Events
+          </h3>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-semibold text-secondary">Page {{ recentEventsCurrentPage }} / {{ totalRecentPages }}</span>
+          </div>
+        </div>
+        
+        <!-- Events Grid - 4 per page -->
+        <div class="grid gap-5 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <ng-container *ngFor="let event of recentEvents">
+            <div class="group p-5 rounded-xl border-2 border-neutral-200 dark:border-neutral-600 hover:border-esprit-red transition-all hover:shadow-lg cursor-pointer bg-white dark:bg-neutral-800 flex flex-col overflow-hidden">
+              <!-- Gradient top bar -->
+              <div [class]="event.online ? 'h-1 bg-gradient-to-r from-blue-400 to-blue-500 mb-3' : 'h-1 bg-gradient-to-r from-emerald-400 to-emerald-500 mb-3'"></div>
+              
+              <div class="flex justify-between items-start gap-2 mb-3">
+                <div class="flex-grow">
+                  <p class="font-bold text-primary line-clamp-2 group-hover:text-esprit-red transition-colors">{{ event.name }}</p>
+                </div>
+                <span class="badge text-xs flex-shrink-0 font-semibold" [ngClass]="event.online ? 'badge-blue' : 'badge-success'">
+                  {{ event.online ? '💻' : '📍' }}
+                </span>
+              </div>
+              
+              <div class="space-y-2 text-xs text-secondary flex-grow">
+                <p class="flex items-center gap-2">
+                  <span>📅</span> 
+                  <span>{{ event.date | date:'shortDate' }}</span>
+                </p>
+                <p class="flex items-center gap-2 line-clamp-1">
+                  <span>📍</span> 
+                  <span>{{ event.location || 'Virtual' }}</span>
+                </p>
+              </div>
+              
+              <!-- Hover effect -->
+              <div class="mt-4 pt-3 border-t border-neutral-200 dark:border-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="text-xs font-semibold text-esprit-red">Click to view →</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Enhanced Pagination Controls -->
+        <div class="flex items-center justify-between pt-6 border-t-2 border-neutral-200 dark:border-neutral-600">
+          <button 
+            class="btn btn-sm btn-outline hover:btn-primary transition-all"
+            [disabled]="recentEventsCurrentPage === 1"
+            (click)="previousRecentPage()">
+            <span class="text-lg">⬅️</span> Previous
+          </button>
+          
+          <div class="flex gap-2 items-center">
+            <ng-container *ngFor="let page of [].constructor(totalRecentPages); let i = index">
+              <button
+                class="btn btn-sm transition-all"
+                [class.btn-active]="recentEventsCurrentPage === i + 1"
+                [class.btn-primary]="recentEventsCurrentPage === i + 1"
+                [class.btn-ghost]="recentEventsCurrentPage !== i + 1"
+                [class.btn-outline]="recentEventsCurrentPage !== i + 1"
+                (click)="recentEventsCurrentPage = i + 1">
+                {{ i + 1 }}
+              </button>
+            </ng-container>
+          </div>
+
+          <button 
+            class="btn btn-sm btn-outline hover:btn-primary transition-all"
+            [disabled]="recentEventsCurrentPage === totalRecentPages"
+            (click)="nextRecentPage()">
+            Next <span class="text-lg">➡️</span>
+          </button>
+        </div>
+      </div>
+      </div> <!-- End Events Sub-Tab -->
+
+    </div>
+
+    <!-- Reservations Tab -->
+    <div *ngIf="activeTab === 'reservations'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">📝 Reservations</h1>
+
+      <!-- Reservations Sub-Tabs -->
+      <div class="flex gap-2 mb-6 border-b border-neutral-200 dark:border-neutral-700">
+        <button 
+          (click)="reservationsSubTab = 'reservations'"
+          [class.border-b-2]="reservationsSubTab === 'reservations'"
+          [class.border-esprit-red]="reservationsSubTab === 'reservations'"
+          [class.text-esprit-red]="reservationsSubTab === 'reservations'"
+          [class.text-secondary]="reservationsSubTab !== 'reservations'"
+          class="px-4 py-3 font-medium transition-colors duration-300 focus:outline-none">
+          📝 Reservations
+        </button>
+        <button 
+          (click)="reservationsSubTab = 'stalls'"
+          [class.border-b-2]="reservationsSubTab === 'stalls'"
+          [class.border-esprit-red]="reservationsSubTab === 'stalls'"
+          [class.text-esprit-red]="reservationsSubTab === 'stalls'"
+          [class.text-secondary]="reservationsSubTab !== 'stalls'"
+          class="px-4 py-3 font-medium transition-colors duration-300 focus:outline-none">
+          🏪 Stalls
+        </button>
+        <button 
+          (click)="reservationsSubTab = 'equipments'"
+          [class.border-b-2]="reservationsSubTab === 'equipments'"
+          [class.border-esprit-red]="reservationsSubTab === 'equipments'"
+          [class.text-esprit-red]="reservationsSubTab === 'equipments'"
+          [class.text-secondary]="reservationsSubTab !== 'equipments'"
+          class="px-4 py-3 font-medium transition-colors duration-300 focus:outline-none">
+          ⚙️ Equipments
+        </button>
+        <button 
+          (click)="reservationsSubTab = 'equipmentReservations'"
+          [class.border-b-2]="reservationsSubTab === 'equipmentReservations'"
+          [class.border-esprit-red]="reservationsSubTab === 'equipmentReservations'"
+          [class.text-esprit-red]="reservationsSubTab === 'equipmentReservations'"
+          [class.text-secondary]="reservationsSubTab !== 'equipmentReservations'"
+          class="px-4 py-3 font-medium transition-colors duration-300 focus:outline-none">
+          📦 Equipment Reservations
+        </button>
+      </div>
+
+      <!-- Reservations Sub-Tab Content -->
+      <div *ngIf="reservationsSubTab === 'reservations'" class="animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-primary">📅 Event Reservations</h2>
+        </div>
+
+        <div class="card card-lg overflow-hidden">
+          <div class="overflow-x-auto rounded-lg border border-neutral-200">
+            <table class="w-full text-sm">
+              <thead class="bg-neutral-100">
+                <tr>
+                  <th class="text-left px-4 py-3 font-semibold">Event Name</th>
+                  <th class="text-left px-4 py-3 font-semibold">Date</th>
+                  <th class="text-left px-4 py-3 font-semibold">Location</th>
+                  <th class="text-left px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="inPersonEvents.length === 0">
+                  <td colspan="4" class="px-4 py-3 text-center text-secondary">No in-person events found</td>
+                </tr>
+                <tr *ngFor="let event of inPersonEvents" class="border-t border-neutral-200 hover:bg-neutral-50 transition-colors">
+                  <td class="px-4 py-3 font-semibold">{{ event.name }}</td>
+                  <td class="px-4 py-3">{{ event.date | date:'mediumDate' }}</td>
+                  <td class="px-4 py-3">{{ event.location }}</td>
+                  <td class="px-4 py-3">
+                    <button class="btn btn-primary btn-sm" (click)="openReservationModal(event)">📅 Make Reservation</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stalls Sub-Tab -->
+      <div *ngIf="reservationsSubTab === 'stalls'" class="animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-primary">🏪 Stalls Management</h2>
+          <button class="btn btn-primary" (click)="openStallModal()">➕ New Stall</button>
+        </div>
+
+        <div class="card card-lg">
+          <div class="overflow-x-auto rounded-lg border border-neutral-200">
+            <table class="w-full text-sm">
+              <thead class="bg-neutral-100">
+                <tr>
+                  <th class="text-left px-4 py-3 font-semibold">Stall Name</th>
+                  <th class="text-left px-4 py-3 font-semibold">Number</th>
+                  <th class="text-left px-4 py-3 font-semibold">Event</th>
+                  <th class="text-left px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="stalls.length === 0">
+                  <td colspan="4" class="px-4 py-3 text-center text-secondary">No stalls created yet</td>
+                </tr>
+                <tr *ngFor="let stall of stalls" class="border-t border-neutral-200 hover:bg-neutral-50 transition-colors">
+                  <td class="px-4 py-3">{{ stall.name }}</td>
+                  <td class="px-4 py-3">{{ stall.number }}</td>
+                  <td class="px-4 py-3">{{ stall.event?.name || 'N/A' }}</td>
+                  <td class="px-4 py-3">
+                    <div class="flex gap-2">
+                      <button class="btn btn-secondary btn-sm" (click)="editStall(stall)">Edit</button>
+                      <button class="btn btn-danger btn-sm" (click)="deleteStall(stall.id)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equipments Sub-Tab -->
+      <div *ngIf="reservationsSubTab === 'equipments'" class="animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-primary">⚙️ Equipments Management</h2>
+          <button class="btn btn-primary" (click)="openEquipmentModal()">➕ New Equipment</button>
+        </div>
+
+        <div class="mb-4 flex items-center gap-4">
+          <label class="text-sm font-medium text-primary">Filter by event</label>
+          <input type="text" placeholder="Search event by name" class="input rounded-lg w-64" [(ngModel)]="equipmentEventSearch" (ngModelChange)="onEquipmentEventSearchChange($event)" />
+          <select class="input rounded-lg" [(ngModel)]="selectedEquipmentEventId" (ngModelChange)="selectEquipmentEvent($event)">
+            <option [ngValue]="null">All events</option>
+            <option *ngFor="let ev of events" [ngValue]="ev.id">{{ ev.name }} — {{ ev.date }}</option>
+          </select>
+          <div class="ml-auto text-sm text-secondary">Showing {{ filteredEquipmentsByEvent.length }} equipment(s)</div>
+        </div>
+
+        <div class="card card-lg">
+          <div class="overflow-hidden rounded-lg border border-neutral-200 p-4">
+            <!-- If an event is selected, show all its equipments in a 4-column table -->
+            <div *ngIf="selectedEquipmentEventId; else tableView">
+              <div *ngIf="filteredEquipmentsByEvent.length === 0" class="text-center text-secondary py-8">No equipment for this event.</div>
+              <div *ngIf="filteredEquipmentsByEvent.length > 0" class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm">
+                  <thead class="bg-neutral-100">
+                    <tr>
+                      <th class="text-left px-4 py-3 font-semibold">Name</th>
+                      <th class="text-left px-4 py-3 font-semibold">Type</th>
+                      <th class="text-left px-4 py-3 font-semibold">Quantity</th>
+                      <th class="text-left px-4 py-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let equipment of filteredEquipmentsByEvent" class="border-t border-neutral-200 hover:bg-neutral-50 transition-colors">
+                      <td class="px-4 py-3">{{ equipment.name }}</td>
+                      <td class="px-4 py-3">{{ equipment.type }}</td>
+                      <td class="px-4 py-3 font-semibold">{{ equipment.quantity || 1 }}</td>
+                      <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                          <button class="btn btn-secondary btn-sm" (click)="editEquipment(equipment)">Edit</button>
+                          <button class="btn btn-danger btn-sm" (click)="deleteEquipment(equipment.id)">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Table view when no specific event is selected -->
+            <ng-template #tableView>
+              <div class="overflow-x-auto rounded-lg">
+                <table class="w-full text-sm">
+                  <thead class="bg-neutral-100">
+                    <tr>
+                      <th class="text-left px-4 py-3 font-semibold">Name</th>
+                      <th class="text-left px-4 py-3 font-semibold">Type</th>
+                      <th class="text-left px-4 py-3 font-semibold">Quantity</th>
+                      <th class="text-left px-4 py-3 font-semibold">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="equipments.length === 0">
+                      <td colspan="4" class="px-4 py-3 text-center text-secondary">No equipment created yet</td>
+                    </tr>
+                    <tr *ngFor="let equipment of equipmentsForCurrentPage" class="border-t border-neutral-200 hover:bg-neutral-50 transition-colors">
+                      <td class="px-4 py-3">{{ equipment.name }}</td>
+                      <td class="px-4 py-3">{{ equipment.type }}</td>
+                      <td class="px-4 py-3 font-semibold">{{ equipment.quantity || 1 }}</td>
+                      <td class="px-4 py-3">
+                        <div class="flex gap-2">
+                          <button class="btn btn-secondary btn-sm" (click)="editEquipment(equipment)">Edit</button>
+                          <button class="btn btn-danger btn-sm" (click)="deleteEquipment(equipment.id)">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="flex items-center justify-between p-4 border-t border-neutral-100">
+                <div class="text-sm text-secondary">Page {{ equipmentCurrentPage }} / {{ totalEquipmentPages }}</div>
+                <div class="flex items-center gap-2">
+                  <button class="btn btn-ghost btn-sm" [disabled]="equipmentCurrentPage===1" (click)="previousEquipmentPage()">← Prev</button>
+                  <button class="btn btn-ghost btn-sm" [disabled]="equipmentCurrentPage>=totalEquipmentPages" (click)="nextEquipmentPage()">Next →</button>
+                </div>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Equipment Reservations Sub-Tab -->
+      <div *ngIf="reservationsSubTab === 'equipmentReservations'" class="animate-fade-in">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-primary">📦 Equipment Reservations</h2>
+        </div>
+
+        <div class="card card-lg">
+          <div class="overflow-x-auto rounded-lg border border-neutral-200">
+            <table class="w-full text-sm">
+              <thead class="bg-neutral-100">
+                <tr>
+                  <th class="text-left px-3 py-2">Date</th>
+                  <th class="text-left px-3 py-2">Event</th>
+                  <th class="text-left px-3 py-2">Equipment</th>
+                  <th class="text-left px-3 py-2">Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filteredEquipmentReservations.length === 0">
+                  <td colspan="4" class="px-3 py-3 text-secondary">No reservations found.</td>
+                </tr>
+                <tr *ngFor="let reservation of filteredEquipmentReservations" class="border-t border-neutral-200">
+                  <td class="px-3 py-2">{{ reservation.reservedAt | date:'short' }}</td>
+                  <td class="px-3 py-2">{{ reservation.eventName }}</td>
+                  <td class="px-3 py-2">{{ reservation.equipmentLabel }}</td>
+                  <td class="px-3 py-2">{{ reservation.quantity }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Organizers Tab -->
+    <div *ngIf="activeTab === 'organizers'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Event Organizers</h1>
+      <div class="card card-lg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Name</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Organization</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Events</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Rating</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let organizer of organizers" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm">{{ organizer.name }}</td>
+              <td class="px-4 py-3 text-sm">{{ organizer.organization }}</td>
+              <td class="px-4 py-3 text-sm">{{ organizer.eventCount }}</td>
+              <td class="px-4 py-3 text-sm">⭐ {{ organizer.rating }}/5</td>
+              <td class="px-4 py-3">
+                <button class="btn btn-secondary btn-sm">View profile</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Submissions Tab -->
+    <div *ngIf="activeTab === 'submissions'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Pending Submissions</h1>
+      <div class="space-y-4">
+        <div *ngFor="let submission of submissions" class="card card-md">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-bold text-primary">{{ submission.title }}</h3>
+              <p class="text-sm text-secondary mb-2">{{ submission.description }}</p>
+              <div class="text-xs text-secondary">
+                <span>📅 {{ submission.date }}</span>
+                <span class="ml-3">📍 {{ submission.location }}</span>
+              </div>
+            </div>
+            <span class="badge badge-warning">Pending</span>
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-neutral-200">
+            <span class="text-xs text-secondary">By {{ submission.submittedBy }}</span>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm" (click)="approveSubmission(submission.id)">✅ Approve</button>
+              <button class="btn btn-danger btn-sm" (click)="rejectSubmission(submission.id)">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<app-modal 
+  [isOpen]="isModalOpen"
+  [title]="modalTitle"
+  [isSubmitting]="isSubmitting"
+  [submitLabel]="isViewMode ? 'Close' : editingEvent ? 'Save' : 'Create'"
+  [isSubmitDisabled]="isViewMode ? false : eventForm.invalid"
+  (close)="closeModal()"
+  (submitted)="submitEvent()">
+  <form [formGroup]="eventForm" class="space-y-4">
+    <div class="form-group">
+      <label for="name" class="block text-sm font-medium text-primary mb-2">Event Name</label>
+      <input
+        id="name"
+        type="text"
+        placeholder="Enter event name"
+        class="input"
+        formControlName="name"
+      />
+      <span *ngIf="!isViewMode && eventForm.get('name')?.invalid && eventForm.get('name')?.touched" class="error-text">Name is required</span>
+    </div>
+    <div class="form-group">
+      <label for="description" class="block text-sm font-medium text-primary mb-2">Description</label>
+      <textarea
+        id="description"
+        placeholder="Enter event description"
+        class="input"
+        formControlName="description"
+        rows="3">
+      </textarea>
+    </div>
+    <div class="form-group">
+      <label for="date" class="block text-sm font-medium text-primary mb-2">Date</label>
+      <input
+        id="date"
+        type="date"
+        class="input"
+        formControlName="date"
+        [attr.min]="minEventDate"
+      />
+      <span *ngIf="!isViewMode && eventForm.get('date')?.hasError('required') && eventForm.get('date')?.touched" class="error-text">Date is required</span>
+      <span *ngIf="!isViewMode && eventForm.get('date')?.hasError('futureOrPresent') && eventForm.get('date')?.touched" class="error-text">Date must be today or later</span>
+    </div>
+    <div class="form-group">
+      <label for="location" class="block text-sm font-medium text-primary mb-2">Location</label>
+      <select
+        id="location"
+        class="input"
+        formControlName="location"
+      >
+        <option value="">Select a location</option>
+        <option value="A">A</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="D">D</option>
+        <option value="E">E</option>
+        <option value="G">G</option>
+        <option value="H">H</option>
+        <option value="IJK">IJK</option>
+        <option value="M">M</option>
+      </select>
+      <span *ngIf="!isViewMode && eventForm.get('location')?.invalid && eventForm.get('location')?.touched" class="error-text">Location is required</span>
+      <p *ngIf="eventForm.get('online')?.value" class="text-xs text-gray-500 mt-1">Location is optional for online events (e.g., meeting URL)</p>
+    </div>
+
+    <div class="form-group">
+      <label class="block text-sm font-medium text-primary mb-2">Type</label>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2">
+          <input type="radio" formControlName="online" [value]="true" (change)="recommendEquipments()" />
+          Online
+        </label>
+        <label class="flex items-center gap-2">
+          <input type="radio" formControlName="online" [value]="false" (change)="recommendEquipments()" />
+          In-Person
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group" *ngIf="!eventForm.get('online')?.value">
+      <label for="nbTickets" class="block text-sm font-medium text-primary mb-2">Number of Tickets</label>
+      <input
+        id="nbTickets"
+        type="number"
+        placeholder="Enter number of tickets"
+        class="input"
+        formControlName="nbTickets"
+        min="0"
+        max="140"
+        (change)="recommendEquipments()"
+      />
+      <p class="text-xs text-gray-500 mt-1">Used to automatically recommend equipment</p>
+      <span *ngIf="eventForm.get('nbTickets')?.hasError('max') && eventForm.get('nbTickets')?.touched" class="error-text">Maximum allowed tickets is 140</span>
+    </div>
+
+    <!-- Recommended Equipment Section -->
+    <div *ngIf="isShowingRecommendations && recommendedEquipments.length > 0 && !isViewMode" class="mt-4 p-4 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-200 dark:border-blue-700">
+      <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-3">Recommended Equipment</h3>
+      <p class="text-sm text-blue-700 dark:text-blue-200 mb-3">Based on {{eventForm.get('nbTickets')?.value}} tickets, we recommend:</p>
+      <div class="space-y-2">
+        <div *ngFor="let equipment of recommendedEquipments" class="text-sm text-blue-800 dark:text-blue-100">
+          <span class="font-medium">{{equipment.name}}</span>
+          <span class="text-blue-600 dark:text-blue-300"> (x{{equipment.quantity}})</span> - {{equipment.description}}
+        </div>
+      </div>
+      <p class="text-xs text-blue-600 dark:text-blue-400 mt-3">These will be automatically created when you create the event.</p>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isReservationModalOpen"
+  [title]="reservationModalTitle"
+  [isSubmitting]="isReservationSubmitting"
+  [submitLabel]="'Create Reservation'"
+  [isSubmitDisabled]="reservationForm.invalid"
+  (close)="closeReservationModal()"
+  (submitted)="submitReservation()">
+  <form [formGroup]="reservationForm" class="space-y-4">
+    <div class="flex gap-2">
+      <button type="button" class="btn btn-secondary btn-sm" (click)="openStallModal()">Stall</button>
+      <button type="button" class="btn btn-secondary btn-sm" (click)="openEquipmentModal()">Equipments</button>
+    </div>
+
+    <div class="form-group">
+      <label for="reservationName" class="block text-sm font-medium text-primary mb-2">Reservation Name</label>
+      <input
+        id="reservationName"
+        type="text"
+        placeholder="Enter reservation name"
+        class="input"
+        formControlName="name"
+      />
+      <span *ngIf="reservationForm.get('name')?.invalid && reservationForm.get('name')?.touched" class="error-text">Name is required</span>
+    </div>
+
+    <div class="form-group">
+      <label for="reservationDate" class="block text-sm font-medium text-primary mb-2">Reservation Date</label>
+      <input
+        id="reservationDate"
+        type="date"
+        class="input"
+        formControlName="date"
+        [attr.min]="minEventDate"
+      />
+      <span *ngIf="reservationForm.get('date')?.hasError('required') && reservationForm.get('date')?.touched" class="error-text">Date is required</span>
+      <span *ngIf="reservationForm.get('date')?.hasError('futureOrPresent') && reservationForm.get('date')?.touched" class="error-text">Date must be today or later</span>
+    </div>
+
+    <p *ngIf="reservationEvent" class="text-sm text-secondary">
+      Event: <strong>{{ reservationEvent.name }}</strong> - {{ reservationEvent.location }}
+    </p>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isStallModalOpen"
+  [title]="stallModalTitle"
+  [isSubmitting]="isStallSubmitting"
+  [submitLabel]="editingStall ? 'Update Stall' : 'Create Stall'"
+  [isSubmitDisabled]="stallForm.invalid"
+  (close)="closeStallModal()"
+  (submitted)="submitStall()">
+  <form [formGroup]="stallForm" class="space-y-4">
+    <div>
+      <button type="button" class="btn btn-ghost btn-sm" (click)="backToReservationFromStall()">⬅ Retour vers Reservation</button>
+    </div>
+
+    <div class="space-y-2">
+      <label class="block text-sm font-medium text-primary">Map des blocs ESPRIT (location stall)</label>
+      <div class="rounded-lg border border-neutral-200 p-3 bg-neutral-50 max-h-64 overflow-y-auto">
+        <svg viewBox="0 0 640 360" class="w-full h-auto" aria-label="Plan des blocs ESPRIT">
+          <rect x="10" y="10" width="620" height="340" rx="14" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"></rect>
+
+          <rect x="250" y="20" width="140" height="320" rx="10" fill="#e2e8f0"></rect>
+          <text x="320" y="185" text-anchor="middle" font-size="13" fill="#334155">Couloir central</text>
+
+          <g (click)="selectStallBlock('A')" class="cursor-pointer">
+            <rect x="40" y="45" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'A' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="115" y="95" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'A' ? '#ffffff' : '#0f172a'">A</text>
+          </g>
+
+          <g (click)="selectStallBlock('B')" class="cursor-pointer">
+            <rect x="40" y="145" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'B' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="115" y="195" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'B' ? '#ffffff' : '#0f172a'">B</text>
+          </g>
+
+          <g (click)="selectStallBlock('C')" class="cursor-pointer">
+            <rect x="40" y="245" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'C' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="115" y="295" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'C' ? '#ffffff' : '#0f172a'">C</text>
+          </g>
+
+          <g (click)="selectStallBlock('D')" class="cursor-pointer">
+            <rect x="450" y="45" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'D' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="525" y="95" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'D' ? '#ffffff' : '#0f172a'">D</text>
+          </g>
+
+          <g (click)="selectStallBlock('E')" class="cursor-pointer">
+            <rect x="450" y="145" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'E' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="525" y="195" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'E' ? '#ffffff' : '#0f172a'">E</text>
+          </g>
+
+          <g (click)="selectStallBlock('M')" class="cursor-pointer">
+            <rect x="450" y="245" width="150" height="85" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'M' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="525" y="295" text-anchor="middle" font-size="24" font-weight="700" [attr.fill]="selectedStallBlock === 'M' ? '#ffffff' : '#0f172a'">M</text>
+          </g>
+
+          <g (click)="selectStallBlock('G')" class="cursor-pointer">
+            <rect x="250" y="40" width="140" height="70" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'G' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="320" y="83" text-anchor="middle" font-size="20" font-weight="700" [attr.fill]="selectedStallBlock === 'G' ? '#ffffff' : '#0f172a'">G</text>
+          </g>
+
+          <g (click)="selectStallBlock('IJK')" class="cursor-pointer">
+            <rect x="250" y="250" width="140" height="70" rx="10" stroke="#cbd5e1" stroke-width="2" [attr.fill]="selectedStallBlock === 'IJK' ? '#dc2626' : '#ffffff'"></rect>
+            <text x="320" y="293" text-anchor="middle" font-size="16" font-weight="700" [attr.fill]="selectedStallBlock === 'IJK' ? '#ffffff' : '#0f172a'">IJK</text>
+          </g>
+        </svg>
+      </div>
+      <p class="text-xs text-secondary">Bloc sélectionné: <strong>{{ selectedStallBlock }}</strong></p>
+    </div>
+
+    <div class="form-group">
+      <label for="stallLocation" class="block text-sm font-medium text-primary mb-2">Location (Block)</label>
+      <input
+        id="stallLocation"
+        type="text"
+        class="input"
+        formControlName="location"
+        readonly
+      />
+      <span *ngIf="stallForm.get('location')?.hasError('required') && stallForm.get('location')?.touched" class="error-text">Location is required</span>
+      <span *ngIf="stallForm.get('location')?.hasError('invalidStallLocation') && stallForm.get('location')?.touched" class="error-text">Please select a valid block location</span>
+    </div>
+
+    <div class="form-group">
+      <label for="stallEvent" class="block text-sm font-medium text-primary mb-2">Event</label>
+      <select
+        id="stallEvent"
+        class="input"
+        formControlName="eventId"
+      >
+        <option value="" disabled>Select an event</option>
+        <option *ngFor="let event of events" [value]="event.id">{{ event.name }}</option>
+      </select>
+      <span *ngIf="stallForm.get('eventId')?.invalid && stallForm.get('eventId')?.touched" class="error-text">Event is required</span>
+    </div>
+
+    <div class="form-group">
+      <label for="stallName" class="block text-sm font-medium text-primary mb-2">Stall Name</label>
+      <input
+        id="stallName"
+        type="text"
+        placeholder="Enter stall name (max 100 characters)"
+        class="input"
+        formControlName="name"
+      />
+      <span *ngIf="stallForm.get('name')?.hasError('required') && stallForm.get('name')?.touched" class="error-text">Stall name is required</span>
+      <span *ngIf="stallForm.get('name')?.hasError('maxlength') && stallForm.get('name')?.touched" class="error-text">Stall name must not exceed 100 characters</span>
+    </div>
+
+    <div class="form-group">
+      <label for="stallNumber" class="block text-sm font-medium text-primary mb-2">Stall Number</label>
+      <input
+        id="stallNumber"
+        type="number"
+        min="1"
+        placeholder="Enter stall number (minimum 1)"
+        class="input"
+        formControlName="number"
+      />
+      <span *ngIf="stallForm.get('number')?.hasError('required') && stallForm.get('number')?.touched" class="error-text">Number is required</span>
+      <span *ngIf="stallForm.get('number')?.hasError('min') && stallForm.get('number')?.touched" class="error-text">Number must be at least 1</span>
+    </div>
+
+    <p class="text-xs text-secondary">
+      Le stall sera enregistré avec le bloc choisi (ex: "Nom Stall - Bloc {{ selectedStallBlock }}").
+    </p>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isEquipmentModalOpen"
+  [title]="equipmentModalTitle"
+  [isSubmitting]="isEquipmentSubmitting"
+  [submitLabel]="editingEquipment ? 'Update Equipment' : 'Create Equipment'"
+  [isSubmitDisabled]="equipmentForm.invalid"
+  (close)="closeEquipmentModal()"
+  (submitted)="submitEquipment()">
+  <form [formGroup]="equipmentForm" class="space-y-4">
+    <div class="form-group">
+      <label for="equipmentName" class="block text-sm font-medium text-primary mb-2">Equipment Name</label>
+      <select
+        id="equipmentName"
+        class="input"
+        formControlName="name"
+      >
+        <option value="" disabled>Select equipment name</option>
+        <option *ngFor="let name of validEquipmentNames" [value]="name">{{ name }}</option>
+      </select>
+      <span *ngIf="equipmentForm.get('name')?.hasError('required') && equipmentForm.get('name')?.touched" class="error-text">Equipment name is required</span>
+      <span *ngIf="equipmentForm.get('name')?.hasError('invalidEquipmentName') && equipmentForm.get('name')?.touched" class="error-text">Please select a valid equipment name</span>
+    </div>
+
+    <div class="form-group">
+      <label for="equipmentType" class="block text-sm font-medium text-primary mb-2">Type</label>
+      <select
+        id="equipmentType"
+        class="input"
+        formControlName="type"
+      >
+        <option value="" disabled>Select equipment type</option>
+        <option *ngFor="let type of validEquipmentTypes" [value]="type">{{ type }}</option>
+      </select>
+      <span *ngIf="equipmentForm.get('type')?.hasError('required') && equipmentForm.get('type')?.touched" class="error-text">Type is required</span>
+      <span *ngIf="equipmentForm.get('type')?.hasError('invalidEquipmentType') && equipmentForm.get('type')?.touched" class="error-text">Please select a valid type</span>
+    </div>
+
+    <div class="form-group">
+      <label for="equipmentStatus" class="block text-sm font-medium text-primary mb-2">Status</label>
+      <select
+        id="equipmentStatus"
+        class="input"
+        formControlName="status"
+      >
+        <option value="AVAILABLE">Available</option>
+        <option value="IN_USE">In Use</option>
+        <option value="MAINTENANCE">Maintenance</option>
+      </select>
+      <span *ngIf="equipmentForm.get('status')?.invalid && equipmentForm.get('status')?.touched" class="error-text">Status is required</span>
+    </div>
+
+    <div class="form-group">
+      <label for="equipmentQuantity" class="block text-sm font-medium text-primary mb-2">Quantity</label>
+      <input
+        id="equipmentQuantity"
+        type="number"
+        min="1"
+        placeholder="Enter quantity"
+        class="input"
+        formControlName="quantity"
+      />
+      <span *ngIf="equipmentForm.get('quantity')?.hasError('required') && equipmentForm.get('quantity')?.touched" class="error-text">Quantity is required</span>
+      <span *ngIf="equipmentForm.get('quantity')?.hasError('min') && equipmentForm.get('quantity')?.touched" class="error-text">Quantity must be at least 1</span>
+    </div>
+
+    <div class="form-group">
+      <label for="equipmentEvent" class="block text-sm font-medium text-primary mb-2">Event</label>
+      <select
+        id="equipmentEvent"
+        class="input"
+        formControlName="eventId"
+      >
+        <option value="" disabled>Select an event</option>
+        <option *ngFor="let event of events" [value]="event.id">{{ event.name }}</option>
+      </select>
+      <span *ngIf="equipmentForm.get('eventId')?.invalid && equipmentForm.get('eventId')?.touched" class="error-text">Event is required</span>
+    </div>
+  </form>
+</app-modal>
+
+<app-footer></app-footer>

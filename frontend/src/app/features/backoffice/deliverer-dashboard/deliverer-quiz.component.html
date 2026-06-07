@@ -1,0 +1,173 @@
+<div class="quiz-container">
+  @if (error()) {
+    <div class="alert alert-danger" role="alert">
+      {{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="spinner-container">
+      <p>Traitement en cours...</p>
+    </div>
+  }
+
+  @if (!quizCompleted() && !loading()) {
+    <div class="quiz-box">
+      <div class="quiz-header">
+        <h2>Quiz de Recrutement Livreur</h2>
+        <p class="progress-info">
+          Question {{ currentQuestionIndex() + 1 }}/{{ questionList().length }}
+        </p>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="progressPercent()"></div>
+        </div>
+      </div>
+
+      @if (currentQuestion(); as question) {
+        <div class="question-section">
+          <h3>{{ question.question }}</h3>
+
+          <div class="options">
+            @for (option of question.options; track $index) {
+              <button
+                type="button"
+                [class.selected]="question.userAnswer === $index"
+                (click)="selectAnswer($index)"
+                class="option-btn"
+              >
+                {{ option }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="navigation-buttons">
+        <button
+          type="button"
+          (click)="previousQuestion()"
+          [disabled]="!canGoPrevious()"
+          class="btn-secondary"
+        >
+          Previous
+        </button>
+
+        <button
+          type="button"
+          (click)="nextQuestion()"
+          [class.btn-success]="isLastQuestion()"
+          [class.btn-primary]="!isLastQuestion()"
+        >
+          {{ isLastQuestion() ? 'Submit' : 'Next' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (quizCompleted() && result() && !loading()) {
+    <div class="result-box">
+      <div [class.result-success]="result()!.isPassed" [class.result-failed]="!result()!.isPassed">
+        <h2>
+          {{ result()!.isPassed ? 'Resultat: accepte' : 'Resultat: refuse' }}
+        </h2>
+        <p class="message">{{ result()!.message }}</p>
+
+        <div class="result-details">
+          <p><strong>Score:</strong> {{ result()!.score }}/100</p>
+          <p><strong>Statut:</strong> {{ result()!.status }}</p>
+          @if (result()!.submittedAt) {
+            <p><strong>Soumis le:</strong> {{ result()!.submittedAt | date:'dd/MM/yyyy HH:mm' }}</p>
+          }
+
+          @if (result()!.status === 'ACCEPTED_QUIZ') {
+            @if (result()!.interviewScheduledAt) {
+              <div class="meeting-section">
+                <h4>Scheduled Interview</h4>
+                <p>Your interview is scheduled for : <strong class="date-highlight">{{ result()!.interviewScheduledAt | date:'dd/MM/yyyy at HH:mm' }}</strong></p>
+                <p>An confirmation email has been sent to you. Please use the following link to join :</p>
+                <div class="meeting-link-box">
+                  <input type="text" [value]="result()!.meetingLink" readonly class="link-input" />
+                  <button type="button" (click)="copyMeetingLink()" class="btn-copy">
+                    Copy
+                  </button>
+                </div>
+                @if (copyMessage()) {
+                  <p class="copy-message">{{ copyMessage() }}</p>
+                }
+                <a [href]="result()!.meetingLink" target="_blank" rel="noopener" class="btn-join">
+                  Join the Interview
+                </a>
+              </div>
+            } @else {
+              <div class="calendar-section mt-4">
+                <h4>📅 Schedule Your Interview</h4>
+                <p class="mb-4 text-sm text-secondary text-left">Please choose a time slot for your interview with our team :</p>
+
+                @if (calendarLoading()) {
+                   <div class="spinner-container"><p>Loading the calendar...</p></div>
+                }
+
+                @if (calendarError()) {
+                   <div class="alert alert-danger">{{ calendarError() }}</div>
+                }
+
+                @if (calendarResponse() && !calendarLoading()) {
+                  <div class="week-calendar bg-white dark:bg-neutral-800 rounded-lg p-4 border border-neutral-200 dark:border-neutral-700 shadow-sm">
+                    <p class="week-title font-semibold text-lg mb-4 text-primary text-center">Week of {{ calendarResponse()!.weekStart | date:'dd/MM' }} to {{ calendarResponse()!.weekEnd | date:'dd/MM' }}</p>
+                    
+                    <div class="calendar-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                      @for (day of calendarResponse()!.days; track day.date) {
+                        <div class="calendar-day text-center">
+                          <h5 class="text-sm font-bold text-esprit-red mb-3 pb-2 border-b border-neutral-100 dark:border-neutral-700">{{ day.date | date:'EEEE dd/MM' }}</h5>
+                          <div class="slots flex flex-col gap-2">
+                            @for (slot of day.slots; track slot.start) {
+                              <button 
+                                type="button" 
+                                class="slot-btn text-xs py-2 px-1 rounded-md transition-all duration-200 border" 
+                                [class.bg-green-50]="slot.available && !isSlotSelected(slot)"
+                                [class.text-green-700]="slot.available && !isSlotSelected(slot)"
+                                [class.border-green-200]="slot.available && !isSlotSelected(slot)"
+                                [class.hover:bg-green-100]="slot.available && !isSlotSelected(slot)"
+                                [class.bg-esprit-red]="isSlotSelected(slot)"
+                                [class.text-white]="isSlotSelected(slot)"
+                                [class.border-esprit-red]="isSlotSelected(slot)"
+                                [class.bg-neutral-100]="!slot.available"
+                                [class.text-neutral-400]="!slot.available"
+                                [class.border-neutral-200]="!slot.available"
+                                [class.cursor-not-allowed]="!slot.available"
+                                [class.line-through]="!slot.available"
+                                [disabled]="!slot.available"
+                                (click)="selectSlot(slot)">
+                                {{ formatSlotTime(slot.start) }}
+                              </button>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+
+                    @if (selectedSlot()) {
+                       <div class="booking-confirmation mt-6 p-4 bg-red-50 rounded-lg text-center border border-red-100">
+                          <p class="text-sm mb-3">Créneau sélectionné: <strong class="text-esprit-red text-base">{{ selectedSlot()!.start | date:'EEEE dd/MM à HH:mm' }}</strong></p>
+                          <button type="button" class="btn-primary w-full sm:w-auto mt-2" [disabled]="bookingLoading()" (click)="bookSlot()" [class.opacity-50]="bookingLoading()">
+                            {{ bookingLoading() ? 'Réservation en cours...' : 'Confirmer ce créneau' }}
+                          </button>
+                       </div>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          }
+        </div>
+
+        <button type="button" (click)="restartQuiz()" [disabled]="!canRestartQuiz()" class="btn-primary">
+          Retake the quiz
+        </button>
+        @if (restartHint()) {
+          <p class="restart-hint">{{ restartHint() }}</p>
+        }
+      </div>
+    </div>
+  }
+</div>

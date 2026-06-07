@@ -1,0 +1,153 @@
+.search-page {
+  min-height: 100vh;
+  background: #f4f6f9;
+  padding: 1.5rem 1rem 2rem;
+}
+
+.search-shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e1e5ec;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.search-shell h1 {
+  margin: 0 0 1rem;
+  font-size: 1.7rem;
+  color: #1e2a3b;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.field label {
+  font-size: 0.8rem;
+  color: #4b5565;
+  font-weight: 700;
+}
+
+.field input,
+.field select {
+  border: 1px solid #ccd3df;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+.field.action button {
+  border: 1px solid #d0d7e3;
+  background: #ffffff;
+  color: #30415f;
+  border-radius: 8px;
+  min-height: 38px;
+  padding: 0 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status {
+  margin: 0.75rem 0;
+  color: #4d5c73;
+  font-size: 0.92rem;
+}
+
+.status.error {
+  color: #b91c1c;
+}
+
+.summary {
+  color: #4d5c73;
+  font-size: 0.9rem;
+  margin: 0.35rem 0 0.8rem;
+}
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.result-card {
+  border: 1px solid #d8deea;
+  border-radius: 10px;
+  padding: 0.8rem;
+  background: #fbfcff;
+}
+
+.result-card h3 {
+  margin: 0 0 0.45rem;
+  color: #24334a;
+  font-size: 1rem;
+}
+
+.result-card p {
+  margin: 0.2rem 0;
+  color: #43536d;
+  font-size: 0.85rem;
+}
+
+.pagination {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.pagination button {
+  min-width: 36px;
+  height: 34px;
+  border: 1px solid #d0d7e3;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #2f3f5a;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pagination button.active {
+  background: #cf0d14;
+  border-color: #cf0d14;
+  color: #ffffff;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+  .filters {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .results {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .search-shell {
+    padding: 1rem;
+  }
+
+  .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .results {
+    grid-template-columns: 1fr;
+  }
+}

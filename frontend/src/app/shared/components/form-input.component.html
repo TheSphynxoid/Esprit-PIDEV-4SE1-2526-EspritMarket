@@ -1,0 +1,10 @@
+<div class="form-group">
+  <label *ngIf="label" [for]="name">{{ label }}</label>
+  <input
+    [id]="name"
+    [type]="type"
+    [placeholder]="placeholder"
+    class="input"
+  />
+  <span *ngIf="error" class="error-text">{{ error }}</span>
+</div>

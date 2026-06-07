@@ -1,0 +1,43 @@
+<ng-template #dashboardContent>
+  <div *ngIf="activeTab() === 'vendor'" class="animate-fade-in">
+    <app-vendor-dashboard></app-vendor-dashboard>
+  </div>
+
+  <div *ngIf="activeTab() === 'service-provider'" class="animate-fade-in">
+    <app-service-provider-dashboard></app-service-provider-dashboard>
+  </div>
+
+  <div *ngIf="activeTab() === 'recruiter'" class="animate-fade-in">
+    <app-recruiter-dashboard></app-recruiter-dashboard>
+  </div>
+
+  <div *ngIf="activeTab() === 'deliverer'" class="animate-fade-in">
+    <app-delivery-dashboard></app-delivery-dashboard>
+  </div>
+
+  <div *ngIf="activeTab() === 'events'" class="animate-fade-in">
+    <app-events-admin-dashboard></app-events-admin-dashboard>
+  </div>
+
+  <div *ngIf="availableTabs().length === 0" class="flex items-center justify-center h-96">
+    <div class="text-center">
+      <p class="text-4xl mb-4">🔒</p>
+      <p class="text-lg text-secondary">No dashboard available for your role</p>
+    </div>
+  </div>
+</ng-template>
+
+<app-backoffice-layout
+  *ngIf="availableTabs().length > 1; else singleRoleContent"
+  title="Dashboard"
+  [navItems]="navItems()"
+  [activeTab]="activeTab()"
+  (tabChange)="onTabChange($event)"
+  (logout)="logout()"
+>
+  <ng-container [ngTemplateOutlet]="dashboardContent"></ng-container>
+</app-backoffice-layout>
+
+<ng-template #singleRoleContent>
+  <ng-container [ngTemplateOutlet]="dashboardContent"></ng-container>
+</ng-template>

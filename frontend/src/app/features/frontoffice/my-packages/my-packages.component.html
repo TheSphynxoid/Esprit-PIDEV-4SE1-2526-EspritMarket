@@ -1,0 +1,142 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-12 px-4">
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-primary mb-2">My packages</h1>
+      <p class="text-xl text-secondary">Follow all your orders and deliveries</p>
+    </div>
+
+    <div class="space-y-6">
+      <div *ngFor="let packageOrder of packages()" class="card card-md">
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-neutral-200">
+          <h3 class="text-lg font-bold text-primary">Order #{{ packageOrder.id }}</h3>
+          <span
+            class="px-3 py-1 rounded-full text-xs font-semibold"
+            [ngClass]="{
+              'bg-green-100 text-green-800': packageOrder.status === 'delivered',
+              'bg-blue-100 text-blue-800': packageOrder.status === 'shipped',
+              'bg-amber-100 text-amber-800': packageOrder.status === 'confirmed',
+              'bg-red-100 text-red-800': packageOrder.status === 'pending'
+            }"
+          >
+            {{ packageOrder.status | titlecase }}
+          </span>
+        </div>
+
+        <div class="bg-neutral-50 p-4 rounded-lg mb-4 border border-neutral-200">
+          <p class="text-sm mb-2"><strong class="text-primary">Items:</strong> <span class="text-secondary">{{ packageOrder.items }}</span></p>
+          <p class="text-sm"><strong class="text-primary">Amount:</strong> <span class="font-bold text-esprit-red">{{ packageOrder.amount }} TND</span></p>
+        </div>
+
+        <div class="mb-6">
+          <div class="flex gap-2 overflow-x-auto pb-2">
+            <div
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-red-100]="packageOrder.step === 0"
+              [class.text-red-800]="packageOrder.step === 0"
+              [class.bg-green-100]="packageOrder.step > 0"
+              [class.text-green-800]="packageOrder.step > 0"
+              [class.bg-neutral-100]="packageOrder.step < 0"
+              [class.text-neutral-600]="packageOrder.step < 0"
+            >
+              &#x1F4E6; Ordered
+            </div>
+            <div
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-red-100]="packageOrder.step === 1"
+              [class.text-red-800]="packageOrder.step === 1"
+              [class.bg-green-100]="packageOrder.step > 1"
+              [class.text-green-800]="packageOrder.step > 1"
+              [class.bg-neutral-100]="packageOrder.step < 1"
+              [class.text-neutral-600]="packageOrder.step < 1"
+            >
+              &#x2705; Confirmed
+            </div>
+            <div
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-red-100]="packageOrder.step === 2"
+              [class.text-red-800]="packageOrder.step === 2"
+              [class.bg-green-100]="packageOrder.step > 2"
+              [class.text-green-800]="packageOrder.step > 2"
+              [class.bg-neutral-100]="packageOrder.step < 2"
+              [class.text-neutral-600]="packageOrder.step < 2"
+            >
+              &#x1F69A; In Progress
+            </div>
+            <div
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-red-100]="packageOrder.step === 3"
+              [class.text-red-800]="packageOrder.step === 3"
+              [class.bg-green-100]="packageOrder.step > 3"
+              [class.text-green-800]="packageOrder.step > 3"
+              [class.bg-neutral-100]="packageOrder.step < 3"
+              [class.text-neutral-600]="packageOrder.step < 3"
+            >
+              &#x2714;&#xFE0F; Delivered
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-sm text-secondary">
+          <p>&#x1F4CD; Delivery to: <span class="text-primary font-medium">{{ packageOrder.address }}</span></p>
+          <p>&#x1F4C5; Estimated: <span class="text-primary font-medium">{{ packageOrder.estimatedDate }}</span></p>
+        </div>
+
+        <div *ngIf="packageOrder.status === 'shipped'" class="mt-4">
+          <p class="text-sm font-semibold text-primary mb-2">&#x1F5FA;&#xFE0F; Live tracking</p>
+          <div *ngIf="packageOrder.routeDistanceText || packageOrder.routeEtaText" class="flex gap-3 mb-3">
+            <div *ngIf="packageOrder.routeDistanceText" class="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm">
+              <strong>Distance:</strong> {{ packageOrder.routeDistanceText }}
+            </div>
+            <div *ngIf="packageOrder.routeEtaText" class="px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-sm">
+              <strong>ETA:</strong> {{ packageOrder.routeEtaText }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Oui Button -->
+        <div class="mt-6 flex justify-end">
+          <button 
+            (click)="goToConfirmationDelivery(packageOrder.orderId)"
+            class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-6 rounded-lg transition"
+          >
+            Oui
+          </button>
+        </div>
+      </div>
+
+      <!-- Shared map -->
+      <div *ngIf="shippedPackages.length > 0" class="card card-md">
+        <p class="text-sm font-semibold text-primary mb-2">&#x1F5FA;&#xFE0F; Package live location</p>
+        <div *ngIf="shippedPackages.length > 1" class="flex gap-2 mb-3 overflow-x-auto pb-1">
+          <button
+            *ngFor="let sp of shippedPackages"
+            (click)="selectPackage(sp)"
+            class="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition"
+            [ngClass]="activePackage?.orderId === sp.orderId
+              ? 'bg-blue-100 text-blue-800'
+              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'"
+          >
+            {{ sp.address.length > 30 ? (sp.address | slice:0:30) + '...' : sp.address }}
+          </button>
+        </div>
+        <div
+          id="tracking-map-customer"
+          class="rounded-lg overflow-hidden border border-neutral-200 bg-white"
+          style="width: 100%; height: 350px;"
+        ></div>
+        <div class="flex items-center gap-4 mt-2 text-xs text-secondary">
+          <div class="flex items-center gap-1">
+            <span class="inline-block w-3 h-3 rounded-full bg-blue-500"></span> Courier
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span> Destination
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

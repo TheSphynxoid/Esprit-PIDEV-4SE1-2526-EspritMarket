@@ -1,0 +1,70 @@
+<app-header></app-header>
+
+<section class="vs-wrap bg-neutral-50 dark:bg-neutral-900 min-h-screen">
+  <header class="vs-head">
+    <h1>Recherche visuelle</h1>
+    <p>Upload une image et trouve des produits similaires (style, couleur, catégorie).</p>
+  </header>
+
+  <div class="vs-card">
+    <div class="vs-upload">
+      <label for="imageInput">Image produit</label>
+      <input id="imageInput" type="file" accept="image/*" (change)="onFileSelected($event)" />
+      <button type="button" class="vs-btn" [disabled]="loading" (click)="runVisualSearch()">
+        {{ loading ? 'Analyse en cours...' : 'Lancer la recherche IA' }}
+      </button>
+
+      <p *ngIf="error" class="vs-error">{{ error }}</p>
+      <p *ngIf="warning && !error" class="vs-warning">⚠ {{ warning }}</p>
+    </div>
+
+    <div class="vs-preview" *ngIf="previewUrl">
+      <img [src]="previewUrl" alt="Image analysée" />
+    </div>
+  </div>
+
+  <!-- Analyse IA : toujours visible si response existe -->
+  <section class="vs-analysis" *ngIf="response">
+    <h2>Analyse IA</h2>
+    <p>
+      <strong>Type détecté:</strong>
+      {{ response.style === 'ai-unavailable' ? 'Indisponible' : (response.detectedType || 'N/A') }}
+    </p>
+    <p>
+      <strong>Couleurs:</strong>
+      {{ response.style === 'ai-unavailable' ? 'Indisponible' : (getTagList(response.colors) || 'N/A') }}
+    </p>
+    <p>
+      <strong>Style:</strong>
+      {{ response.style === 'ai-unavailable' ? 'Indisponible' : (response.style || 'N/A') }}
+    </p>
+    <p>
+      <strong>Mots-clés:</strong>
+      {{ response.style === 'ai-unavailable' ? 'Indisponible' : (getTagList(response.keywords) || 'N/A') }}
+    </p>
+  </section>
+
+  <!-- Résultats -->
+  <section class="vs-results" *ngIf="response">
+    <h2>Produits similaires</h2>
+    <p *ngIf="response.results.length === 0">{{ getNoResultMessage() }}</p>
+
+    <div class="vs-grid" *ngIf="response.results.length > 0">
+      <article class="vs-item" *ngFor="let item of response.results">
+        <img
+          *ngIf="resolveImageUrl(item.product.imageUrl)"
+          [src]="resolveImageUrl(item.product.imageUrl)"
+          [alt]="item.product.name"
+        />
+        <div class="vs-item-body">
+          <h3>{{ item.product.name }}</h3>
+          <p>{{ item.product.price }} DT</p>
+          <p>Score similarité: {{ item.similarityScore | number:'1.0-2' }}</p>
+          <p class="vs-desc">{{ item.product.description }}</p>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>
+
+<app-footer></app-footer>

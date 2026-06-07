@@ -1,0 +1,122 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-12 px-4">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold text-primary mb-2">Delivery Tracking</h1>
+      <p class="text-xl text-secondary">Track your orders in real-time</p>
+    </div>
+
+    <!-- Orders List -->
+    <div class="space-y-6">
+      <div *ngFor="let order of orders()" class="card card-md">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-neutral-200">
+          <div class="flex items-center gap-3">
+            <h3 class="text-lg font-bold text-primary">Order #{{ order.id }}</h3>
+            <button 
+              *ngIf="isAdmin()" 
+              (click)="onDelete(order.id)"
+              class="p-1.5 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+              title="Delete Order"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          </div>
+          <span 
+            class="px-3 py-1 rounded-full text-xs font-semibold"
+            [ngClass]="{
+              'bg-green-100 text-green-800': order.status === 'delivered',
+              'bg-blue-100 text-blue-800': order.status === 'shipped',
+              'bg-amber-100 text-amber-800': order.status === 'confirmed',
+              'bg-red-100 text-red-800': order.status === 'pending'
+            }"
+          >
+            {{ order.status | titlecase }}
+          </span>
+        </div>
+
+        <!-- Order Info -->
+        <div class="bg-neutral-50 p-4 rounded-lg mb-4 border border-neutral-200">
+          <p class="text-sm mb-2"><strong class="text-primary">Items:</strong> <span class="text-secondary">{{ order.items }}</span></p>
+          <p class="text-sm"><strong class="text-primary">Amount:</strong> <span class="font-bold text-esprit-red">{{ order.amount }} TND</span></p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="mb-6">
+          <div class="flex gap-2 overflow-x-auto pb-2">
+            <div 
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-green-100]="order.step >= 0"
+              [class.text-green-800]="order.step >= 0"
+              [class.bg-neutral-100]="order.step < 0"
+              [class.text-neutral-600]="order.step < 0"
+            >
+              📦 Ordered
+            </div>
+            <div 
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-green-100]="order.step >= 1"
+              [class.text-green-800]="order.step >= 1"
+              [class.bg-neutral-100]="order.step < 1"
+              [class.text-neutral-600]="order.step < 1"
+            >
+              ✅ Confirmed
+            </div>
+            <div 
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-blue-100]="order.step >= 2"
+              [class.text-blue-800]="order.step >= 2"
+              [class.bg-neutral-100]="order.step < 2"
+              [class.text-neutral-600]="order.step < 2"
+            >
+              🚚 In Progress
+            </div>
+            <div 
+              class="flex-1 min-w-max md:min-w-0 p-3 rounded-lg text-center text-xs font-semibold transition-all duration-300"
+              [class.bg-green-100]="order.step >= 3"
+              [class.text-green-800]="order.step >= 3"
+              [class.bg-neutral-100]="order.step < 3"
+              [class.text-neutral-600]="order.step < 3"
+            >
+              ✔️ Delivered
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Info -->
+        <div class="space-y-2 text-sm text-secondary mb-4">
+          <p>📍 Delivery to: <span class="text-primary font-medium">{{ order.address }}</span></p>
+          <p>📅 Estimated: <span class="text-primary font-medium">{{ order.estimatedDate }}</span></p>
+        </div>
+
+        <!-- Products Details -->
+        <div class="pt-4 border-t border-neutral-200">
+          <h4 class="text-sm font-semibold text-primary mb-3">Order Items</h4>
+          <div *ngIf="order.products && order.products.length > 0; else noProducts">
+            <div *ngFor="let product of order.products" class="mb-3 pb-3 last:mb-0 last:pb-0 border-b border-neutral-100 last:border-b-0">
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-primary">{{ product.name }}</p>
+                  <p class="text-xs text-secondary mt-1">Qty: <span class="font-medium">{{ product.quantity }}</span> | Price: <span class="font-medium text-esprit-red">{{ product.price }} DT</span></p>
+                </div>
+              </div>
+              <div class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-secondary">
+                <p><strong>Dimensions:</strong> {{ product.dimensionsLabel }}</p>
+                <p><strong>Weight:</strong> <span *ngIf="product.weight > 0">{{ product.weight }} kg</span><span *ngIf="product.weight === 0">N/A</span></p>
+              </div>
+            </div>
+          </div>
+          <ng-template #noProducts>
+            <p class="text-xs text-secondary">No items in this order</p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

@@ -1,0 +1,682 @@
+/* Recruiter Applications Component Styles */
+
+.recruiter-applications {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Alerts */
+.alert {
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+.alert-error {
+  background-color: #fee;
+  color: #c33;
+  border: 1px solid #faa;
+}
+
+.alert-success {
+  background-color: #efe;
+  color: #3c3;
+  border: 1px solid #afa;
+}
+
+/* List Section */
+.list-section {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.list-section h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.loading,
+.empty-state {
+  padding: 2rem;
+  text-align: center;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.empty-state {
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+/* Table */
+.applications-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.applications-table thead {
+  background-color: #f5f5f5;
+  border-bottom: 2px solid #ddd;
+}
+
+.applications-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #333;
+}
+
+.applications-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.applications-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.applications-table .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Score Badge */
+.score-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #f0f6ff;
+  color: #004085;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-accepted {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-rejected {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* Activity Badge */
+.activity-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.activity-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.activity-inactive {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.activity-at_risk {
+  background-color: #fff3cd;
+  color: #856404;
+  animation: pulse-risk 2s infinite;
+}
+
+@keyframes pulse-risk {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 193, 7, 0); }
+}
+
+/* Inline Edit */
+.inline-edit {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-control {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+/* Buttons */
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-edit {
+  background-color: #0066cc;
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: #0052a3;
+}
+
+.btn-download {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-download:hover:not(:disabled) {
+  background-color: #138496;
+}
+
+.btn-download:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-save {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #218838;
+}
+
+.btn-cancel {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-cancel:hover {
+  background-color: #5a6268;
+}
+
+.action-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.no-cv {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.7rem;
+  border-radius: 20px;
+  background-color: #f1f3f5;
+  color: #666;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+/* Delete Button */
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+.btn-delete:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-confirm-delete {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.btn-confirm-delete:hover {
+  background-color: #ee5a52;
+}
+
+/* Delete Confirmation */
+.delete-confirmation {
+  align-items: center;
+  padding: 0.5rem;
+  background-color: #fff3cd;
+  border-radius: 4px;
+  flex-wrap: wrap;
+}
+
+.confirmation-text {
+  margin: 0;
+  color: #856404;
+  font-size: 0.85rem;
+  font-weight: 500;
+  min-width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+/* TASK 2: Performance Report Section */
+.performance-report-section {
+  background: #fff;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-report-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.report-description {
+  margin-bottom: 1.5rem;
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  background-color: #f0f6ff;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #0066cc;
+  border-radius: 4px;
+}
+
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.performance-table thead {
+  background-color: #004085;
+  color: white;
+}
+
+.performance-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.performance-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.performance-table tbody tr:hover {
+  background-color: #f0f6ff;
+}
+
+.metric-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #e8f4f8;
+  color: #004085;
+  text-align: center;
+  min-width: 40px;
+}
+
+/* TASK 3: Advanced Search Section (Keywords Function with Multiple Tables) */
+.search-section {
+  background: #fff;
+  padding: 2rem;
+  margin-top: 2rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-section h2 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.search-description {
+  margin-bottom: 2rem;
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  background-color: #f0f4f8;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #17a2b8;
+  border-radius: 4px;
+}
+
+/* Search Filters */
+.search-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background-color: white;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #17a2b8;
+  box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.1);
+}
+
+.button-group {
+  display: flex;
+  gap: 1rem;
+  grid-column: 1 / -1;
+  align-items: flex-end;
+}
+
+.btn-primary {
+  background-color: #0066cc;
+  color: white;
+  padding: 0.75rem 2rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #0052a3;
+}
+
+.btn-primary:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+  padding: 0.75rem 2rem;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Quick Filters */
+.quick-filters {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background-color: #f0f4f8;
+  border-radius: 6px;
+  border: 1px solid #d0dce6;
+}
+
+.quick-filters p {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  color: #333;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.type-buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-outline {
+  padding: 0.6rem 1.2rem;
+  font-size: 0.9rem;
+  border: 2px solid #17a2b8;
+  color: #17a2b8;
+  background-color: transparent;
+  transition: all 0.3s;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Search Results */
+.search-results {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.search-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.search-table thead {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.search-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+}
+
+.search-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #eee;
+  color: #555;
+}
+
+.search-table tbody tr:hover {
+  background-color: #e8f4f8;
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background-color: #cfe2f3;
+  color: #003d66;
+}
+
+.description-cell {
+  font-size: 0.85rem;
+  color: #666;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-open {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-closed {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-expired {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .recruiter-applications {
+    padding: 1rem;
+  }
+
+  .list-section {
+    padding: 1.5rem;
+  }
+
+  .applications-table {
+    font-size: 0.85rem;
+  }
+
+  .applications-table th,
+  .applications-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .applications-table .actions {
+    flex-direction: column;
+  }
+
+  .btn-sm {
+    width: 100%;
+  }
+
+  .action-group {
+    flex-direction: column;
+  }
+
+  .action-group .btn {
+    width: 100%;
+  }
+
+  .delete-confirmation {
+    flex-direction: column;
+  }
+
+  .confirmation-text {
+    min-width: auto;
+  }
+
+  .performance-report-section {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .performance-table {
+    font-size: 0.85rem;
+  }
+
+  .performance-table th,
+  .performance-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  /* Search Section Responsive */
+  .search-section {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .search-filters {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group .btn {
+    width: 100%;
+  }
+
+  .type-buttons {
+    flex-direction: column;
+  }
+
+  .btn-outline {
+    width: 100%;
+  }
+
+  .search-table {
+    font-size: 0.85rem;
+  }
+
+  .search-table th,
+  .search-table td {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .description-cell {
+    max-width: 150px;
+  }
+}
+
+
+
+/* Color-coded Matching Score Badges */
+

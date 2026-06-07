@@ -1,0 +1,206 @@
+@startuml global-class
+
+class User {
+    - id: Long
+    - email: String
+    - password: String
+    - firstName: String
+    - lastName: String
+    - role: UserRole
+    - createdAt: LocalDateTime
+}
+
+enum UserRole {
+    BUYER
+    SELLER
+    SERVICE_PROVIDER
+    COURIER
+    EVENT_ORGANIZER
+    COMPANY
+    ADMINISTRATOR
+}
+
+class Product {
+    - id: Long
+    - title: String
+    - description: String
+    - price: double
+    - stock: int
+    - imageUrl: String
+    - sellerId: Long
+    - categoryId: Long
+    - createdAt: LocalDateTime
+}
+
+class Order {
+    - id: Long
+    - buyerId: Long
+    - orderDate: LocalDateTime
+    - status: OrderStatus
+    - totalAmount: double
+    - paymentStatus: PaymentStatus
+}
+
+class OrderItem {
+    - id: Long
+    - orderId: Long
+    - productId: Long
+    - quantity: int
+    - unitPrice: double
+}
+
+class Service {
+    - id: Long
+    - title: String
+    - description: String
+    - price: double
+    - providerId: Long
+    - availability: String
+    - createdAt: LocalDateTime
+}
+
+class Booking {
+    - id: Long
+    - serviceId: Long
+    - clientId: Long
+    - scheduledDate: LocalDateTime
+    - status: BookingStatus
+}
+
+class Project {
+    - id: Long
+    - title: String
+    - description: String
+    - ownerId: Long
+    - status: ProjectStatus
+    - createdAt: LocalDateTime
+}
+
+class Milestone {
+    - id: Long
+    - projectId: Long
+    - title: String
+    - dueDate: LocalDate
+    - status: MilestoneStatus
+}
+
+class DeliveryOrder {
+    - id: Long
+    - customerId: Long
+    - pickupAddress: String
+    - dropoffAddress: String
+    - status: DeliveryStatus
+    - price: double
+    - estimatedTime: int
+}
+
+class CourierProfile {
+    - id: Long
+    - userId: Long
+    - vehicleType: String
+    - licenseNumber: String
+    - rating: double
+    - totalDeliveries: int
+}
+
+class Event {
+    - id: Long
+    - title: String
+    - description: String
+    - eventDate: LocalDateTime
+    - location: String
+    - capacity: int
+    - organizerId: Long
+    - eventType: EventType
+}
+
+class Registration {
+    - id: Long
+    - eventId: Long
+    - userId: Long
+    - registrationDate: LocalDateTime
+    - status: RegistrationStatus
+}
+
+class WaitingListEntry {
+    - id: Long
+    - eventId: Long
+    - userId: Long
+    - position: int
+    - notified: boolean
+}
+
+class Company {
+    - id: Long
+    - name: String
+    - email: String
+    - verified: boolean
+    - createdAt: LocalDateTime
+}
+
+class JobOffer {
+    - id: Long
+    - companyId: Long
+    - title: String
+    - description: String
+    - requirements: String
+    - salary: String
+    - status: OfferStatus
+}
+
+class Application {
+    - id: Long
+    - offerId: Long
+    - studentId: Long
+    - status: ApplicationStatus
+    - submittedDate: LocalDateTime
+    - matchingScore: double
+}
+
+class InterviewSchedule {
+    - id: Long
+    - applicationId: Long
+    - scheduledAt: LocalDateTime
+    - location: String
+    - meetingLink: String
+    - status: InterviewStatus
+}
+
+class Review {
+    - id: Long
+    - productId: Long
+    - userId: Long
+    - rating: int
+    - comment: String
+    - imageUrl: String
+    - createdAt: LocalDateTime
+}
+
+class Payment {
+    - id: Long
+    - orderId: Long
+    - amount: double
+    - method: PaymentMethod
+    - status: PaymentStatus
+    - transactionRef: String
+}
+
+User "1" --> "0..*" Product
+User "1" --> "0..*" Service
+User "1" --> "0..*" Order
+Order "1" --> "0..*" OrderItem
+Order "1" --> "0..1" Payment
+User "1" --> "0..*" Booking
+Booking "1" --> "1" Service
+User "1" --> "0..*" Project
+Project "1" --> "0..*" Milestone
+User "1" --> "0..*" DeliveryOrder
+DeliveryOrder "1" --> "1" CourierProfile
+User "1" --> "0..*" Event
+Event "1" --> "0..*" Registration
+Event "1" --> "0..*" WaitingListEntry
+Company "1" --> "0..*" JobOffer
+JobOffer "1" --> "0..*" Application
+Application "1" --> "0..1" InterviewSchedule
+Product "1" --> "0..*" Review
+@enduml

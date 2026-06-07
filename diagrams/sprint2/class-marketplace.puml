@@ -1,0 +1,52 @@
+@startuml marketplace-sprint2-class
+
+class Review {
+    - id: Long
+    - rating: int
+    - title: String
+    - comment: String
+    - imageUrl: String
+    - createdAt: LocalDateTime
+    - verified: boolean
+    + isVerified(): boolean
+}
+
+class Payment {
+    - id: Long
+    - amount: double
+    - method: PaymentMethod
+    - status: PaymentStatus
+    - transactionRef: String
+    - paidAt: LocalDateTime
+    + process(): boolean
+    + refund(): boolean
+}
+
+class PaymentMethod {
+    CREDIT_CARD
+    PAYPAL
+    STRIPE
+}
+
+class PaymentStatus {
+    PENDING
+    COMPLETED
+    FAILED
+    REFUNDED
+}
+
+class SalesAnalytics {
+    - periodStart: LocalDate
+    - periodEnd: LocalDate
+    - totalRevenue: double
+    - totalOrders: int
+    - averageOrderValue: double
+    + getTopProducts(): List<Product>
+    + getRevenueTrend(): List<DataPoint>
+}
+
+User "1" -- "0..*" Review : writes >
+Product "1" -- "0..*" Review : receives >
+Order "1" -- "0..1" Payment : has >
+
+@enduml

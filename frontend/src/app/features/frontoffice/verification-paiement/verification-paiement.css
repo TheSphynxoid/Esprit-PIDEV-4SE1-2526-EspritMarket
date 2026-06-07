@@ -1,0 +1,147 @@
+/* Verification et Paiement Component Styles */
+
+:host {
+  display: block;
+}
+
+/* Payment Option Styles */
+.payment-option {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.payment-option:hover {
+  border-color: #ff5722;
+  box-shadow: 0 2px 8px rgba(255, 87, 34, 0.1);
+}
+
+.payment-option.selected {
+  border-color: #ff5722;
+  background-color: #fff8f5;
+}
+
+/* Discount Code Section */
+.discount-code-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.discount-code-input {
+  border: 1px solid #d0d0d0;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.discount-code-input:focus {
+  outline: none;
+  border-color: #ff5722;
+  box-shadow: 0 0 0 3px rgba(255, 87, 34, 0.1);
+}
+
+/* Summary Card Styles */
+.summary-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 24px;
+  background-color: white;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  font-size: 14px;
+}
+
+.summary-row.total {
+  border-top: 2px solid #d0d0d0;
+  padding-top: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Card Logos */
+.card-logo {
+  height: 24px;
+  display: inline-block;
+  margin-right: 8px;
+  border-radius: 4px;
+}
+
+/* Buttons */
+.btn-green {
+  background-color: #4caf50;
+  color: white;
+  font-weight: bold;
+  padding: 12px 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-green:hover {
+  background-color: #45a049;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-back {
+  background-color: #d0d0d0;
+  color: #333;
+  font-weight: bold;
+  padding: 12px 32px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-back:hover {
+  background-color: #b0b0b0;
+}
+
+/* Radio Button Customization */
+input[type="radio"] {
+  accent-color: #ff5722;
+}
+
+/* Edit Icons */
+.edit-icon {
+  cursor: pointer;
+  color: #999;
+  transition: color 0.3s ease;
+}
+
+.edit-icon:hover {
+  color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .col-span-2,
+  .col-span-1 {
+    grid-column: 1;
+  }
+  
+  .btn-container {
+    flex-direction: column;
+  }
+  
+  .btn-green,
+  .btn-back {
+    width: 100%;
+  }
+}

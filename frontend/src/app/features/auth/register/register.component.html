@@ -1,0 +1,168 @@
+<div class="min-h-screen flex items-center justify-center px-4 py-8 bg-gradient-to-br from-neutral-50 via-esprit-50 to-neutral-100 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900 transition-colors duration-200">
+  <div class="w-full max-w-md animate-slide-up">
+    <!-- Logo Card -->
+    <div class="inline-flex items-center gap-4 bg-white dark:bg-neutral-800 p-4 rounded-2xl shadow-card mx-auto mb-8 block transition-colors duration-200">
+      <div class="w-20 h-20 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-4xl">
+        🎓
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-primary dark:text-white">ESPRIT Market</h1>
+        <p class="text-sm text-secondary dark:text-neutral-400">Join our platform</p>
+      </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card card-lg">
+      <h2 class="text-2xl font-bold text-primary dark:text-white mb-6 text-center">Create an account</h2>
+      
+      <!-- Progress Bar -->
+      <div class="w-full h-1 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden mb-2 transition-colors duration-200">
+        <div 
+          class="h-full bg-esprit-red transition-all duration-300"
+          [style.width.%]="(currentStep / totalSteps) * 100"
+        ></div>
+      </div>
+      <p class="text-center text-xs text-secondary dark:text-neutral-400 mb-6">Step {{ currentStep }} of {{ totalSteps }}</p>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onNext()" class="space-y-4">
+        <!-- Step 1: Personal Info -->
+        <div *ngIf="currentStep === 1" class="animate-slide-up space-y-4">
+          <div class="form-group">
+            <label class="block text-sm font-medium text-primary dark:text-white mb-2">First name</label>
+            <input
+              type="text"
+              placeholder="Jean"
+              formControlName="firstName"
+              class="form-input w-full"
+            />
+            <span *ngIf="registerForm.get('firstName')?.invalid && registerForm.get('firstName')?.touched" class="text-xs text-red-600 mt-1 block">
+              First name required
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="block text-sm font-medium text-primary mb-2">Last name</label>
+            <input
+              type="text"
+              placeholder="Dupont"
+              formControlName="lastName"
+              class="form-input w-full"
+            />
+            <span *ngIf="registerForm.get('lastName')?.invalid && registerForm.get('lastName')?.touched" class="text-xs text-red-600 mt-1 block">
+              Last name required
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="block text-sm font-medium text-primary mb-2">Email ESPRIT</label>
+            <input
+              type="email"
+              placeholder="student@esprit.tn"
+              formControlName="email"
+              class="form-input w-full"
+            />
+            <span *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched" class="text-xs text-red-600 mt-1 block">
+              Valid email required
+            </span>
+          </div>
+        </div>
+
+        <!-- Step 2: Password -->
+        <div *ngIf="currentStep === 2" class="animate-slide-up space-y-4">
+          <div class="form-group">
+            <label class="block text-sm font-medium text-primary mb-2">Password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              formControlName="password"
+              class="form-input w-full"
+            />
+            <span *ngIf="registerForm.get('password')?.invalid && registerForm.get('password')?.touched" class="text-xs text-red-600 mt-1 block">
+              Minimum 6 characters
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label class="block text-sm font-medium text-primary mb-2">Confirm password</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              formControlName="confirmPassword"
+              class="form-input w-full"
+            />
+            <span *ngIf="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched" class="text-xs text-red-600 mt-1 block">
+              Confirmation required
+            </span>
+          </div>
+
+          <div *ngIf="registerForm.errors?.['mismatch']" class="bg-red-50 border-l-4 border-red-600 p-3 text-xs text-red-600">
+            Passwords do not match
+          </div>
+
+          <p class="text-xs text-secondary">At least 6 characters</p>
+        </div>
+
+        <!-- Step 3: Role Selection -->
+        <div *ngIf="currentStep === 3" class="animate-slide-up space-y-4">
+          <label class="block text-sm font-medium text-primary mb-4">What is your primary role?</label>
+          <div class="space-y-3">
+            <div
+              *ngFor="let role of userRoles"
+              class="p-4 border-2 rounded-xl cursor-pointer transition-all duration-300"
+              [class.border-esprit-red]="registerForm.get('role')?.value === role.id"
+              [class.bg-esprit-red/5]="registerForm.get('role')?.value === role.id"
+              [class.border-neutral-200]="registerForm.get('role')?.value !== role.id"
+              [class.hover:border-esprit-red]="registerForm.get('role')?.value !== role.id"
+              [class.hover:bg-esprit-red/5]="registerForm.get('role')?.value !== role.id"
+              (click)="selectRole(role.id)"
+            >
+              <span class="text-2xl block mb-2">{{ role.icon }}</span>
+              <span class="font-semibold text-primary block mb-1">{{ role.label }}</span>
+              <p class="text-xs text-secondary">{{ role.description }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex gap-3 mt-6 pt-4 border-t border-neutral-200">
+          <button
+            type="button"
+            *ngIf="currentStep > 1"
+            (click)="onBack()"
+            class="btn btn-secondary flex-1"
+          >
+            Previous
+          </button>
+
+          <button
+            type="submit"
+            [disabled]="!isCurrentStepValid() || isSubmitting"
+            class="btn btn-primary flex-1"
+            [class.opacity-50]="!isCurrentStepValid() || isSubmitting"
+            [class.disabled:cursor-not-allowed]="!isCurrentStepValid() || isSubmitting"
+          >
+            <span *ngIf="!isSubmitting">{{ currentStep === totalSteps ? 'Create my account' : 'Next' }} ➜</span>
+            <span *ngIf="isSubmitting">Creating...</span>
+          </button>
+        </div>
+
+        <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-600 p-4 text-sm text-red-700 dark:text-red-400 rounded animate-slide-up">
+          <p class="font-semibold mb-1">⚠️ Registration Error</p>
+          <p>{{ errorMessage }}</p>
+          <p *ngIf="errorMessage.includes('already exists')" class="mt-3 text-xs">
+            💡 <strong>This email is already registered.</strong>
+            <a routerLink="/login" class="text-esprit-red font-semibold underline hover:no-underline">Click here to login</a> or use a different email.
+          </p>
+          <p *ngIf="errorMessage.includes('connect to server') || errorMessage.includes('timed out')" class="mt-2 text-xs">
+            💡 <strong>Tip:</strong> Make sure the backend server is running at <code class="bg-red-100 dark:bg-red-900/40 px-1 py-0.5 rounded">{{ backendUrl }}</code>
+          </p>
+        </div>
+      </form>
+
+      <!-- Auth Links -->
+      <div class="text-center text-sm text-secondary mt-6 pt-6 border-t border-neutral-200">
+        <p>Already registered? <a routerLink="/login" class="text-esprit-red font-semibold hover:underline">Login</a></p>
+      </div>
+    </div>
+  </div>
+</div>

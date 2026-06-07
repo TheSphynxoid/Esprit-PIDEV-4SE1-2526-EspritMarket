@@ -1,0 +1,52 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-xl mx-auto py-12 px-4">
+    <h1 class="text-3xl font-bold text-primary dark:text-white mb-8">Write a Review</h1>
+
+    <div *ngIf="!bookingId()" class="card card-md">
+      <p class="text-secondary">No booking specified for review.</p>
+      <button class="btn btn-primary mt-4" (click)="router.navigate(['/bookings'])">View My Bookings</button>
+    </div>
+
+    <div *ngIf="bookingId() && !submitted()" class="card card-lg">
+      <div *ngIf="booking() as bkg" class="mb-6">
+        <p class="font-semibold text-primary dark:text-white">{{ bkg.serviceName || 'Service' }}</p>
+        <p class="text-sm text-secondary">{{ bkg.date | date:'medium' }} - {{ bkg.duration }}h</p>
+      </div>
+
+      <div *ngIf="error()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm mb-4">
+        {{ error() }}
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Rating</label>
+          <app-star-rating [value]="form.get('rating')?.value" (valueChange)="form.get('rating')?.setValue($event)" [showLabel]="true"></app-star-rating>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-primary dark:text-white mb-2">Comment (optional)</label>
+          <textarea
+            formControlName="comment"
+            rows="4"
+            class="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 transition-colors resize-none"
+          ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary w-full" [disabled]="form.invalid || isSubmitting()">
+          {{ isSubmitting() ? 'Submitting...' : 'Submit Review' }}
+        </button>
+      </form>
+    </div>
+
+    <div *ngIf="submitted()" class="card card-md text-center">
+      <h2 class="text-2xl font-bold text-primary dark:text-white mb-4">Review Submitted!</h2>
+      <p class="text-secondary mb-6">Thank you for your feedback.</p>
+      <div class="flex gap-4 justify-center">
+        <button class="btn btn-primary" (click)="router.navigate(['/bookings'])">My Bookings</button>
+        <button class="btn btn-secondary" (click)="router.navigate(['/services'])">Browse Services</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

@@ -1,0 +1,40 @@
+@startuml marketplace-sprint2-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Buyer
+actor Seller
+
+rectangle "Marketplace Enhancements (Sprint 2)" {
+    usecase "Submit Product Review" as UC1
+    usecase "Rate Product (1-5 stars)" as UC2
+    usecase "Upload Review Images" as UC3
+    usecase "View Product Reviews" as UC4
+    usecase "Advanced Search" as UC5
+    usecase "Filter by Price Range" as UC6
+    usecase "Filter by Rating" as UC7
+    usecase "Secure Payment" as UC8
+    usecase "View Payment Confirmation" as UC9
+    usecase "View Sales Analytics" as UC10
+    usecase "View Revenue Trends" as UC11
+}
+
+Buyer --> UC1
+Buyer --> UC2
+Buyer --> UC3
+Buyer --> UC4
+Buyer --> UC5
+Buyer --> UC6
+Buyer --> UC7
+Buyer --> UC8
+Buyer --> UC9
+
+Seller --> UC10
+Seller --> UC11
+
+UC1 ..> UC2 : <<include>>
+UC1 ..> UC3 : <<extend>>
+UC5 ..> UC6 : <<include>>
+UC5 ..> UC7 : <<include>>
+@enduml

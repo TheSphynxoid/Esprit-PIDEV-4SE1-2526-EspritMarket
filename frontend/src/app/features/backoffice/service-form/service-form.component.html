@@ -1,0 +1,146 @@
+<form [formGroup]="form" class="space-y-5">
+  <div>
+    <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Service Name</label>
+    <input
+      type="text"
+      formControlName="name"
+      placeholder="e.g., Programming course"
+      class="form-input"
+      [class.border-red-400]="form.get('name')?.invalid && form.get('name')?.touched"
+      [class.focus:ring-red-200]="form.get('name')?.invalid && form.get('name')?.touched"
+    />
+    <p *ngIf="form.get('name')?.invalid && form.get('name')?.touched" class="text-red-500 text-xs mt-1 flex items-center gap-1">
+      <span>&#9888;</span> The name must contain at least 2 characters
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Category</label>
+      <select
+        formControlName="category"
+        class="form-input"
+        [class.border-red-400]="form.get('category')?.invalid && form.get('category')?.touched"
+      >
+        <option value="">-- Select --</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+      <p *ngIf="form.get('category')?.invalid && form.get('category')?.touched" class="text-red-500 text-xs mt-1 flex items-center gap-1">
+        <span>&#9888;</span> The category is required
+      </p>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Status</label>
+      <select
+        formControlName="status"
+        class="form-input"
+      >
+        <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Description</label>
+    <textarea
+      formControlName="description"
+      placeholder="Describe your service..."
+      rows="3"
+      class="form-input resize-none"
+    ></textarea>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Pricing Type</label>
+      <select
+        formControlName="pricingType"
+        class="form-input"
+      >
+        <option *ngFor="let pt of pricingTypes" [value]="pt">{{ pt }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Price (DT)</label>
+      <input
+        type="number"
+        formControlName="price"
+        placeholder="0.00"
+        step="0.01"
+        min="0"
+        class="form-input"
+        [class.border-red-400]="form.get('price')?.invalid && form.get('price')?.touched"
+      />
+      <p *ngIf="form.get('price')?.invalid && form.get('price')?.touched" class="text-red-500 text-xs mt-1 flex items-center gap-1">
+        <span>&#9888;</span> The price must be a positive number
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Service Image</label>
+    <div class="space-y-3">
+      <div class="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-xl p-4 text-center hover:border-esprit-red/40 transition-colors">
+        <input
+          type="file"
+          accept="image/*"
+          (change)="onFileSelected($event)"
+          class="w-full text-sm text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-esprit-red/10 file:text-esprit-red hover:file:bg-esprit-red/20 file:cursor-pointer transition-colors"
+        />
+        <p class="text-xs text-secondary mt-2">Max 5MB. Accepted: JPG, PNG, GIF, WebP</p>
+      </div>
+      <div *ngIf="imagePreview()" class="relative inline-block">
+        <img [src]="imagePreview()" alt="Preview" class="h-24 w-24 object-cover rounded-xl border border-neutral-200 shadow-sm" />
+        <button type="button" (click)="clearImage()" class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow-sm hover:bg-red-600 transition-colors">&times;</button>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-secondary whitespace-nowrap">Or paste URL:</span>
+        <input
+          type="text"
+          formControlName="imageUrl"
+          placeholder="https://example.com/image.jpg"
+          class="flex-1 px-3 py-1.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-sm font-semibold text-primary dark:text-white mb-1.5">Tags</label>
+    <input
+      type="text"
+      formControlName="tags"
+      placeholder="e.g., python, tutoring, beginner"
+      class="form-input"
+    />
+    <p class="text-xs text-secondary mt-1">Separate tags with commas</p>
+  </div>
+
+  <div class="schedule-section">
+    <div class="schedule-divider">
+      <span class="schedule-divider-text">Schedule</span>
+    </div>
+
+    <div class="schedule-toggle">
+      <label class="schedule-option" [class.selected]="scheduleMode() === 'default'">
+        <input type="radio" name="scheduleMode" [value]="'default'"
+          [checked]="scheduleMode() === 'default'"
+          (change)="scheduleMode.set('default')" />
+        <span class="schedule-option-label">Use my default schedule</span>
+        <span class="schedule-option-hint">Your global availability will apply to this service</span>
+      </label>
+      <label class="schedule-option" [class.selected]="scheduleMode() === 'custom'">
+        <input type="radio" name="scheduleMode" [value]="'custom'"
+          [checked]="scheduleMode() === 'custom'"
+          (change)="scheduleMode.set('custom')" />
+        <span class="schedule-option-label">Set a custom schedule</span>
+        <span class="schedule-option-hint">Override your default for this specific service</span>
+      </label>
+    </div>
+
+    <div *ngIf="scheduleMode() === 'custom'" class="schedule-editor-wrapper schedule-fade-in">
+      <app-weekly-schedule-editor #scheduleEditor [autoSave]="false"></app-weekly-schedule-editor>
+    </div>
+  </div>
+</form>

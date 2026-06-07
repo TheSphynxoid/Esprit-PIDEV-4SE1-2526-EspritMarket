@@ -1,0 +1,206 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+        <img src="assets/logo.png" alt="ESPRIT Logo" class="w-full h-full object-contain" />
+      </div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Admin Market</h2>
+    <nav class="space-y-2">
+      <button
+        (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        Overview
+      </button>
+      <button
+        (click)="activeTab = 'requests'"
+        [class.bg-esprit-red]="activeTab === 'requests'"
+        [class.text-white]="activeTab === 'requests'"
+        [class.text-secondary]="activeTab !== 'requests'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        Seller Requests
+      </button>
+      <button
+        (click)="goToMarketplace()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium text-secondary"
+      >
+        Market
+      </button>
+      <hr class="my-4 border-neutral-200 dark:border-neutral-700" />
+      <button
+        (click)="fetchStudentRequests()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-sm font-medium text-secondary"
+        [disabled]="loading"
+      >
+        {{ loading ? 'Loading...' : 'Refresh' }}
+      </button>
+      <hr class="my-4 border-neutral-200 dark:border-neutral-700" />
+      <button
+        (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 text-sm font-medium text-red-600"
+      >
+        Logout
+      </button>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-6 lg:p-8">
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Market Overview</h1>
+
+      <div *ngIf="loading && studentRequests.length === 0" class="p-3 mb-4 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-100 rounded-md border border-blue-200 dark:border-blue-700">
+        Loading requests...
+      </div>
+
+      <div *ngIf="loading && studentRequests.length > 0" class="p-3 mb-4 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded-md border border-yellow-200 dark:border-yellow-700">
+        Updating requests...
+      </div>
+
+      <div *ngIf="error" class="p-3 mb-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700">
+        {{ error }}
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Requests</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ studentRequests.length }}</p>
+          <p class="text-xs text-secondary mt-2">Total</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Pending</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ pendingRequestsCount }}</p>
+          <p class="text-xs text-secondary mt-2">To process</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Synchronized</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ syncedRequestsCount }}</p>
+          <p class="text-xs text-secondary mt-2">Backend OK</p>
+        </div>
+        <div class="card card-md text-center">
+          <h3 class="text-sm text-secondary mb-2">Not synchronized</h3>
+          <p class="text-3xl font-bold text-esprit-red">{{ unsyncedRequestsCount }}</p>
+          <p class="text-xs text-secondary mt-2">Pending sync</p>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'requests'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Seller Requests</h1>
+
+      <div class="card card-lg overflow-hidden">
+        <table class="w-full">
+          <thead class="bg-neutral-100">
+            <tr>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Student Number</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">First Name</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Last Name</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">E-mail</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Student Card</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Status</th>
+              <th class="text-left px-4 py-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let request of studentRequests; let i = index" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors duration-200">
+              <td class="px-4 py-3 text-sm">{{ request.numeroEtudiant }}</td>
+              <td class="px-4 py-3 text-sm">{{ request.prenom }}</td>
+              <td class="px-4 py-3 text-sm">{{ request.nom }}</td>
+              <td class="px-4 py-3 text-sm">{{ request.email }}</td>
+              <td class="px-4 py-3 text-sm">
+                <button
+                  *ngIf="request.carteEtudiantUrl"
+                  (click)="openCardModal(request.carteEtudiantUrl, request)"
+                  class="btn btn-secondary btn-sm"
+                >
+                  View
+                </button>
+                <span *ngIf="!request.carteEtudiantUrl" class="text-secondary">-</span>
+              </td>
+              <td class="px-4 py-3 text-sm">
+                <span
+                  class="badge"
+                  [class.badge-warning]="request.statut === 'EN_ATTENTE'"
+                  [class.badge-success]="request.statut === 'APPROUVE'"
+                  [class.badge-danger]="request.statut === 'REFUSE'"
+                >
+                  {{ request.statut === 'EN_ATTENTE' ? 'PENDING' : request.statut === 'APPROUVE' ? 'APPROVED' : request.statut === 'REFUSE' ? 'REJECTED' : request.statut }}
+                </span>
+                <div *ngIf="request.statut === 'EN_ATTENTE' && !request.syncedWithBackend" class="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
+                  Syncing...
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <div class="flex flex-wrap gap-2 items-center" *ngIf="request.statut === 'EN_ATTENTE'">
+                  <button
+                    (click)="approveRequest(i)"
+                    class="btn btn-primary btn-sm"
+                    [title]="request.syncedWithBackend ? 'Approve' : 'Request is not synchronized with backend'"
+                  >
+                    Approve
+                  </button>
+                  <button
+                    (click)="rejectRequest(i)"
+                    class="btn btn-danger btn-sm"
+                    [title]="request.syncedWithBackend ? 'Reject' : 'Request is not synchronized with backend'"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    (click)="deleteRequest(i)"
+                    class="btn btn-secondary btn-sm"
+                    title="Remove from list"
+                  >
+                    Delete
+                  </button>
+                </div>
+                <span *ngIf="request.statut !== 'EN_ATTENTE'" class="badge badge-success">{{ request.statut === 'APPROUVE' ? 'APPROVED' : request.statut === 'REFUSE' ? 'REJECTED' : request.statut }}</span>
+              </td>
+            </tr>
+            <tr *ngIf="!loading && studentRequests.length === 0">
+              <td colspan="7" class="px-4 py-6 text-center text-secondary">
+                <span *ngIf="!error">No store creation requests found</span>
+                <span *ngIf="error">{{ error }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div *ngIf="showCardModal" class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" (click)="closeCardModal()">
+    <div class="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
+      <div class="flex items-center justify-between p-5 border-b border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40">
+        <h2 class="text-2xl font-semibold text-primary dark:text-white">Student Card</h2>
+        <button class="text-2xl text-secondary hover:text-primary" (click)="closeCardModal()">X</button>
+      </div>
+
+      <div class="p-5 overflow-y-auto flex-1 flex items-center justify-center">
+        <img
+          *ngIf="selectedCard"
+          [src]="selectedCard"
+          alt="Student card"
+          class="max-w-full max-h-[60vh] rounded-lg shadow"
+          (error)="onCardImageError()"
+        />
+        <div *ngIf="cardLoadError" class="p-3 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-100 rounded-md border border-yellow-200 dark:border-yellow-700">
+          {{ cardLoadError }}
+        </div>
+      </div>
+
+      <div class="p-5 border-t border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/40 flex gap-2 justify-end">
+        <a *ngIf="selectedCard" [href]="selectedCard" target="_blank" class="btn btn-primary">Download</a>
+        <button (click)="closeCardModal()" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

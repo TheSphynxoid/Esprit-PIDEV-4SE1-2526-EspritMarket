@@ -1,0 +1,132 @@
+@startuml services-class
+
+class User {
+    - id: Long
+    - email: String
+    - firstName: String
+    - lastName: String
+    - role: UserRole
+}
+
+class Service {
+    - id: Long
+    - title: String
+    - description: String
+    - price: double
+    - category: String
+    - status: ServiceStatus
+    + publish(): void
+    + deactivate(): void
+}
+
+class ServiceSchedule {
+    - id: Long
+    - dayOfWeek: DayOfWeek
+    - startTime: LocalTime
+    - endTime: LocalTime
+    - maxBookings: int
+    - isRecurring: boolean
+    + isAvailable(date: LocalDate): boolean
+}
+
+class AvailabilitySlot {
+    - id: Long
+    - date: LocalDate
+    - startTime: LocalTime
+    - endTime: LocalTime
+    - isBooked: boolean
+}
+
+class Booking {
+    - id: Long
+    - status: BookingStatus
+    - date: LocalDate
+    - startTime: LocalTime
+    - endTime: LocalTime
+    - createdAt: LocalDateTime
+    + confirm(): void
+    + cancel(): void
+}
+
+class Project {
+    - id: Long
+    - title: String
+    - description: String
+    - status: ProjectStatus
+    - startDate: LocalDate
+    - endDate: LocalDate
+    + close(): void
+}
+
+class ProjectMember {
+    - id: Long
+    - role: MemberRole
+    - joinedAt: LocalDateTime
+}
+
+class Milestone {
+    - id: Long
+    - title: String
+    - description: String
+    - dueDate: LocalDate
+    - completed: boolean
+    + markComplete(): void
+}
+
+class Badge {
+    - id: Long
+    - name: String
+    - description: String
+    - criteria: String
+}
+
+class ChatMessage {
+    - id: Long
+    - content: String
+    - sentAt: LocalDateTime
+    - isRead: boolean
+}
+
+class SchedulingConflict {
+    - id: Long
+    - conflictType: String
+    - resolved: boolean
+}
+
+enum ServiceStatus {
+    ACTIVE
+    INACTIVE
+    DRAFT
+}
+
+enum BookingStatus {
+    PENDING
+    CONFIRMED
+    COMPLETED
+    CANCELLED
+}
+
+enum ProjectStatus {
+    ACTIVE
+    COMPLETED
+    ON_HOLD
+}
+
+User "1" -- "0..*" Service : publishes >
+User "1" -- "0..*" Booking : makes >
+User "1" -- "0..*" ProjectMember : is >
+User "1" -- "0..*" Badge : earns >
+
+Service "1" -- "0..*" ServiceSchedule : has >
+Service "1" -- "0..*" AvailabilitySlot : defines >
+Service "1" -- "0..*" Booking : receives >
+
+ServiceSchedule "1" -- "0..*" AvailabilitySlot : generates >
+
+Booking "1" -- "0..*" ChatMessage : contains >
+Booking "1" --> SchedulingConflict : may trigger >
+
+Project "1" -- "0..*" ProjectMember : has >
+Project "1" -- "0..*" Milestone : tracks >
+
+@enduml

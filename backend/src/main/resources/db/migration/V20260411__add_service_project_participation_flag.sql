@@ -1,0 +1,2 @@
+ALTER TABLE service
+    ADD COLUMN IF NOT EXISTS allow_project_participation BOOLEAN NOT NULL DEFAULT TRUE;

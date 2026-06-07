@@ -1,0 +1,297 @@
+<app-header></app-header>
+<div class="form-container">
+
+  <!-- ═══ FORMULAIRE PRINCIPAL ═══════════════════════════════════════ -->
+  <form *ngIf="!isRequestSent"
+        (ngSubmit)="onSubmit()"
+        (input)="onFormInteraction()"
+        (change)="onFormInteraction()">
+
+    <div class="logo-area">
+      <div class="logo-esprit">ESPRIT<span>Market</span></div>
+      <div class="logo-sub">Store Creation - Step 1</div>
+      <div class="divider"></div>
+    </div>
+
+    <label for="studentNumber">Student Number</label>
+    <div class="input-wrap">
+      <input #stNum="ngModel"
+             id="studentNumber" name="studentNumber" type="text"
+             placeholder="Ex: 123abc1234" required
+             pattern="^[0-9]{3}[A-Za-z]{3}[0-9]{4}$"
+             [(ngModel)]="step1Form.studentNumber">
+    </div>
+    <p class="field-error" *ngIf="stNum.invalid && (stNum.touched || stNum.dirty || submitAttempted)">
+      <span *ngIf="stNum.errors?.['required']">Student number is required.</span>
+      <span *ngIf="stNum.errors?.['pattern']">Format: 123abc1234</span>
+    </p>
+
+    <label for="firstName">First Name</label>
+    <div class="input-wrap">
+      <input #firstName="ngModel"
+             id="firstName" name="firstName" type="text"
+             placeholder="Ex: Jean" required minlength="2"
+             pattern="^[A-Za-zÀ-ÿ\s]+$"
+             [(ngModel)]="step1Form.firstName"
+             [readonly]="!!step1Form.firstName"
+             [style.background]="step1Form.firstName ? '#f5f5f5' : ''">
+    </div>
+    <p class="field-error" *ngIf="firstName.invalid && (firstName.touched || firstName.dirty || submitAttempted)">
+      <span *ngIf="firstName.errors?.['required']">First name is required.</span>
+      <span *ngIf="firstName.errors?.['minlength']">Minimum 2 characters.</span>
+      <span *ngIf="firstName.errors?.['pattern']">Only letters allowed.</span>
+    </p>
+
+    <label for="lastName">Last Name</label>
+    <div class="input-wrap">
+      <input #lastName="ngModel"
+             id="lastName" name="lastName" type="text"
+             placeholder="Ex: Dupont" required minlength="2"
+             pattern="^[A-Za-zÀ-ÿ\s]+$"
+             [(ngModel)]="step1Form.lastName"
+             [readonly]="!!step1Form.lastName"
+             [style.background]="step1Form.lastName ? '#f5f5f5' : ''">
+    </div>
+    <p class="field-error" *ngIf="lastName.invalid && (lastName.touched || lastName.dirty || submitAttempted)">
+      <span *ngIf="lastName.errors?.['required']">Last name is required.</span>
+      <span *ngIf="lastName.errors?.['minlength']">Minimum 2 characters.</span>
+      <span *ngIf="lastName.errors?.['pattern']">Only letters allowed.</span>
+    </p>
+
+    <label for="email">E-mail</label>
+    <div class="input-wrap">
+      <input #email="ngModel"
+             id="email" name="email" type="email"
+             placeholder="nom.prenom@esprit.tn"
+             required email pattern="^.+@esprit\.tn$"
+             [(ngModel)]="step1Form.email"
+             [readonly]="!!step1Form.email"
+             [style.background]="step1Form.email ? '#f5f5f5' : ''">
+    </div>
+    <p class="field-error" *ngIf="email.invalid && (email.touched || email.dirty || submitAttempted)">
+      <span *ngIf="email.errors?.['required']">E-mail is required.</span>
+      <span *ngIf="email.errors?.['pattern']">Must end with @esprit.tn</span>
+    </p>
+
+    <!-- ─── 2 ONGLETS ────────────────────────────────────────────── -->
+    <div style="margin: 24px 0 8px 0;">
+      <p style="font-weight: 600; margin-bottom: 12px; color: #333;">
+        Choose your verification method:
+      </p>
+      <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+        <button type="button"
+                (click)="selectMethod('card')"
+                [style.background]="selectedVerificationMethod === 'card' ? '#c0392b' : '#f5f5f5'"
+                [style.color]="selectedVerificationMethod === 'card' ? '#fff' : '#333'"
+                [style.border]="selectedVerificationMethod === 'card' ? '2px solid #c0392b' : '2px solid #ddd'"
+                style="flex: 1; padding: 14px; border-radius: 10px; cursor: pointer;
+                       font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">
+          📸 Student Card
+        </button>
+        <button type="button"
+                (click)="selectMethod('email')"
+                [style.background]="selectedVerificationMethod === 'email' ? '#c0392b' : '#f5f5f5'"
+                [style.color]="selectedVerificationMethod === 'email' ? '#fff' : '#333'"
+                [style.border]="selectedVerificationMethod === 'email' ? '2px solid #c0392b' : '2px solid #ddd'"
+                style="flex: 1; padding: 14px; border-radius: 10px; cursor: pointer;
+                       font-weight: 600; font-size: 0.95rem; transition: all 0.2s;">
+          📧 Email Verification
+        </button>
+      </div>
+    </div>
+
+    <!-- ─── ONGLET 1 : Carte étudiant ───────────────────────────── -->
+    <div *ngIf="selectedVerificationMethod === 'card'">
+      <label for="studentCard">Student card photo</label>
+      <div class="input-wrap">
+        <input id="studentCard" type="file" accept="image/*"
+               (change)="onStudentCardSelected($event)">
+      </div>
+      <p class="field-error" *ngIf="studentCardError || (!hasSelectedStudentCard && submitAttempted)">
+        {{ studentCardError || 'Student card photo is required.' }}
+      </p>
+      <div *ngIf="studentCardPreviewUrl" class="card-preview-box">
+        <p class="card-preview-title">Student card preview</p>
+        <img [src]="studentCardPreviewUrl" alt="Student card preview" class="card-preview-image">
+      </div>
+      <label for="hasFiveArticles" class="checkbox-label" style="margin-top: 16px; display: block;">
+        <input id="hasFiveArticles" name="hasFiveArticles"
+               type="checkbox" [(ngModel)]="hasFiveOrMoreArticles">
+        I have more than 5 items and I want to open a store (step 2 after admin approval)
+      </label>
+      <p class="text-xs text-secondary mt-2">
+        If unchecked, after admin approval you can add products without opening a store.
+      </p>
+      <button type="submit" class="submit-button" style="margin-top: 20px;">
+        Submit my request
+      </button>
+    </div>
+
+    <!-- ─── ONGLET 2 : Vérification par Email Outlook ────────────── -->
+    <div *ngIf="selectedVerificationMethod === 'email'" style="margin-top: 8px;">
+
+      <div style="background: #fff8e8; border: 1px solid #ffe2b8; border-radius: 10px;
+                  padding: 14px; margin-bottom: 20px; color: #9a6700; font-size: 0.9rem;">
+        📧 Enter your ESPRIT Outlook email. You will receive a 5-digit verification code.
+        Once verified, your request will be submitted to admin for approval.
+      </div>
+
+      <label>Your ESPRIT Email (@esprit.tn)</label>
+      <div class="input-wrap">
+        <input type="email"
+               name="outlookEmail"
+               placeholder="nom.prenom@esprit.tn"
+               [(ngModel)]="outlookEmail"
+               [readonly]="!!outlookEmail"
+               [style.background]="outlookEmail ? '#f5f5f5' : ''"
+               style="width: 100%;">
+      </div>
+
+      <label for="hasFiveArticles" class="checkbox-label" style="margin-top: 16px; display: block;">
+        <input id="hasFiveArticles" name="hasFiveArticles"
+               type="checkbox" [(ngModel)]="hasFiveOrMoreArticles">
+        I have more than 5 items and I want to open a store (step 2 after admin approval)
+      </label>
+      <p class="text-xs text-secondary mt-2">
+        If unchecked, after admin approval you can add products without opening a store.
+      </p>
+
+      <button type="button"
+              (click)="sendVerificationCode()"
+              [disabled]="isSendingCode || codeSent"
+              class="submit-button"
+              style="margin-top: 12px;"
+              [style.background]="codeSent ? '#12b76a' : '#c0392b'">
+        <span *ngIf="!isSendingCode && !codeSent">📤 Send Verification Code</span>
+        <span *ngIf="isSendingCode">⏳ Sending...</span>
+        <span *ngIf="codeSent">✅ Code Sent</span>
+      </button>
+
+      <div *ngIf="codeSentMessage"
+           style="background: #ecfdf3; color: #027a48; border: 1px solid #d1fadf;
+                  border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 0.9rem;">
+        ✅ {{ codeSentMessage }}
+      </div>
+
+      <div *ngIf="codeSent" style="margin-top: 20px;">
+        <label>Enter the 5-digit code received by email</label>
+        <div class="input-wrap">
+          <input type="text"
+                 name="verificationCode"
+                 placeholder="Ex: 84729"
+                 maxlength="5"
+                 [(ngModel)]="verificationCode"
+                 style="letter-spacing: 6px; font-size: 1.4rem;
+                        text-align: center; font-weight: bold;">
+        </div>
+
+        <!-- ✅ FIX : !== 5 au lieu de !== 6 -->
+        <button type="button"
+                (click)="verifyEmailCode()"
+                [disabled]="isVerifyingCode || verificationCode.length !== 5"
+                class="submit-button"
+                style="margin-top: 12px;">
+          <span *ngIf="!isVerifyingCode">🔓 Verify Code & Continue</span>
+          <span *ngIf="isVerifyingCode">⏳ Verifying...</span>
+        </button>
+
+        <button type="button"
+                (click)="codeSent = false; verificationCode = ''; codeSentMessage = ''"
+                style="background: none; border: none; color: #c0392b; cursor: pointer;
+                       text-decoration: underline; margin-top: 8px; font-size: 0.9rem;">
+          Resend a new code
+        </button>
+      </div>
+
+      <div *ngIf="codeError"
+           style="background: #ffecec; color: #b42318; border: 1px solid #ffd5d2;
+                  border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 0.9rem;">
+        ❌ {{ codeError }}
+      </div>
+
+    </div>
+
+  </form>
+
+  <!-- ═══ EN ATTENTE D'APPROBATION ══════════════════════════════════ -->
+  <div *ngIf="isRequestSent && !isApproved && status !== ''" class="status-container">
+    <div class="logo-area">
+      <div class="logo-esprit">ESPRIT<span>Market</span></div>
+      <div class="logo-sub">Request status</div>
+      <div class="divider"></div>
+    </div>
+    <div class="status-box" [ngClass]="status.toLowerCase()">
+      <p *ngIf="status === 'EN_ATTENTE'">Your request is being reviewed by Market Admin.</p>
+      <p *ngIf="status === 'REFUSE'">Your request was rejected. Please contact support.</p>
+      <div class="loader" *ngIf="status === 'EN_ATTENTE'"></div>
+    </div>
+    <button class="submit-button secondary" (click)="refreshStatus()">Refresh</button>
+    <button class="submit-button secondary" type="button" (click)="editRequest()">Back to form</button>
+    <button class="submit-button secondary danger" type="button" (click)="clearCachedRequest()">
+      Clear request and restart
+    </button>
+  </div>
+
+  <!-- ═══ APPROUVÉ ══════════════════════════════════════════════════ -->
+  <div *ngIf="isApproved && isRequestSent" class="status-container approved">
+    <div class="logo-area">
+      <div class="logo-esprit">ESPRIT<span>Market</span></div>
+      <div class="logo-sub">Congratulations!</div>
+      <div class="divider"></div>
+    </div>
+    <div class="status-box success">
+      <p>Your request has been approved by Market Admin.</p>
+      <p *ngIf="shouldOpenStoreStep2">You selected more than 5 items. You can continue to step 2.</p>
+      <p *ngIf="!shouldOpenStoreStep2">You can add products without opening a store.</p>
+    </div>
+    <button *ngIf="shouldOpenStoreStep2" class="submit-button" (click)="proceedToNextStep()">
+      Go to step 2 (open my store)
+    </button>
+    <div *ngIf="!shouldOpenStoreStep2" class="mt-4 w-full max-w-2xl mx-auto text-left">
+      <div class="status-box success mb-4">
+        <p>Product add interface is available without opening a store.</p>
+      </div>
+      <div *ngIf="productSubmitError" class="status-box mb-3"
+           style="background: #ffecec; color: #b42318; border-color: #ffd5d2;">
+        {{ productSubmitError }}
+      </div>
+      <div *ngIf="productSubmitMessage" class="status-box mb-3"
+           style="background: #ecfdf3; color: #027a48; border-color: #d1fadf;">
+        {{ productSubmitMessage }}
+      </div>
+      <app-product-form
+        [categories]="productCategories"
+        [isCategoriesLoading]="isLoadingProductCategories"
+        [categoriesError]="productCategoriesError">
+      </app-product-form>
+      <div *ngIf="isResolvingProductStore" class="status-box mb-3"
+           style="background: #fff8e8; color: #9a6700; border-color: #ffe2b8;">
+        Resolving your store context...
+      </div>
+      <div *ngIf="isProductAddedSuccess" class="status-box mb-3"
+           style="background: #ecfdf3; color: #027a48; border-color: #d1fadf;
+                  display: flex; flex-direction: column; align-items: center;
+                  gap: 15px; padding: 20px; border-radius: 12px;">
+        <div style="font-weight: 600; font-size: 1.1rem;">✨ Product added successfully!</div>
+        <p style="margin: 0; text-align: center;">Your item is now live in the marketplace.</p>
+        <button class="submit-button" (click)="goToMarketplace()"
+                style="background: #12b76a; border: none; width: auto; padding: 10px 25px;">
+          View in Marketplace 🛒
+        </button>
+      </div>
+      <button *ngIf="!isProductAddedSuccess"
+              class="submit-button mt-4"
+              (click)="submitProductWithoutStore()"
+              [disabled]="isSubmittingProduct || isLoadingProductCategories || isResolvingProductStore">
+        {{ isSubmittingProduct ? 'Adding...' : 'Add this product' }}
+      </button>
+      <button *ngIf="!isProductAddedSuccess"
+              class="submit-button secondary mt-3"
+              (click)="goToVendorDashboard()">
+        Go to seller dashboard
+      </button>
+    </div>
+  </div>
+
+</div>
+<app-footer></app-footer>

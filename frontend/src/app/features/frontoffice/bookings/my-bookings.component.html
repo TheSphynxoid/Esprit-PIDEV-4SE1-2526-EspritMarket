@@ -1,0 +1,146 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-4xl mx-auto py-12 px-4">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-3xl font-bold text-primary dark:text-white">My Bookings</h1>
+      <button class="btn btn-secondary" (click)="router.navigate(['/services'])">Browse Services</button>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 mb-6">
+      @for (status of statusOptions; track status) {
+        <button
+          class="btn btn-sm"
+          [class.btn-primary]="statusFilter() === status"
+          [class.btn-secondary]="statusFilter() !== status"
+          (click)="onStatusFilterChange(status)">
+          {{ status === 'ALL' ? 'All' : status.replace(/_/g, ' ') }}
+        </button>
+      }
+    </div>
+
+    <div *ngIf="isLoading()" class="space-y-4">
+      @for (s of [1,2,3]; track s) {
+        <div class="card card-md p-5">
+          <div class="flex justify-between items-start mb-3">
+            <div class="space-y-2">
+              <app-skeleton variant="text" style="width: 180px"></app-skeleton>
+              <app-skeleton variant="text" style="width: 120px"></app-skeleton>
+            </div>
+            <app-skeleton variant="text" style="width: 90px; height: 28px; border-radius: 9999px"></app-skeleton>
+          </div>
+          <app-skeleton variant="text" style="width: 60%"></app-skeleton>
+        </div>
+      }
+    </div>
+
+    <div *ngIf="!isLoading() && bookings().length === 0" class="text-center py-20">
+      <p class="text-secondary text-lg mb-4">No bookings yet.</p>
+      <button class="btn btn-primary" (click)="router.navigate(['/services'])">Browse Services</button>
+    </div>
+
+    <div *ngIf="!isLoading()" class="space-y-4">
+      <div *ngIf="actionError()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">
+        {{ actionError() }}
+      </div>
+      <div *ngIf="filteredBookings.length === 0" class="text-center py-12">
+        <p class="text-secondary text-lg mb-4">No bookings match this filter.</p>
+        <button class="btn btn-secondary btn-sm" (click)="onStatusFilterChange('ALL')">Show All</button>
+      </div>
+      <div *ngFor="let booking of paginatedBookings" class="card card-md">
+        <div class="flex justify-between items-start mb-3">
+          <div>
+            <h3 class="font-bold text-primary dark:text-white">{{ booking.serviceName || 'Service' }}</h3>
+            <p class="text-sm text-secondary">{{ booking.date | date:'medium' }}</p>
+            <p class="text-sm text-secondary">Duration: {{ booking.duration }}h</p>
+            <p *ngIf="booking.totalPrice" class="text-sm font-semibold text-esprit-red">{{ booking.totalPrice }} TND</p>
+            <p *ngIf="booking.notes" class="text-sm text-secondary mt-1">Note: {{ booking.notes }}</p>
+          </div>
+          <span class="text-xs px-2 py-1 rounded-full font-semibold" [ngClass]="getStatusClass(booking.status)">
+            {{ booking.status | titlecase }}
+          </span>
+          <span *ngIf="bookingPredictions().get(booking.id!)" class="text-[10px] px-2 py-0.5 rounded-full font-bold ml-1"
+                [ngClass]="{
+                  'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': bookingPredictions().get(booking.id!)!.riskLevel === 'LOW',
+                  'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': bookingPredictions().get(booking.id!)!.riskLevel === 'MEDIUM',
+                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': bookingPredictions().get(booking.id!)!.riskLevel === 'HIGH' || bookingPredictions().get(booking.id!)!.riskLevel === 'CRITICAL'
+                }">
+            AI: {{ bookingPredictions().get(booking.id!)!.riskLevel }}
+          </span>
+        </div>
+
+        <div class="flex gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-700 flex-wrap">
+          <button *ngIf="canCancel(booking.status)" class="btn btn-danger btn-sm" (click)="cancelBooking(booking)">Cancel</button>
+          <button class="btn btn-primary btn-sm" (click)="reviewDeliverable(booking)">View Workspace</button>
+          <button *ngIf="booking.status === BookingStatus.PendingReview || booking.status === BookingStatus.Completed || booking.status === BookingStatus.Disputed" class="btn btn-secondary btn-sm" (click)="downloadDeliverable(booking)">Download Deliverable</button>
+          <button *ngIf="canReview(booking.status) && reviewingBookingId() !== booking.id" class="btn btn-primary btn-sm" (click)="startReview(booking.id)">Leave Review</button>
+        </div>
+
+        <div *ngIf="reviewingBookingId() === booking.id" class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <h4 class="font-semibold text-primary dark:text-white mb-3">Leave a Review</h4>
+
+          <div *ngIf="reviewSubmitted()" class="p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">
+            Review submitted successfully!
+          </div>
+
+          <div *ngIf="reviewError()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">
+            {{ reviewError() }}
+          </div>
+
+          <form *ngIf="!reviewSubmitted()" [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Rating</label>
+              <app-star-rating [value]="reviewForm.get('rating')?.value" (valueChange)="reviewForm.get('rating')?.setValue($event)" [showLabel]="true"></app-star-rating>
+            </div>
+            <div>
+              <label class="block text-sm font-semibold text-primary dark:text-white mb-1">Comment (optional)</label>
+              <textarea
+                formControlName="comment"
+                rows="2"
+                class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-esprit-red dark:bg-neutral-700 dark:border-neutral-600 text-sm resize-none"
+              ></textarea>
+            </div>
+            <div class="flex gap-2">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="reviewForm.invalid">Submit Review</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="cancelReview()">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="totalPages > 1" class="flex items-center justify-center gap-1 pt-6">
+      <button class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+        [class.text-neutral-300]="currentPage() === 0"
+        [class.dark:text-neutral-600]="currentPage() === 0"
+        [class.hover:bg-neutral-100]="currentPage() > 0"
+        [class.dark:hover:bg-neutral-700]="currentPage() > 0"
+        [disabled]="currentPage() === 0"
+        (click)="goToPage(currentPage() - 1)">
+        Previous
+      </button>
+      <button *ngFor="let p of pageRange"
+        class="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
+        [class.bg-esprit-red]="p === currentPage()"
+        [class.text-white]="p === currentPage()"
+        [class.hover:bg-neutral-100]="p !== currentPage()"
+        [class.dark:hover:bg-neutral-700]="p !== currentPage()"
+        (click)="goToPage(p)">
+        {{ p + 1 }}
+      </button>
+      <button class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+        [class.text-neutral-300]="currentPage() >= totalPages - 1"
+        [class.dark:text-neutral-600]="currentPage() >= totalPages - 1"
+        [class.hover:bg-neutral-100]="currentPage() < totalPages - 1"
+        [class.dark:hover:bg-neutral-700]="currentPage() < totalPages - 1"
+        [disabled]="currentPage() >= totalPages - 1"
+        (click)="goToPage(currentPage() + 1)">
+        Next
+      </button>
+    </div>
+
+    <p class="text-center text-xs text-secondary mt-3">{{ filteredBookings.length }} booking{{ filteredBookings.length !== 1 ? 's' : '' }} found</p>
+  </div>
+</div>
+
+<app-footer></app-footer>

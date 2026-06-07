@@ -1,0 +1,54 @@
+@startuml events-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Administrator
+actor Organizer
+actor Participant
+
+rectangle "Events Module" {
+    usecase "Create Event" as UC1
+    usecase "Edit Event" as UC2
+    usecase "Cancel Event" as UC3
+    usecase "Reserve Stall" as UC4
+    usecase "View Stall Availability" as UC5
+    usecase "Reserve Equipment" as UC6
+    usecase "View Equipment Stock" as UC7
+    usecase "Confirm Reservation" as UC8
+    usecase "View Event List" as UC9
+    usecase "Register for Event" as UC10
+    usecase "Cancel Registration" as UC11
+    usecase "Purchase Ticket" as UC12
+    usecase "Manage Schedule" as UC13
+    usecase "Send Notifications" as UC14
+    usecase "Manage Waiting List" as UC15
+    usecase "Export Participants" as UC16
+}
+
+Administrator --> UC1
+Administrator --> UC2
+Administrator --> UC3
+Administrator --> UC4
+Administrator --> UC6
+Administrator --> UC8
+Administrator --> UC13
+
+Organizer --> UC4
+Organizer --> UC5
+Organizer --> UC6
+Organizer --> UC7
+Organizer --> UC13
+Organizer --> UC15
+Organizer --> UC16
+
+Participant --> UC9
+Participant --> UC10
+Participant --> UC11
+Participant --> UC12
+
+UC1 ..> UC14 : <<include>>
+UC10 ..> UC15 : <<extend>>
+UC4 ..> UC5 : <<include>>
+UC6 ..> UC7 : <<include>>
+@enduml

@@ -1,0 +1,1768 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex transition-colors duration-200">
+  <aside class="w-64 bg-white dark:bg-neutral-800 border-r border-neutral-200 dark:border-neutral-700 p-6 fixed h-full overflow-y-auto transition-colors duration-200">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="w-10 h-10 rounded-full bg-gradient-to-br from-esprit-red to-esprit-700 flex items-center justify-center text-white text-lg font-bold shadow-sm">
+        <img
+          src="assets/logo.png"
+          alt="ESPRIT Logo"
+          class="w-full h-full object-contain"
+        />
+      </div>
+      <span class="text-lg font-bold text-primary dark:text-white">ESPRIT Market</span>
+    </div>
+
+    <h2 class="text-lg font-bold text-primary dark:text-white mb-6">Delivery</h2>
+    <nav class="space-y-2">
+      <button
+        (click)="activeTab = 'overview'"
+        [class.bg-esprit-red]="activeTab === 'overview'"
+        [class.text-white]="activeTab === 'overview'"
+        [class.text-secondary]="activeTab !== 'overview'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        📊 Overview
+      </button>
+      <button
+        (click)="activeTab = 'profile'"
+        [class.bg-esprit-red]="activeTab === 'profile'"
+        [class.text-white]="activeTab === 'profile'"
+        [class.text-secondary]="activeTab !== 'profile'"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        👤 My profile
+
+      </button>
+      
+       <!-- Nouveau bouton Testing and validation -->
+<button
+  (click)="activeTab = 'Testing and validation'"
+  [class.bg-esprit-red]="activeTab === 'Testing and validation'"
+  [class.text-white]="activeTab === 'Testing and validation'"
+  [class.text-secondary]="activeTab !== 'Testing and validation'"
+  class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+>
+  🧪 Testing and validation
+</button>
+
+
+<button
+        (click)="activeTab = 'vehicles'"
+        [class.bg-esprit-red]="activeTab === 'vehicles'"
+        [class.text-white]="activeTab === 'vehicles'"
+        [class.text-secondary]="activeTab !== 'vehicles'"
+  [disabled]="isCourierAccessRestricted()"
+  [class.opacity-50]="isCourierAccessRestricted()"
+  [class.cursor-not-allowed]="isCourierAccessRestricted()"
+        title="Available only when courier status is ACCEPTED"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+      >
+        🚚 Vehicules
+      </button>
+
+ 
+       <!-- bouton delivery -->
+<button
+  (click)="activeTab = 'delivery'"
+  [class.bg-esprit-red]="activeTab === 'delivery'"
+  [class.text-white]="activeTab === 'delivery'"
+  [class.text-secondary]="activeTab !== 'delivery'"
+  [disabled]="isCourierAccessRestricted()"
+  [class.opacity-50]="isCourierAccessRestricted()"
+  [class.cursor-not-allowed]="isCourierAccessRestricted()"
+  title="Available only when courier status is ACCEPTED"
+  class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+>
+  <span class="flex items-center justify-between gap-3">
+    <span>📦 Delivery</span>
+    <span
+      *ngIf="hasDeliveryAlert"
+      class="sidebar-alert-badge"
+      aria-label="{{ deliveryNotificationCount }} deliveries"
+    >
+      {{ deliveryNotificationCount }}
+    </span>
+  </span>
+</button>
+
+
+      <!-- Nouveau bouton MAP -->
+<button
+  (click)="openMapTab()"
+  [class.bg-esprit-red]="activeTab === 'map'"
+  [class.text-white]="activeTab === 'map'"
+  [class.text-secondary]="activeTab !== 'map'"
+  class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-esprit-red/10 dark:hover:bg-esprit-red/20 text-sm font-medium"
+>
+  🗺️ Map
+</button>
+      <hr class="my-4 border-neutral-200 dark:border-neutral-700">
+      <button
+        (click)="logout()"
+        class="w-full text-left px-4 py-3 rounded-lg transition-colors duration-300 hover:bg-red-50 text-sm font-medium text-red-600"
+      >
+        🚪 Logout
+      </button>
+    </nav>
+  </aside>
+
+  <main class="flex-1 ml-64 p-6 lg:p-8">
+    <!-- Notification Bar for Incomplete Profile -->
+    <div *ngIf="isProfileIncomplete()" class="mb-6 bg-amber-50 border-l-4 border-amber-400 rounded-lg p-4 flex items-center gap-3 shadow-sm">
+      <span class="text-2xl">⚠️</span>
+      <div class="flex-1">
+        <p class="text-sm font-semibold text-amber-900">Incomplete Profile</p>
+        <p class="text-sm text-amber-800">Please complete your profile after passing the quiz to access all features.</p>
+      </div>
+      <button 
+        (click)="activeTab = 'Testing and validation'"
+        class="ml-4 px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-900 font-medium rounded-lg transition-colors duration-200 text-sm"
+      >
+        Valider Quiz
+      </button>
+    </div>
+
+    <div *ngIf="activeTab === 'overview'" class="animate-fade-in overview-shell">
+      <div class="overview-head">
+        <div>
+          <h1 class="text-3xl font-bold text-primary">Delivery Dashboard</h1>
+          <p class="text-sm text-secondary mt-1">Real-time operational analytics for courier performance</p>
+        </div>
+      </div>
+
+      <p *ngIf="isCourierStatisticsLoading" class="text-sm text-secondary mb-4">Loading statistics...</p>
+      <p *ngIf="courierStatisticsError" class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+        {{ courierStatisticsError }} Local analytics mode enabled.
+      </p>
+
+      <div class="overview-kpis">
+        <article class="metric-card">
+          <div class="metric-icon">📦</div>
+          <div>
+            <p class="metric-title">Total Deliveries</p>
+            <p class="metric-value text-esprit-red">{{ overviewStats.totalDeliveries }}</p>
+            <p class="metric-meta">All time volume</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">✅</div>
+          <div>
+            <p class="metric-title">Delivered</p>
+            <p class="metric-value text-esprit-red">{{ overviewStats.deliveredDeliveries }}</p>
+            <p class="metric-meta">Completed orders</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">🎯</div>
+          <div>
+            <p class="metric-title">Completion Rate</p>
+            <p class="metric-value text-esprit-red">{{ overviewStats.completionRate.toFixed(1) }}%</p>
+            <p class="metric-meta">Delivered / total</p>
+          </div>
+        </article>
+
+        <article class="metric-card">
+          <div class="metric-icon">📍</div>
+          <div>
+            <p class="metric-title">Distance</p>
+            <p class="metric-value text-esprit-red">{{ overviewStats.totalDistanceKm.toFixed(1) }} km</p>
+            <p class="metric-meta">Total delivery route</p>
+          </div>
+        </article>
+      </div>
+
+      <div class="overview-secondary-kpis">
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Pending</p>
+          <p class="sub-kpi-value">{{ overviewStats.pendingDeliveries }}</p>
+        </div>
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Cancelled</p>
+          <p class="sub-kpi-value">{{ overviewStats.cancelledDeliveries }}</p>
+        </div>
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Vehicles</p>
+          <p class="sub-kpi-value">{{ overviewStats.totalVehicles }}</p>
+        </div>
+        <div class="sub-kpi-card">
+          <p class="sub-kpi-title">Avg Distance</p>
+          <p class="sub-kpi-value">{{ averageDistancePerDeliveryKm.toFixed(1) }} km</p>
+        </div>
+      </div>
+
+     
+
+      <div class="overview-analytics-grid">
+        <section class="card card-md analytics-trend-card">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-primary">Delivered Trend (7 days)</h2>
+            <span class="trend-delta-badge">{{ trendDeltaLabel }}</span>
+          </div>
+
+          <div class="trend-stage">
+            <svg viewBox="0 0 100 40" preserveAspectRatio="none" class="w-full h-40">
+              <polyline
+                [attr.points]="deliveredTrendPoints"
+                fill="none"
+                stroke="#6366f1"
+                stroke-width="2.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              ></polyline>
+            </svg>
+
+            <div class="trend-axis-row">
+              <span *ngFor="let tick of deliveredLast7DayTicks" class="trend-day-tick">{{ tick }}</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card card-md analytics-side-stack">
+          <div>
+            <h2 class="text-lg font-semibold text-primary mb-3">Completion</h2>
+            <div class="completion-ring-wrap">
+              <div class="completion-ring" [style.background]="completionRingBackground">
+                <div class="completion-ring-inner">
+                  <p class="completion-ring-value">{{ overviewStats.completionRate.toFixed(0) }}%</p>
+                  <p class="completion-ring-label">Success Rate</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-bars-wrap">
+            <div class="status-bar-item" *ngFor="let stat of statusDistribution">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="text-secondary">{{ stat.label }}</span>
+                <span class="font-semibold text-primary">{{ stat.count }} ({{ stat.percent.toFixed(0) }}%)</span>
+              </div>
+              <div class="status-track">
+                <div
+                  class="status-fill"
+                  [class.status-fill-delivered]="stat.label === 'Delivered'"
+                  [class.status-fill-pending]="stat.label === 'Pending'"
+                  [class.status-fill-cancelled]="stat.label === 'Cancelled'"
+                  [style.width.%]="stat.percent"
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-base font-semibold text-primary mb-3">Upcoming Deliveries</h3>
+            <div *ngIf="overviewUpcomingDeliveries.length > 0; else noOverviewUpcoming" class="space-y-2">
+              <article *ngFor="let delivery of overviewUpcomingDeliveries" class="upcoming-delivery-item">
+                <div class="upcoming-id">{{ delivery.id }}</div>
+                <div>
+                  <p class="text-sm font-semibold text-primary">{{ delivery.to }}</p>
+                  <p class="text-xs text-secondary">{{ delivery.date || 'Date not available' }}</p>
+                </div>
+              </article>
+            </div>
+            <ng-template #noOverviewUpcoming>
+              <p class="text-sm text-secondary">No pending deliveries at the moment.</p>
+            </ng-template>
+          </div>
+        </section>
+         <section class="card card-md mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-lg font-semibold text-primary">Top 5 Couriers (Delivered)</h2>
+        </div>
+
+        <p *ngIf="isTopCouriersLoading" class="text-sm text-secondary">Loading top couriers...</p>
+        <p *ngIf="topCouriersError" class="text-sm text-amber-700">{{ topCouriersError }}</p>
+
+        <div *ngIf="!isTopCouriersLoading && top5CouriersByDelivered.length > 0" class="space-y-2">
+          <article
+            *ngFor="let courier of top5CouriersByDelivered; let index = index"
+            class="flex items-center justify-between rounded-xl border border-neutral-200 dark:border-neutral-700 px-4 py-3"
+          >
+            <div class="flex items-center gap-3">
+              <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-esprit-red/10 text-esprit-red font-bold text-sm">
+                {{ index + 1 }}
+              </span>
+              <div>
+                <p class="font-semibold text-primary">{{ courier.courierName || 'Unknown courier' }}</p>
+                <p class="text-xs text-secondary">{{ courier.courierEmail }}</p>
+              </div>
+            </div>
+
+            <div class="text-right">
+              <p class="text-xs text-secondary">Delivered</p>
+              <p class="text-base font-bold text-esprit-red">{{ courier.deliveredDeliveries }}</p>
+            </div>
+          </article>
+        </div>
+
+        <p *ngIf="!isTopCouriersLoading && !topCouriersError && top5CouriersByDelivered.length === 0" class="text-sm text-secondary">
+          No delivered couriers found.
+        </p>
+      </section>
+      </div>
+    </div>
+
+    <div *ngIf="activeTab === 'profile'" class="animate-fade-in">
+      <h1 class="text-3xl font-bold text-primary mb-6">Mon profil</h1>
+
+      <div *ngIf="profileUser; else noProfile" class="card card-lg">
+        <div class="flex items-center gap-4 mb-6">
+          <img
+            *ngIf="authService.currentUser()?.avatar"
+            [src]="authService.currentUser()?.avatar"
+            alt="Profile avatar"
+            class="w-14 h-14 rounded-full object-cover"
+          />
+          <div>
+            <h2 class="text-xl font-bold text-primary">{{ profileUser.name }}</h2>
+            <p class="text-sm text-secondary">{{ profileUser.email }}</p>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-4 mb-6">
+          <div>
+            <p class="text-xs text-secondary">Role</p>
+            <p class="font-semibold text-primary">{{ profileUser.role }}</p>
+          </div>
+          <div>
+            <label class="text-xs text-secondary" for="profileInlinePhoneNumber">Phone number</label>
+            <div class="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="profileInlinePhoneNumber"
+                name="profileInlinePhoneNumber"
+                [(ngModel)]="profileForm.phoneNumber"
+                class="w-full px-3 py-2 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800"
+                type="tel"
+                placeholder="+216 xx xxx xxx"
+              />
+              <button
+                class="btn btn-secondary btn-sm sm:shrink-0"
+                type="button"
+                [disabled]="isPhoneNumberSaving"
+                (click)="savePhoneNumberDirectly()"
+              >
+                {{ isPhoneNumberSaving ? 'Saving...' : 'Save phone number' }}
+              </button>
+            </div>
+            <p *ngIf="phoneNumberSaveError" class="text-xs text-red-600 mt-1">{{ phoneNumberSaveError }}</p>
+            <p *ngIf="phoneNumberSaveSuccess" class="text-xs text-green-600 mt-1">{{ phoneNumberSaveSuccess }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-secondary">Courier status</p>
+            <span
+              class="badge"
+              [class.badge-warning]="getCourierStatus() === 'PENDING'"
+              [class.badge-success]="getCourierStatus() === 'ACCEPTED'"
+              [class.bg-red-500]="getCourierStatus() === 'REFUSED'"
+              [class.text-white]="getCourierStatus() === 'REFUSED'"
+            >
+              {{ getCourierStatusLabel() }}
+            </span>
+          </div>
+          <div>
+            <p class="text-xs text-secondary">Profile status</p>
+            <span
+              class="badge"
+              [class.badge-success]="getProfileStatus() === 'COMPLETED'"
+              [class.badge-warning]="getProfileStatus() === 'INCOMPLETE'"
+            >
+              {{ getProfileStatusLabel() }}
+            </span>
+          </div>
+          
+        </div>
+
+        <div class="border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 mb-6">
+  
+  <!-- STEPPER HEADER -->
+  <div class="flex items-center justify-center gap-0 mb-8">
+    <ng-container *ngFor="let step of verifySteps; let i = index">
+      <div class="flex flex-col items-center gap-1.5">
+        <div
+          class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium border-2 transition-all"
+          [class.bg-green-600]="verifyStep > i"
+          [class.border-green-600]="verifyStep >= i"
+          [class.text-white]="verifyStep >= i"
+          [class.border-neutral-300]="verifyStep < i"
+          [class.text-neutral-400]="verifyStep < i"
+        >
+          <ng-container *ngIf="verifyStep > i; else numLabel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          </ng-container>
+          <ng-template #numLabel>{{ i + 1 }}</ng-template>
+        </div>
+        <span class="text-xs" [class.text-green-600]="verifyStep === i" [class.text-neutral-400]="verifyStep !== i">
+          {{ step }}
+        </span>
+      </div>
+      <div *ngIf="i < verifySteps.length - 1" class="w-12 h-0.5 mb-4 transition-all"
+           [class.bg-green-600]="verifyStep > i" [class.bg-neutral-200]="verifyStep <= i"></div>
+    </ng-container>
+  </div>
+
+  <!-- STEP 0 : Upload CIN / Permis -->
+  <div *ngIf="verifyStep === 0">
+    <h3 class="text-lg font-medium text-center text-primary mb-2">Take a photo of your permit</h3>
+    <p class="text-sm text-secondary text-center mb-4">Make sure all the information is visible and clear.</p>
+
+    <div class="border-2 border-dashed border-neutral-300 rounded-xl p-6 text-center cursor-pointer hover:border-green-500 transition-colors"
+         (click)="permitFileInputRef.click()">
+      <div class="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <img *ngIf="permitPreviewUrl" [src]="permitPreviewUrl" alt="Permis" class="mx-auto mb-3 rounded-lg max-h-32 object-cover"/>
+      <span class="text-green-600 font-medium text-sm">Choose a file</span>
+      <input #permitFileInputRef type="file" accept="image/*" class="hidden" (change)="onPermitFileSelected($event)"/>
+    </div>
+    <p class="text-xs text-secondary mt-2 text-center">Images only, max 5 MB.</p>
+    <p *ngIf="permitUploadError" class="text-sm text-red-600 mt-2 text-center">{{ permitUploadError }}</p>
+
+    <button
+      class="w-full mt-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition disabled:bg-neutral-300 disabled:cursor-not-allowed"
+      [disabled]="!selectedPermitFile || isPermitUploading"
+      (click)="uploadAndContinue()"
+    >
+      {{ isPermitUploading ? 'Upload...' : 'Take a photo' }}
+    </button>
+    <p class="text-center text-xs text-secondary mt-3 underline cursor-pointer" (click)="permitFileInputRef.click()">
+Upload from gallery    </p>
+  </div>
+
+  <!-- STEP 1 : Selfie -->
+  <div *ngIf="verifyStep === 1">
+    <h3 class="text-lg font-medium text-center text-primary mb-2">Take a selfie</h3>
+    <p class="text-sm text-secondary text-center mb-4">Look at the camera and make sure your face is clearly.</p>
+
+    <div class="w-40 h-40 rounded-full border-4 border-green-500 mx-auto mb-6 overflow-hidden bg-neutral-100 flex items-center justify-center cursor-pointer"
+         (click)="selfieInputRef.click()">
+      <img *ngIf="selfiePreviewUrl; else noSelfie" [src]="selfiePreviewUrl" class="w-full h-full object-cover" alt="Selfie"/>
+      <ng-template #noSelfie>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="1.5">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </ng-template>
+    </div>
+
+    <div class="flex flex-col gap-3 max-w-md mx-auto mb-4">
+      <div class="flex gap-3">
+        <button
+          class="flex-1 py-3 bg-esprit-red text-white rounded-xl hover:bg-esprit-red/90 transition"
+          type="button"
+          (click)="openCamera()"
+          [disabled]="isCameraOpen"
+        >
+          Open the camera
+        </button>
+        <button
+          *ngIf="isCameraOpen"
+          class="flex-1 py-3 bg-neutral-200 text-slate-700 rounded-xl hover:bg-neutral-300 transition"
+          type="button"
+          (click)="closeCamera()"
+        >
+          Close
+        </button>
+      </div>
+      <p *ngIf="cameraError" class="text-sm text-red-600 text-center">{{ cameraError }}</p>
+    </div>
+
+    <div *ngIf="isCameraOpen" class="mx-auto mb-4 max-w-md">
+      <div class="overflow-hidden rounded-xl border border-neutral-200 bg-black">
+        <video #cameraVideo autoplay playsinline class="w-full h-64 object-cover"></video>
+      </div>
+      <button
+        class="w-full mt-3 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition"
+        type="button"
+        (click)="captureSelfie()"
+      >
+        Capture Selfie
+      </button>
+    </div>
+
+    <input #selfieInputRef type="file" accept="image/*" class="hidden" (change)="onSelfieFileSelected($event)"/>
+    <p *ngIf="verificationError" class="text-sm text-red-600 text-center mb-3">{{ verificationError }}</p>
+
+    <button
+      class="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition disabled:bg-neutral-300 disabled:cursor-not-allowed"
+      [disabled]="!selectedSelfieFile || isPermitVerificationSubmitting"
+      (click)="verifyAndContinue()"
+    >
+      {{ isPermitVerificationSubmitting ? 'Verifying...' : 'Take a Selfie' }}
+    </button>
+    <p class="text-center text-xs text-secondary mt-3 underline cursor-pointer" (click)="selfieInputRef.click()">
+      Upload from Gallery
+    </p>
+  </div>
+
+  <!-- STEP 2 : VVerification in Progress -->
+  <div *ngIf="verifyStep === 2" class="text-center">
+    <h3 class="text-lg font-medium text-primary mb-2">Verification in Progress</h3>
+    <p class="text-sm text-secondary mb-6">Please wait while we verify your information.</p>
+    <div class="w-20 h-20 rounded-full border-4 border-green-100 border-t-green-600 animate-spin mx-auto mb-6 flex items-center justify-center">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    </div>
+    <div class="text-left space-y-3 max-w-xs mx-auto">
+      <div class="flex items-center gap-3 text-sm text-primary">
+        <span class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span> Reading the ID Card
+      </div>
+      <div class="flex items-center gap-3 text-sm text-primary">
+        <span class="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </span> Face Detection
+      </div>
+      <div class="flex items-center gap-3 text-sm text-secondary">
+        <span class="w-5 h-5 rounded-full border-2 border-green-500 border-t-transparent animate-spin"></span>
+        Data Comparison
+      </div>
+      <div class="flex items-center gap-3 text-sm text-secondary">
+        <span class="w-5 h-5 rounded-full border-2 border-neutral-300"></span>
+        Fraud Verification
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 : Résultat -->
+  <div *ngIf="verifyStep === 3">
+    <div *ngIf="verificationResult?.verdict === 'APPROVED'; else refusedResult">
+      <h3 class="text-lg font-medium text-center text-primary mb-4">Verification successful!</h3>
+      <div class="w-20 h-20 rounded-full bg-green-600 flex items-center justify-center mx-auto mb-4">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-xl p-4 text-center text-green-800 text-sm mb-4 space-y-3">
+        <p>You can now access your courier account.</p>
+        <img
+          *ngIf="permitPreviewUrl"
+          [src]="permitPreviewUrl"
+          alt="Permit photo"
+          class="mx-auto rounded-xl max-h-64 object-contain border border-green-200 bg-white"
+        />
+      </div>
+      <p class="text-center text-xs text-secondary">This result stays visible until you refresh or leave the page.</p>
+    </div>
+    <ng-template #refusedResult>
+      <h3 class="text-lg font-medium text-center text-red-600 mb-4">Vérification échouée</h3>
+      <div class="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center mx-auto mb-4">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </div>
+      <p *ngIf="verificationResult?.reason" class="text-sm text-secondary text-center mb-4">{{ verificationResult?.reason }}</p>
+      <button class="w-full py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-medium rounded-xl transition" (click)="resetVerifyFlow()">
+        Réessayer
+      </button>
+    </ng-template>
+  </div>
+
+</div>
+
+        <div class="flex flex-wrap gap-3">
+          <button class="btn btn-secondary" (click)="openProfileModal()">Edit profile</button>
+          <button class="btn btn-danger" (click)="confirmDeleteProfile()">Delete account</button>
+        </div>
+      </div>
+
+      <ng-template #noProfile>
+        <div class="card card-md text-center text-secondary">No profile data found.</div>
+      </ng-template>
+    </div>
+
+
+
+<div *ngIf="activeTab === 'Testing and validation'" class="animate-fade-in bg-slate-100 min-h-screen p-10">
+  <div class="max-w-5xl mx-auto">
+    <header class="mb-12 text-center">
+      <h1 class="text-5xl font-bold text-slate-950">Delivery Driver Rules</h1>
+      <p class="text-xl text-slate-600 mt-3 font-light">The 3 Pillars to Enter & Validate Your Role</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-8 flex-1">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-2xl font-semibold text-slate-900">1. Safety</h2>
+            <div class="p-3 rounded-full bg-blue-100 text-blue-700">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-slate-700 leading-relaxed text-base">
+            Strictly follow traffic rules. Wear your Personal Protective Equipment (PPE).
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+        <div class="h-3 bg-yellow-500"></div>
+        <div class="p-8 flex-1">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-2xl font-semibold text-slate-900">2. Attitude</h2>
+            <div class="p-3 rounded-full bg-yellow-100 text-yellow-700">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-slate-700 leading-relaxed text-base">
+            Be polite, smiling, and courteous with clients and staff. Your attitude represents our image.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+        <div class="h-3 bg-orange-500"></div>
+        <div class="p-8 flex-1">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-2xl font-semibold text-slate-900">3. Packages</h2>
+            <div class="p-3 rounded-full bg-orange-100 text-orange-700">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+              </svg>
+            </div>
+          </div>
+          <p class="text-slate-700 leading-relaxed text-base">
+            Handle each package carefully. Avoid shocks and ensure proper delivery.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-20 text-center border-t border-slate-200 pt-12">
+      <button
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-10 rounded-xl shadow-lg transition duration-300 transform hover:-translate-y-1"
+        (click)="showQuiz = !showQuiz">
+        {{ showQuiz ? 'Hide Quiz' : 'Access Validation Quiz' }}
+      </button>
+
+      <div *ngIf="showQuiz" class="mt-12 p-8 bg-white shadow-xl rounded-2xl border border-slate-100 text-left">
+        <app-deliverer-quiz *ngIf="quizUserId(); else missingQuizUser" [userId]="quizUserId()"></app-deliverer-quiz>
+      </div>
+
+      <ng-template #missingQuizUser>
+        <div class="mt-12 p-6 bg-red-100 text-red-800 rounded-xl border border-red-300 inline-block font-medium">
+          ⚠️ Unable to load quiz: User ID not found.
+        </div>
+      </ng-template>
+      </div>
+  </div>
+</div>
+
+
+
+
+ 
+
+
+    <div *ngIf="activeTab === 'vehicles'" class="animate-fade-in">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-primary">Vehicules</h1>
+        <button class="btn btn-primary" (click)="openCreateVehicleModal()">➕ Add vehicle</button>
+      </div>
+
+      <div class="vehicle-toolbar">
+        <div>
+          <p class="vehicle-toolbar-label">Fleet inventory</p>
+          <p class="vehicle-toolbar-hint">Filter and review vehicles with their documents in one place.</p>
+        </div>
+
+        <div class="vehicle-filters">
+          <label for="delivererVehicleRegistrationFilter" class="text-sm font-medium text-secondary">Registration</label>
+          <input
+            id="delivererVehicleRegistrationFilter"
+            type="text"
+            [(ngModel)]="vehicleRegistrationFilter"
+            (ngModelChange)="onVehicleFiltersChanged()"
+            placeholder="Search by registration number"
+            class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm min-w-64"
+          />
+
+          <label for="delivererVehicleStatusFilter" class="text-sm font-medium text-secondary">Status</label>
+          <select
+            id="delivererVehicleStatusFilter"
+            class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+            [(ngModel)]="vehicleStatusFilter"
+            (ngModelChange)="onVehicleFiltersChanged()"
+          >
+            <option value="ALL">All</option>
+            <option value="AVAILABLE">AVAILABLE</option>
+            <option value="UNAVAILABLE">UNAVAILABLE</option>
+          </select>
+
+          <label for="delivererVehicleTypeFilter" class="text-sm font-medium text-secondary">Type</label>
+          <select
+            id="delivererVehicleTypeFilter"
+            class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-md bg-white dark:bg-neutral-800 text-sm"
+            [(ngModel)]="vehicleTypeFilter"
+            (ngModelChange)="onVehicleFiltersChanged()"
+          >
+            <option value="ALL">All</option>
+            <option value="CAR">CAR</option>
+            <option value="MOTOR">MOTOR</option>
+            <option value="TRUCK">TRUCK</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="filteredVehicles.length > 0; else noVehiclesState" class="vehicle-table-shell">
+        <div class="vehicle-table-header">
+          <div>Vehicle</div>
+          <div>Documents</div>
+          <div>Capacity</div>
+          <div>Status</div>
+          <div class="text-right">Actions</div>
+        </div>
+
+        <div *ngFor="let vehicle of paginatedVehicles" class="vehicle-table-row">
+          <div class="vehicle-identity">
+            <div class="vehicle-thumb">
+              <img
+                *ngIf="getVehiclePhotoPreviewUrl(vehicle.id); else noVehiclePhoto"
+                [src]="getVehiclePhotoPreviewUrl(vehicle.id)"
+                alt="Vehicle photo"
+                (click)="openVehicleImagePreview(getVehiclePhotoPreviewUrl(vehicle.id), 'Vehicle photo')"
+              />
+              <ng-template #noVehiclePhoto>
+                <span>No photo</span>
+              </ng-template>
+            </div>
+
+            <div>
+              <div class="vehicle-title-row">
+                <h3>{{ vehicle.registrationnumbers }}</h3>
+                <span class="vehicle-type-chip">{{ vehicle.type }}</span>
+              </div>
+                      </div>
+          </div>
+
+          <div class="vehicle-docs">
+            <button type="button" class="vehicle-doc-preview" (click)="openVehicleImagePreview(getRegistrationCardFrontPreviewUrl(vehicle.id), 'Carte grise recto')">
+              <div class="vehicle-thumb vehicle-doc-thumb">
+                <img
+                  *ngIf="getRegistrationCardFrontPreviewUrl(vehicle.id); else noCardFront"
+                  [src]="getRegistrationCardFrontPreviewUrl(vehicle.id)"
+                  alt="Carte grise recto"
+                />
+                <ng-template #noCardFront>
+                  <span>N/A</span>
+                </ng-template>
+              </div>
+              <span class="vehicle-doc-caption">Recto</span>
+            </button>
+
+            <button type="button" class="vehicle-doc-preview" (click)="openVehicleImagePreview(getRegistrationCardBackPreviewUrl(vehicle.id), 'Carte grise verso')">
+              <div class="vehicle-thumb vehicle-doc-thumb">
+                <img
+                  *ngIf="getRegistrationCardBackPreviewUrl(vehicle.id); else noCardBack"
+                  [src]="getRegistrationCardBackPreviewUrl(vehicle.id)"
+                  alt="Carte grise verso"
+                />
+                <ng-template #noCardBack>
+                  <span>N/A</span>
+                </ng-template>
+              </div>
+              <span class="vehicle-doc-caption">Verso</span>
+            </button>
+          </div>
+
+          <div class="vehicle-meta-block">
+            <span class="vehicle-meta-value">{{ vehicle.capacity }}</span>
+            <span class="vehicle-meta-label">Capacity</span>
+          </div>
+
+          <div class="vehicle-status-block">
+            <span
+              class="vehicle-status-pill"
+              [class.vehicle-status-available]="vehicle.status === 'AVAILABLE'"
+              [class.vehicle-status-unavailable]="vehicle.status === 'UNAVAILABLE'"
+            >
+              {{ vehicle.status }}
+            </span>
+          </div>
+
+          <div class="vehicle-actions">
+            <button class="btn btn-secondary btn-sm" (click)="openEditVehicleModal(vehicle)">Edit</button>
+            <button class="btn btn-danger btn-sm" (click)="confirmDeleteVehicle(vehicle)">Delete</button>
+          </div>
+        </div>
+
+        <div class="vehicle-pagination">
+          <div class="vehicle-pagination-summary">
+            Showing {{ vehiclePaginationStart }}-{{ vehiclePaginationEnd }} of {{ filteredVehicles.length }} vehicles
+          </div>
+
+          <div class="vehicle-pagination-actions">
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="setVehiclePage(currentVehiclePage - 1)"
+              [disabled]="currentVehiclePage === 1"
+            >
+              Prev
+            </button>
+
+            <span class="vehicle-pagination-page">Page {{ currentVehiclePage }} / {{ totalVehiclePages }}</span>
+
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              (click)="setVehiclePage(currentVehiclePage + 1)"
+              [disabled]="currentVehiclePage === totalVehiclePages"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noVehiclesState>
+        <div class="card card-md text-center text-secondary">No vehicles available.</div>
+      </ng-template>
+    </div>
+
+
+<div *ngIf="activeTab === 'delivery'" class="animate-fade-in space-y-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-primary">delivery</h1>
+          <p class="text-sm text-secondary mt-1">Switch between pending work and delivered packages.</p>
+        </div>
+
+        <div class="delivery-view-switch" role="tablist" aria-label="Delivery views">
+          <button
+            type="button"
+            class="delivery-view-switch__button"
+            [class.delivery-view-switch__button--active]="deliveryView === 'pending'"
+            (click)="setDeliveryView('pending')"
+          >
+            <span>Pending</span>
+            <span class="delivery-view-switch__count">{{ deliveryNotificationCount }}</span>
+          </button>
+          <button
+            type="button"
+            class="delivery-view-switch__button"
+            [class.delivery-view-switch__button--active]="deliveryView === 'delivered'"
+            (click)="setDeliveryView('delivered')"
+          >
+            <span>Delivered packages ✅</span>
+            <span class="delivery-view-switch__count">{{ deliveredPackageCount }}</span>
+          </button>
+          <button
+            type="button"
+            class="delivery-view-switch__button"
+            [class.delivery-view-switch__button--active]="deliveryView === 'cancelled'"
+            (click)="setDeliveryView('cancelled')"
+          >
+            <span>Cancelled ❌</span>
+            <span class="delivery-view-switch__count">{{ cancelledPackageCount }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="delivery-table-toolbar">
+        <label for="delivererDeliveryIdFilter" class="delivery-table-toolbar__label">Filter by delivery ID</label>
+        <input
+          id="delivererDeliveryIdFilter"
+          type="text"
+          [(ngModel)]="deliveryIdFilter"
+          (ngModelChange)="onDeliveryIdFilterChanged()"
+          placeholder="Ex: DEL5"
+          class="delivery-table-toolbar__input"
+        />
+      </div>
+
+      <div *ngIf="deliveryView === 'pending'" class="space-y-4">
+        <div *ngIf="filteredDuplicatePendingDeliveryAddressGroups.length > 0" class="space-y-4">
+          <h2 class="text-lg font-semibold text-primary">Deliveries with same address</h2>
+          <div
+            *ngFor="let group of filteredDuplicatePendingDeliveryAddressGroups"
+            class="delivery-table-section"
+          >
+            <div class="delivery-table-caption">Same address: {{ group.address }}</div>
+            <div class="delivery-table-shell">
+              <div class="delivery-table-scroll">
+                <table class="delivery-table">
+                  <thead>
+                    <tr>
+                      <th>Delivery</th>
+                      <th>To</th>
+                      <th>Date</th>
+                      <th>Vehicle</th>
+                      <th>Priority</th>
+                      <th>Rate</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ng-container *ngFor="let delivery of group.deliveries">
+                      <tr>
+                        <td>
+                          <div class="delivery-table-id">{{ delivery.id }}</div>
+                          <div class="delivery-table-order">Order {{ delivery.orderLabel || '-' }}</div>
+                        </td>
+                        <td>{{ delivery.to || '-' }}</td>
+                        <td>{{ delivery.date || '-' }}</td>
+                        <td>{{ delivery.vehicule || '-' }}</td>
+                        <td>
+                          <span
+                            class="delivery-table-pill"
+                            [class.delivery-table-pill--urgent]="delivery.priority === 'urgent'"
+                            [class.delivery-table-pill--normal]="delivery.priority === 'normal'"
+                          >
+                            {{ delivery.priority || '-' }}
+                          </span>
+                        </td>
+                        <td class="font-semibold text-esprit-red">{{ delivery.price }} DT</td>
+                        <td class="delivery-table-actions delivery-table-actions--compact">
+                          <button class="delivery-action-btn delivery-action-btn--primary" (click)="acceptDelivery(delivery)">Accept</button>
+                          <button class="delivery-action-btn delivery-action-btn--neutral" (click)="toggleDeliveryActionsPanel(delivery)">
+                            {{ isDeliveryActionsPanelOpen(delivery) ? 'Masquer' : 'Afficher' }}
+                          </button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="isDeliveryActionsPanelOpen(delivery)">
+                        <td colspan="7" class="delivery-actions-cell">
+                          <div class="delivery-actions-panel">
+                            <div class="delivery-actions-grid">
+                              <button class="delivery-action-btn delivery-action-btn--neutral" (click)="openDeliveryDetails(delivery)">Details</button>
+                              <button class="delivery-action-btn delivery-action-btn--warning" (click)="markDeliveryInProgress(delivery)">In progress</button>
+                              <button
+                                class="delivery-action-btn delivery-action-btn--success"
+                                (click)="markDeliveryDelivered(delivery)"
+                                [disabled]="delivery.status?.toLowerCase() !== 'in progress'"
+                              >
+                                Delivered
+                              </button>
+                              
+                              <ng-container *ngIf="cancellingDeliveryId !== delivery.id">
+                                <button class="delivery-action-btn delivery-action-btn--danger" (click)="startCancellation(delivery.id)">Cancelled</button>
+                              </ng-container>
+                              
+                              <ng-container *ngIf="cancellingDeliveryId === delivery.id">
+                                <div class="col-span-2 sm:col-span-3 flex flex-col gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                                  <label [for]="'cancelReason-' + delivery.id" class="text-xs font-semibold text-red-700 dark:text-red-400">Reason for cancellation</label>
+                                  <div class="flex gap-2">
+                                    <input
+                                      [id]="'cancelReason-' + delivery.id"
+                                      type="text"
+                                      [(ngModel)]="cancellationReason"
+                                      placeholder="Ex: Client absent, address wrong..."
+                                      class="flex-1 px-3 py-1.5 text-sm border border-red-300 rounded-md bg-white dark:bg-neutral-800"
+                                    />
+                                    <button class="btn btn-danger btn-sm" (click)="markDeliveryCancelled(delivery)">Confirm</button>
+                                    <button class="btn btn-secondary btn-sm" (click)="cancelCancellation()">Back</button>
+                                  </div>
+                                </div>
+                              </ng-container>
+
+                              <button class="delivery-action-btn delivery-action-btn--indigo" (click)="toggleDeliveryChat(delivery)">Chat</button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr *ngIf="isChatOpenForDelivery(delivery)">
+                        <td colspan="7" class="delivery-chat-cell">
+                          <div class="delivery-chat-panel">
+                            <div class="flex items-center justify-between mb-3">
+                              <div>
+                                <p class="text-sm font-semibold text-primary">Chat avec {{ delivery.userName || 'client' }}</p>
+                                <p class="text-xs text-secondary">{{ delivery.receiverId }}</p>
+                              </div>
+                              <button class="text-sm text-esprit-red hover:underline" (click)="closeDeliveryChat()">Fermer</button>
+                            </div>
+                            <div class="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                              <div *ngIf="chatLoading" class="text-sm text-secondary">Chargement du chat...</div>
+                              <div *ngFor="let message of chatMessages" class="p-3 rounded-xl border border-neutral-200 dark:border-neutral-700" [class.self-end]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-white]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-neutral-100]="message.senderId !== authService.currentUser()?.email?.trim()">
+                                <p class="text-sm text-primary whitespace-pre-wrap">{{ message.content }}</p>
+                                <p class="text-xs text-secondary mt-1">{{ message.sentAt | date:'short' }}</p>
+                              </div>
+                            </div>
+                            <div class="space-y-2">
+                              <p *ngIf="chatErrorMessage" class="text-sm text-esprit-red">{{ chatErrorMessage }}</p>
+                              <textarea
+                                class="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-primary"
+                                rows="2"
+                                [(ngModel)]="chatDraft"
+                                placeholder="Écrire un message..."
+                              ></textarea>
+                              <button
+                                class="delivery-action-btn delivery-action-btn--indigo w-full"
+                                (click)="sendChatMessageForDelivery(delivery)"
+                                [disabled]="chatLoading || !chatDraft.trim()"
+                              >
+                                Envoyer
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </ng-container>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="delivery-table-shell">
+          <div class="delivery-table-scroll">
+            <table class="delivery-table">
+              <thead>
+                <tr>
+                  <th>Delivery</th>
+                  <th>To</th>
+                  <th>Date</th>
+                  <th>Vehicle</th>
+                  <th>Priority</th>
+                  <th>Rate</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let delivery of paginatedPendingDeliveries">
+                  <tr>
+                    <td>
+                      <div class="delivery-table-id">{{ delivery.id }}</div>
+                      <div class="delivery-table-order">Order {{ delivery.orderLabel || '-' }}</div>
+                    </td>
+                    <td>{{ delivery.to || '-' }}</td>
+                    <td>{{ delivery.date || '-' }}</td>
+                    <td>{{ delivery.vehicule || '-' }}</td>
+                    <td>
+                      <span
+                        class="delivery-table-pill"
+                        [class.delivery-table-pill--urgent]="delivery.priority === 'urgent'"
+                        [class.delivery-table-pill--normal]="delivery.priority === 'normal'"
+                      >
+                        {{ delivery.priority || '-' }}
+                      </span>
+                    </td>
+                    <td class="font-semibold text-esprit-red">{{ delivery.price }} DT</td>
+                    <td class="delivery-table-actions delivery-table-actions--compact">
+                      <button class="delivery-action-btn delivery-action-btn--primary" (click)="acceptDelivery(delivery)">Accept</button>
+                      <button class="delivery-action-btn delivery-action-btn--neutral" (click)="toggleDeliveryActionsPanel(delivery)">
+                        {{ isDeliveryActionsPanelOpen(delivery) ? 'Masquer' : 'Afficher' }}
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="isDeliveryActionsPanelOpen(delivery)">
+                    <td colspan="7" class="delivery-actions-cell">
+                      <div class="delivery-actions-panel">
+                        <div class="delivery-actions-grid">
+                          <button class="delivery-action-btn delivery-action-btn--neutral" (click)="openDeliveryDetails(delivery)">Details</button>
+                          <button class="delivery-action-btn delivery-action-btn--warning" (click)="markDeliveryInProgress(delivery)">In progress</button>
+                          <button
+                            class="delivery-action-btn delivery-action-btn--success"
+                            (click)="markDeliveryDelivered(delivery)"
+                            [disabled]="delivery.status?.toLowerCase() !== 'in progress'"
+                          >
+                            Delivered
+                          </button>
+
+                          <ng-container *ngIf="cancellingDeliveryId !== delivery.id">
+                            <button class="delivery-action-btn delivery-action-btn--danger" (click)="startCancellation(delivery.id)">Cancelled</button>
+                          </ng-container>
+
+                          <ng-container *ngIf="cancellingDeliveryId === delivery.id">
+                            <div class="col-span-2 sm:col-span-3 flex flex-col gap-2 p-2 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                              <label [for]="'cancelReasonMain-' + delivery.id" class="text-xs font-semibold text-red-700 dark:text-red-400">Reason for cancellation</label>
+                              <div class="flex gap-2">
+                                <input
+                                  [id]="'cancelReasonMain-' + delivery.id"
+                                  type="text"
+                                  [(ngModel)]="cancellationReason"
+                                  placeholder="Ex: Client absent, address wrong..."
+                                  class="flex-1 px-3 py-1.5 text-sm border border-red-300 rounded-md bg-white dark:bg-neutral-800"
+                                />
+                                <button class="btn btn-danger btn-sm" (click)="markDeliveryCancelled(delivery)">Confirm</button>
+                                <button class="btn btn-secondary btn-sm" (click)="cancelCancellation()">Back</button>
+                              </div>
+                            </div>
+                          </ng-container>
+
+                          <button class="delivery-action-btn delivery-action-btn--indigo" (click)="toggleDeliveryChat(delivery)">Chat</button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="isChatOpenForDelivery(delivery)">
+                    <td colspan="7" class="delivery-chat-cell">
+                      <div class="delivery-chat-panel">
+                        <div class="flex items-center justify-between mb-3">
+                          <div>
+                            <p class="text-sm font-semibold text-primary">Chat avec {{ delivery.userName || 'client' }}</p>
+                            <p class="text-xs text-secondary">{{ delivery.receiverId }}</p>
+                          </div>
+                          <button class="text-sm text-esprit-red hover:underline" (click)="closeDeliveryChat()">Fermer</button>
+                        </div>
+                        <div class="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                          <div *ngIf="chatLoading" class="text-sm text-secondary">Chargement du chat...</div>
+                          <div *ngFor="let message of chatMessages" class="p-3 rounded-xl border border-neutral-200 dark:border-neutral-700" [class.self-end]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-white]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-neutral-100]="message.senderId !== authService.currentUser()?.email?.trim()">
+                            <p class="text-sm text-primary whitespace-pre-wrap">{{ message.content }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ message.sentAt | date:'short' }}</p>
+                          </div>
+                        </div>
+                        <div class="space-y-2">
+                          <p *ngIf="chatErrorMessage" class="text-sm text-esprit-red">{{ chatErrorMessage }}</p>
+                          <textarea
+                            class="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-primary"
+                            rows="2"
+                            [(ngModel)]="chatDraft"
+                            placeholder="Écrire un message..."
+                          ></textarea>
+                          <button
+                            class="delivery-action-btn delivery-action-btn--indigo w-full"
+                            (click)="sendChatMessageForDelivery(delivery)"
+                            [disabled]="chatLoading || !chatDraft.trim()"
+                          >
+                            Envoyer
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <tr *ngIf="filteredNonDuplicatePendingDeliveries.length === 0">
+                  <td colspan="7" class="delivery-empty-row">No pending deliveries.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="filteredNonDuplicatePendingDeliveries.length > 0" class="delivery-pagination">
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setPendingDeliveryPage(currentPendingDeliveryPage - 1)"
+            [disabled]="currentPendingDeliveryPage === 1"
+          >
+            Previous
+          </button>
+          <span class="delivery-pagination__label">Page {{ currentPendingDeliveryPage }} / {{ pendingDeliveryTotalPages }}</span>
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setPendingDeliveryPage(currentPendingDeliveryPage + 1)"
+            [disabled]="currentPendingDeliveryPage === pendingDeliveryTotalPages"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="deliveryView === 'delivered'" class="space-y-4">
+        <div class="delivery-table-shell delivery-table-shell--delivered">
+          <div class="delivery-table-scroll">
+            <table class="delivery-table">
+              <thead>
+                <tr>
+                  <th>Delivery</th>
+                  <th>To</th>
+                  <th>Date</th>
+                  <th>Vehicle</th>
+                  <th>Status</th>
+                  <th>Rate</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let delivery of paginatedDeliveredDeliveries">
+                  <tr>
+                    <td>
+                      <div class="delivery-table-id">{{ delivery.id }}</div>
+                      <div class="delivery-table-order">Order {{ delivery.orderLabel || '-' }}</div>
+                    </td>
+                    <td>{{ delivery.to || '-' }}</td>
+                    <td>{{ delivery.date || '-' }}</td>
+                    <td>{{ delivery.vehicule || '-' }}</td>
+                    <td><span class="delivery-table-pill delivery-table-pill--success">Delivered</span></td>
+                    <td class="font-semibold text-green-600">{{ delivery.price }} DT</td>
+                    <td class="delivery-table-actions">
+                      <button class="delivery-action-btn delivery-action-btn--neutral" (click)="openDeliveryDetails(delivery)">Details</button>
+                      <button class="delivery-action-btn delivery-action-btn--indigo" (click)="toggleDeliveryChat(delivery)">Chat</button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="isChatOpenForDelivery(delivery)">
+                    <td colspan="7" class="delivery-chat-cell">
+                      <div class="delivery-chat-panel">
+                        <div class="flex items-center justify-between mb-3">
+                          <div>
+                            <p class="text-sm font-semibold text-primary">Chat avec {{ delivery.userName || 'client' }}</p>
+                            <p class="text-xs text-secondary">{{ delivery.receiverId }}</p>
+                          </div>
+                          <button class="text-sm text-esprit-red hover:underline" (click)="closeDeliveryChat()">Fermer</button>
+                        </div>
+                        <div class="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                          <div *ngIf="chatLoading" class="text-sm text-secondary">Chargement du chat...</div>
+                          <div *ngFor="let message of chatMessages" class="p-3 rounded-xl border border-neutral-200 dark:border-neutral-700" [class.self-end]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-white]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-neutral-100]="message.senderId !== authService.currentUser()?.email?.trim()">
+                            <p class="text-sm text-primary whitespace-pre-wrap">{{ message.content }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ message.sentAt | date:'short' }}</p>
+                          </div>
+                        </div>
+                        <div class="space-y-2">
+                          <p *ngIf="chatErrorMessage" class="text-sm text-esprit-red">{{ chatErrorMessage }}</p>
+                          <textarea
+                            class="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-primary"
+                            rows="2"
+                            [(ngModel)]="chatDraft"
+                            placeholder="Écrire un message..."
+                          ></textarea>
+                          <button
+                            class="delivery-action-btn delivery-action-btn--indigo w-full"
+                            (click)="sendChatMessageForDelivery(delivery)"
+                            [disabled]="chatLoading || !chatDraft.trim()"
+                          >
+                            Envoyer
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <tr *ngIf="filteredDeliveredDeliveries.length === 0">
+                  <td colspan="7" class="delivery-empty-row">No delivered packages yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="filteredDeliveredDeliveries.length > 0" class="delivery-pagination">
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setDeliveredDeliveryPage(currentDeliveredDeliveryPage - 1)"
+            [disabled]="currentDeliveredDeliveryPage === 1"
+          >
+            Previous
+          </button>
+          <span class="delivery-pagination__label">Page {{ currentDeliveredDeliveryPage }} / {{ deliveredDeliveryTotalPages }}</span>
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setDeliveredDeliveryPage(currentDeliveredDeliveryPage + 1)"
+            [disabled]="currentDeliveredDeliveryPage === deliveredDeliveryTotalPages"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="deliveryView === 'cancelled'" class="space-y-4">
+        <div class="delivery-table-shell delivery-table-shell--cancelled">
+          <div class="delivery-table-scroll">
+            <table class="delivery-table">
+              <thead>
+                <tr>
+                  <th>Delivery</th>
+                  <th>To</th>
+                  <th>Date</th>
+                  <th>Vehicle</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Rate</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let delivery of paginatedCancelledDeliveries">
+                  <tr>
+                    <td>
+                      <div class="delivery-table-id">{{ delivery.id }}</div>
+                      <div class="delivery-table-order">Order {{ delivery.orderLabel || '-' }}</div>
+                    </td>
+                    <td>{{ delivery.to || '-' }}</td>
+                    <td>{{ delivery.date || '-' }}</td>
+                    <td>{{ delivery.vehicule || '-' }}</td>
+                    <td class="text-xs text-secondary max-w-[150px] truncate" [title]="delivery.cancellationReason || 'No reason provided'">
+                      {{ delivery.cancellationReason || '-' }}
+                    </td>
+                    <td><span class="delivery-table-pill delivery-table-pill--danger">Cancelled</span></td>
+                    <td class="font-semibold text-red-600">{{ delivery.price }} DT</td>
+                    <td class="delivery-table-actions">
+                      <button class="delivery-action-btn delivery-action-btn--neutral" (click)="openDeliveryDetails(delivery)">Details</button>
+                      <button class="delivery-action-btn delivery-action-btn--indigo" (click)="toggleDeliveryChat(delivery)">Chat</button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="isChatOpenForDelivery(delivery)">
+                    <td colspan="7" class="delivery-chat-cell">
+                      <div class="delivery-chat-panel">
+                        <div class="flex items-center justify-between mb-3">
+                          <div>
+                            <p class="text-sm font-semibold text-primary">Chat avec {{ delivery.userName || 'client' }}</p>
+                            <p class="text-xs text-secondary">{{ delivery.receiverId }}</p>
+                          </div>
+                          <button class="text-sm text-esprit-red hover:underline" (click)="closeDeliveryChat()">Fermer</button>
+                        </div>
+                        <div class="space-y-2 mb-3 max-h-56 overflow-y-auto">
+                          <div *ngIf="chatLoading" class="text-sm text-secondary">Chargement du chat...</div>
+                          <div *ngFor="let message of chatMessages" class="p-3 rounded-xl border border-neutral-200 dark:border-neutral-700" [class.self-end]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-white]="message.senderId === authService.currentUser()?.email?.trim()" [class.bg-neutral-100]="message.senderId !== authService.currentUser()?.email?.trim()">
+                            <p class="text-sm text-primary whitespace-pre-wrap">{{ message.content }}</p>
+                            <p class="text-xs text-secondary mt-1">{{ message.sentAt | date:'short' }}</p>
+                          </div>
+                        </div>
+                        <div class="space-y-2">
+                          <p *ngIf="chatErrorMessage" class="text-sm text-esprit-red">{{ chatErrorMessage }}</p>
+                          <textarea
+                            class="w-full rounded-lg border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm text-primary"
+                            rows="2"
+                            [(ngModel)]="chatDraft"
+                            placeholder="Écrire un message..."
+                          ></textarea>
+                          <button
+                            class="delivery-action-btn delivery-action-btn--indigo w-full"
+                            (click)="sendChatMessageForDelivery(delivery)"
+                            [disabled]="chatLoading || !chatDraft.trim()"
+                          >
+                            Envoyer
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <tr *ngIf="filteredCancelledDeliveries.length === 0">
+                  <td colspan="7" class="delivery-empty-row">No cancelled deliveries.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="filteredCancelledDeliveries.length > 0" class="delivery-pagination">
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setCancelledDeliveryPage(currentCancelledDeliveryPage - 1)"
+            [disabled]="currentCancelledDeliveryPage === 1"
+          >
+            Previous
+          </button>
+          <span class="delivery-pagination__label">Page {{ currentCancelledDeliveryPage }} / {{ cancelledDeliveryTotalPages }}</span>
+          <button
+            type="button"
+            class="delivery-page-btn"
+            (click)="setCancelledDeliveryPage(currentCancelledDeliveryPage + 1)"
+            [disabled]="currentCancelledDeliveryPage === cancelledDeliveryTotalPages"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- Onglet MAP -->
+<div *ngIf="activeTab === 'map'" class="animate-fade-in">
+  <h1 class="text-3xl font-bold text-primary mb-6">Delivery Map</h1>
+
+  <div *ngIf="activeRouteDelivery" class="card card-md mb-4">
+    <p class="text-sm text-secondary">
+      <strong>Delivery:</strong> {{ activeRouteDelivery.id }}
+    </p>
+    <p class="text-sm text-secondary">
+      <strong>Destination:</strong> {{ activeRouteDelivery.to }}
+    </p>
+  </div>
+
+  <!-- Si la map est prête -->
+  <div class="relative" *ngIf="mapsReady()">
+    <google-map
+      height="400px"
+      width="100%"
+      [center]="center"
+      [zoom]="zoom"
+      (mapInitialized)="onMapInitialized()">
+      <!-- ma position actuelle sur map -->
+        <map-marker
+        [position]="markerPosition"
+        title="Ma position"
+          [icon]="blueIcon">
+        </map-marker>
+    </google-map>
+
+    <div class="absolute left-3 top-3 z-10 flex flex-col gap-2 pointer-events-none">
+      <div class="px-3 py-2 rounded-lg bg-blue-50/95 text-blue-700 text-sm shadow" *ngIf="routeDistanceText">
+        <strong>Distance en direct:</strong> {{ routeDistanceText }}
+      </div>
+      <div class="px-3 py-2 rounded-lg bg-emerald-50/95 text-emerald-700 text-sm shadow" *ngIf="routeEtaText">
+        <strong>ETA (temps estime):</strong> {{ routeEtaText }}
+      </div>
+      <div class="px-3 py-2 rounded-lg bg-amber-50/95 text-amber-700 text-sm shadow" *ngIf="isLiveRouteUpdating">
+        Updating live route...
+      </div>
+    </div>
+  </div>
+
+  <!-- Si erreur -->
+  <p *ngIf="mapsError()">
+    {{ mapsError() }}
+  </p>
+
+  <!-- Loading -->
+  <p *ngIf="!mapsReady() && !mapsError()">
+    Loading Google Maps...
+  </p>
+
+  <!-- Autres livraisons à faire -->
+  <div class="mt-6">
+    <h2 class="text-xl font-bold text-primary mb-4">Autres livraisons en attente</h2>
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div 
+        *ngFor="let delivery of pendingDeliveries"
+        [class.ring-2]="activeRouteDelivery?.id === delivery.id"
+        [class.ring-blue-500]="activeRouteDelivery?.id === delivery.id"
+        class="card card-md cursor-pointer hover:shadow-lg transition-all"
+        (click)="acceptDelivery(delivery)">
+        <div class="flex justify-between items-start mb-2">
+          <h3 class="font-bold text-primary">{{ delivery.id }}</h3>
+          <span *ngIf="activeRouteDelivery?.id === delivery.id" class="px-2 py-1 rounded-full text-xs font-bold bg-blue-500 text-white">
+            Actuelle
+          </span>
+        </div>
+        <p class="text-sm text-secondary mb-1"><strong>Destination:</strong> {{ delivery.to }}</p>
+        <p class="text-sm text-secondary mb-1"><strong>Distance:</strong> {{ delivery.distance || 'N/A' }}</p>
+        <p class="text-sm mb-2"><strong>Tarif:</strong> <span class="text-esprit-red">{{ delivery.price }} DT</span></p>
+        <p class="text-xs text-secondary">Cliquez pour changer la route</p>
+      </div>
+      <div *ngIf="pendingDeliveries.length === 0" class="col-span-full text-center text-secondary">
+        Aucune livraison en attente
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div
+      *ngIf="selectedVehicleImageUrl"
+      class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70 px-4 py-6"
+      (click)="closeVehicleImagePreview()"
+    >
+      <div
+        class="relative max-w-5xl w-full rounded-2xl bg-white p-4 shadow-2xl"
+        (click)="$event.stopPropagation()"
+      >
+        <button
+          type="button"
+          class="absolute right-3 top-3 rounded-full bg-neutral-100 px-3 py-1 text-sm font-semibold text-neutral-700 hover:bg-neutral-200"
+          (click)="closeVehicleImagePreview()"
+        >
+          Close
+        </button>
+
+        <h3 class="mb-4 pr-16 text-lg font-semibold text-primary">{{ selectedVehicleImageTitle }}</h3>
+        <img
+          [src]="selectedVehicleImageUrl"
+          [alt]="selectedVehicleImageTitle"
+          class="max-h-[80vh] w-full rounded-xl object-contain bg-neutral-50"
+        />
+      </div>
+    </div>
+
+
+
+
+
+  </main>
+</div>
+
+<app-footer></app-footer>
+
+<app-modal
+  [isOpen]="isProfileModalOpen"
+  title="Edit profile"
+  submitLabel="Save"
+  [isSubmitting]="isProfileSubmitting"
+  (close)="closeProfileModal()"
+  (submitted)="submitProfileUpdate()"
+>
+  <div class="space-y-4">
+    <div>
+      <label class="block text-sm font-medium text-primary mb-1" for="profileName">Name</label>
+      <input
+        id="profileName"
+        name="profileName"
+        [(ngModel)]="profileForm.name"
+        class="w-full px-3 py-2 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800"
+        type="text"
+        placeholder="Full name"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-primary mb-1" for="profileEmail">Email</label>
+      <input
+        id="profileEmail"
+        name="profileEmail"
+        [(ngModel)]="profileForm.email"
+        class="w-full px-3 py-2 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800"
+        type="email"
+        placeholder="email@example.com"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-primary mb-1" for="profilePhoneNumber">Phone number</label>
+      <input
+        id="profilePhoneNumber"
+        name="profilePhoneNumber"
+        [(ngModel)]="profileForm.phoneNumber"
+        class="w-full px-3 py-2 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800"
+        type="tel"
+        placeholder="+216 xx xxx xxx"
+      />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-primary mb-1" for="profilePassword">Password</label>
+      <input
+        id="profilePassword"
+        name="profilePassword"
+        [(ngModel)]="profileForm.password"
+        class="w-full px-3 py-2 border border-neutral-200 rounded-md bg-white dark:bg-neutral-800"
+        type="password"
+        placeholder="Enter new password"
+      />
+      <p class="text-xs text-secondary mt-1">Required to save profile changes.</p>
+    </div>
+  </div>
+</app-modal>
+
+<app-modal
+  [isOpen]="isVehicleModalOpen"
+  [title]="editingVehicleId ? 'Edit vehicle' : 'Create vehicle'"
+  size="2xl"
+  [submitLabel]="editingVehicleId ? 'Update' : 'Create'"
+  [isSubmitting]="isVehicleSubmitting"
+  [isSubmitDisabled]="isVehicleSubmitDisabled"
+  (close)="closeVehicleModal()"
+  (submitted)="submitVehicleForm()"
+>
+  <form [formGroup]="vehicleForm" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <!-- Error Message Alert -->
+    <div
+      *ngIf="vehicleErrorMessage"
+      class="md:col-span-2 xl:col-span-4 p-3 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100 rounded-md border border-red-200 dark:border-red-700"
+    >
+      {{ vehicleErrorMessage }}
+    </div>
+
+    <!-- Success Message Alert -->
+    <div
+      *ngIf="vehicleSuccessMessage"
+      class="md:col-span-2 xl:col-span-4 p-3 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-md border border-green-200 dark:border-green-700"
+    >
+      {{ vehicleSuccessMessage }}
+    </div>
+
+    <!-- TYPE -->
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="vehicleType">Type</label>
+      <select
+        id="vehicleType"
+        formControlName="type"
+        class="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-primary dark:text-white"
+      >
+        <option value="">-- Select Type --</option>
+        <option *ngFor="let option of vehicleTypes" [value]="option">{{ option }}</option>
+      </select>
+      <div class="text-red-500 text-sm mt-1" *ngIf="f['type'].touched && f['type'].invalid">
+        <div *ngIf="f['type'].errors?.['required']">Type is required</div>
+        <div *ngIf="f['type'].errors?.['pattern']">Type must be MOTOR, CAR, or TRUCK</div>
+      </div>
+    </div>
+
+    <!-- REGISTRATION -->
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="vehicleReg">Registration Number</label>
+      <input
+        id="vehicleReg"
+        type="text"
+        formControlName="registrationnumbers"
+        placeholder="12345 or 140 TU 1600"
+        class="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-primary dark:text-white"
+      />
+      <div class="text-red-500 text-sm mt-1" *ngIf="f['registrationnumbers'].touched && f['registrationnumbers'].invalid">
+        <div *ngIf="f['registrationnumbers'].errors?.['required']">Registration number is required</div>
+        <div *ngIf="f['registrationnumbers'].errors?.['pattern']">Must be 5 digits (MOTOR) OR ### TU #### (CAR/TRUCK)</div>
+      </div>
+    </div>
+
+    <!-- CAPACITY -->
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="vehicleCapacity">Capacity</label>
+      <input
+        id="vehicleCapacity"
+        type="number"
+        formControlName="capacity"
+        min="0"
+        class="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-primary dark:text-white"
+      />
+      <div class="text-red-500 text-sm mt-1" *ngIf="f['capacity'].touched && f['capacity'].invalid">
+        <div *ngIf="f['capacity'].errors?.['required']">Capacity is required</div>
+        <div *ngIf="f['capacity'].errors?.['min']">Capacity must be positive</div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div>
+      <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="vehicleStatus">Status</label>
+      <select
+        id="vehicleStatus"
+        formControlName="status"
+        class="w-full px-4 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-800 text-primary dark:text-white"
+      >
+        <option value="">-- Select Status --</option>
+        <option value="AVAILABLE">Available</option>
+        <option value="UNAVAILABLE">Unavailable</option>
+      </select>
+      <div class="text-red-500 text-sm mt-1" *ngIf="f['status'].touched && f['status'].invalid">
+        <div *ngIf="f['status'].errors?.['required']">Status is required</div>
+        <div *ngIf="f['status'].errors?.['pattern']">Status must be AVAILABLE or UNAVAILABLE</div>
+      </div>
+    </div>
+
+    <div class="md:col-span-2 xl:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="vehiclePhoto">Vehicle photo</label>
+        <div *ngIf="editingVehicleId && getEditingVehiclePhotoPreviewUrl()" class="mb-2">
+          <p class="text-xs text-secondary mb-1">Current file</p>
+          <img
+            [src]="getEditingVehiclePhotoPreviewUrl()"
+            alt="Current vehicle photo"
+            class="h-20 w-full rounded-lg object-cover border border-neutral-200 dark:border-neutral-700 cursor-zoom-in"
+            (click)="openVehicleImagePreview(getEditingVehiclePhotoPreviewUrl(), 'Vehicle photo')"
+          />
+        </div>
+        <input
+          id="vehiclePhoto"
+          type="file"
+          accept="image/*"
+          (change)="onVehiclePhotoSelected($event)"
+          class="w-full text-sm text-secondary file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-primary hover:file:bg-neutral-200"
+        />
+        <p class="text-xs text-secondary mt-1">Image only, max size 5 MB. {{ editingVehicleId ? 'Optional on edit.' : 'Required on create.' }}</p>
+        <p *ngIf="vehiclePhotoError" class="text-xs text-red-600 mt-1">{{ vehiclePhotoError }}</p>
+        <p *ngIf="selectedVehiclePhotoFile" class="text-xs text-green-700 mt-1 truncate" [title]="selectedVehiclePhotoFile.name">Selected: {{ selectedVehiclePhotoFile.name }}</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="registrationCardFront">Carte grise recto</label>
+        <div *ngIf="editingVehicleId && getEditingRegistrationCardFrontPreviewUrl()" class="mb-2">
+          <p class="text-xs text-secondary mb-1">Current file</p>
+          <img
+            [src]="getEditingRegistrationCardFrontPreviewUrl()"
+            alt="Current carte grise recto"
+            class="h-20 w-full rounded-lg object-cover border border-neutral-200 dark:border-neutral-700 cursor-zoom-in"
+            (click)="openVehicleImagePreview(getEditingRegistrationCardFrontPreviewUrl(), 'Carte grise recto')"
+          />
+        </div>
+        <input
+          id="registrationCardFront"
+          type="file"
+          accept="image/*"
+          (change)="onRegistrationCardFrontSelected($event)"
+          class="w-full text-sm text-secondary file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-primary hover:file:bg-neutral-200"
+        />
+        <p class="text-xs text-secondary mt-1">Image only, max size 5 MB. {{ editingVehicleId ? 'Optional on edit.' : 'Required on create.' }}</p>
+        <p *ngIf="registrationCardFrontError" class="text-xs text-red-600 mt-1">{{ registrationCardFrontError }}</p>
+        <p *ngIf="selectedRegistrationCardFrontFile" class="text-xs text-green-700 mt-1 truncate" [title]="selectedRegistrationCardFrontFile.name">Selected: {{ selectedRegistrationCardFrontFile.name }}</p>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-primary dark:text-white mb-2" for="registrationCardBack">Carte grise verso</label>
+        <div *ngIf="editingVehicleId && getEditingRegistrationCardBackPreviewUrl()" class="mb-2">
+          <p class="text-xs text-secondary mb-1">Current file</p>
+          <img
+            [src]="getEditingRegistrationCardBackPreviewUrl()"
+            alt="Current carte grise verso"
+            class="h-20 w-full rounded-lg object-cover border border-neutral-200 dark:border-neutral-700 cursor-zoom-in"
+            (click)="openVehicleImagePreview(getEditingRegistrationCardBackPreviewUrl(), 'Carte grise verso')"
+          />
+        </div>
+        <input
+          id="registrationCardBack"
+          type="file"
+          accept="image/*"
+          (change)="onRegistrationCardBackSelected($event)"
+          class="w-full text-sm text-secondary file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-neutral-100 file:text-primary hover:file:bg-neutral-200"
+        />
+        <p class="text-xs text-secondary mt-1">Image only, max size 5 MB. {{ editingVehicleId ? 'Optional on edit.' : 'Required on create.' }}</p>
+        <p *ngIf="registrationCardBackError" class="text-xs text-red-600 mt-1">{{ registrationCardBackError }}</p>
+        <p *ngIf="selectedRegistrationCardBackFile" class="text-xs text-green-700 mt-1 truncate" [title]="selectedRegistrationCardBackFile.name">Selected: {{ selectedRegistrationCardBackFile.name }}</p>
+      </div>
+    </div>
+  </form>
+</app-modal>
+
+<app-modal
+  [isOpen]="isDeliveryDetailsModalOpen"
+  title="Delivery details"
+  [isSubmitting]="false"
+  (close)="closeDeliveryDetailsModal()"
+>
+  <div *ngIf="selectedDeliveryDetails as details" class="max-h-[70vh] overflow-y-auto pr-1 space-y-4">
+    <div class="rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+      <div class="flex items-start justify-between gap-3 mb-3">
+        <h3 class="text-base font-semibold text-primary">Détails de livraison</h3>
+        <button type="button" class="btn btn-secondary btn-sm" (click)="closeDeliveryDetailsModal()">Fermer</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div><strong>Delivery:</strong> {{ details.id }}</div>
+        <div><strong>Order:</strong> {{ details.orderLabel || '-' }}</div>
+        <div><strong>Adresse:</strong> {{ details.to || '-' }}</div>
+        <div><strong>Ville:</strong> {{ details.city || '-' }}</div>
+        <div><strong>Code postal:</strong> {{ details.postalCode || '-' }}</div>
+        <div><strong>Téléphone:</strong> {{ details.phoneNumber || '-' }}</div>
+        <div><strong>Mode de livraison:</strong> {{ details.deliveryMode || 'Livraison à domicile' }}</div>
+        <div><strong>Type de livraison:</strong> {{ details.deliverytype || '-' }}</div>
+        <div><strong>Poids réel:</strong> {{ formatWeightKg(details.realWeightKg) }}</div>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-neutral-200 bg-white p-4">
+      <h4 class="text-sm font-semibold text-primary mb-2">QR Code</h4>
+      <div class="flex items-center gap-4">
+        <img
+          *ngIf="deliveryQrCodeUrls[details.id]"
+          [src]="deliveryQrCodeUrls[details.id]"
+          alt="QR Code delivery"
+          class="h-44 w-44 object-contain border border-neutral-200 rounded-md p-2 bg-white"
+        />
+        <span *ngIf="!deliveryQrCodeUrls[details.id]" class="text-xs text-secondary">QR indisponible</span>
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-neutral-200 bg-white p-4">
+      <h4 class="text-sm font-semibold text-primary mb-2">Paiement</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+        <div><strong>Mode de paiement:</strong> {{ details.paymentMode || '-' }}</div>
+        <div><strong>Statut:</strong> {{ details.orderStatus || details.status || '-' }}</div>
+        <div class="md:col-span-2"><strong>Total TTC:</strong> {{ details.price }} DT</div>
+      </div>
+    </div>
+  </div>
+</app-modal>

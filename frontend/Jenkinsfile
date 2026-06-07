@@ -1,0 +1,127 @@
+pipeline {
+  agent any
+
+  environment {
+    NODE_ENV = 'test'
+    DOCKERHUB_USERNAME = 'thesphynx2000'
+    DOCKERHUB_REPO = 'thesphynx2000/espritmarket-frontend'
+  }
+
+  stages {
+    stage('Setup') {
+      steps {
+        script {
+          sh 'echo "Node $(node --version) | npm $(npm --version)"'
+        }
+      }
+    }
+
+    stage('Checkout') {
+      steps {
+        git branch: 'SRV_P2',
+            credentialsId: 'Jenkins',
+            url: 'https://github.com/TheSphynxoid/esprit-market-frontend.git'
+        script {
+          env.IMAGE_TAG = sh(script: "node -e \"console.log(require('./package.json').version)\"", returnStdout: true).trim()
+          env.IMAGE_HASH = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+          env.IMAGE_VERSION_TAG = "${env.IMAGE_TAG}-${env.IMAGE_HASH}"
+          echo "Image tags: ${env.IMAGE_TAG} (latest), ${env.IMAGE_VERSION_TAG}"
+        }
+      }
+    }
+
+    stage('Generate Types') {
+      steps {
+        script {
+          sh '''
+            if [ -f /tmp/espritmarket-openapi.json ]; then
+              echo "Using OpenAPI spec from backend pipeline"
+              cp /tmp/espritmarket-openapi.json openapi.json
+            else
+              echo "WARNING: No cached OpenAPI spec found. Fetching from live server as fallback..."
+              SPEC_STATUS=$(curl -sf -o openapi.json -w "%{http_code}" http://10.100.202.174:8088/v3/api-docs || echo "000")
+              if [ "$SPEC_STATUS" != "200" ]; then
+                echo "WARNING: Failed to fetch OpenAPI spec (HTTP $SPEC_STATUS), using existing types"
+                exit 0
+              fi
+            fi
+            npx --yes @openapitools/openapi-generator-cli generate \
+              -i openapi.json \
+              -g typescript-angular \
+              -o generated-types \
+              --additional-properties=ngVersion=21.0.0,npmName=@esprit-market/api-types,supportsES6=true,withInterfaces=true 2>&1 | tail -5
+            mkdir -p src/app/generated/model
+            cp -r generated-types/model/* src/app/generated/model/
+            rm -rf generated-types openapi.json
+            echo "Types generated successfully"
+          '''
+        }
+      }
+    }
+
+    stage('Install & Test') {
+      steps {
+        script {
+          sh 'npm install --no-progress --no-audit --loglevel=error 2>&1 | grep -E "^(added|removed|changed|up to date)" || true'
+          sh 'npm test -- --watch=false --progress=false --no-progress 2>&1 | tail -5'
+        }
+      }
+    }
+
+    stage('Build Image') {
+      steps {
+        script {
+          sh 'DOCKER_BUILDKIT=1 docker build -q -t $DOCKERHUB_REPO:$IMAGE_TAG -t $DOCKERHUB_REPO:$IMAGE_VERSION_TAG -t $DOCKERHUB_REPO:latest .'
+        }
+      }
+    }
+
+    stage('Push Image') {
+      steps {
+        script {
+          withCredentials([string(credentialsId: 'dockerhub-credentials', variable: 'DOCKERHUB_TOKEN')]) {
+            sh '''
+              echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin 2>/dev/null
+              docker push $DOCKERHUB_REPO:$IMAGE_TAG
+              docker push $DOCKERHUB_REPO:$IMAGE_VERSION_TAG
+              docker push $DOCKERHUB_REPO:latest
+              docker logout 2>/dev/null
+            '''
+          }
+        }
+      }
+    }
+
+    stage('Cleanup') {
+      steps {
+        script {
+          sh 'docker rmi $DOCKERHUB_REPO:$IMAGE_TAG $DOCKERHUB_REPO:$IMAGE_VERSION_TAG $DOCKERHUB_REPO:latest 2>/dev/null || true'
+          sh 'docker image prune -f 2>/dev/null || true'
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        if (fileExists('coverage/junit.xml')) {
+          junit 'coverage/junit.xml'
+        }
+        if (fileExists('coverage/index.html')) {
+          publishHTML([
+            reportDir: 'coverage',
+            reportFiles: 'index.html',
+            reportName: 'Code Coverage Report'
+          ])
+        }
+      }
+    }
+    success {
+      echo 'Frontend pipeline succeeded.'
+    }
+    failure {
+      echo 'Frontend pipeline failed.'
+    }
+  }
+}

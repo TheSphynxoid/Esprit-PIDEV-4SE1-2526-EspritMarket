@@ -1,0 +1,19 @@
+{
+  "name": "@esprit-market/api-types",
+  "version": "1.0.0",
+  "description": "Auto-generated TypeScript types from Esprit Market Backend API",
+  "main": "src/generated/index.ts",
+  "types": "src/generated/index.ts",
+  "scripts": {
+    "generate": "../scripts/generate-types.sh"
+  },
+  "keywords": ["openapi", "typescript", "angular", "api-types"],
+  "license": "MIT",
+  "peerDependencies": {
+    "@angular/core": "^17.0.0",
+    "rxjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.7.0"
+  }
+}

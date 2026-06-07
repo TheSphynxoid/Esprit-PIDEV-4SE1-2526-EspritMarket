@@ -1,0 +1,147 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-3xl mx-auto py-12 px-4">
+    <div class="flex items-center gap-4 mb-8">
+      <button class="btn btn-secondary btn-sm" (click)="goBack()">Back</button>
+      <h1 class="text-3xl font-bold text-primary dark:text-white">Deliverable Details</h1>
+    </div>
+
+    <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 rounded-lg text-sm mb-4 border border-amber-200 dark:border-amber-700/40">
+      This page is deprecated and will sunset on {{ legacySunsetDate }}. Booking Workspace is the canonical flow.
+      <button *ngIf="deliverable()?.bookingId" class="ml-2 underline font-semibold" (click)="openWorkspace()">Open Workspace</button>
+    </div>
+
+    <div *ngIf="isLoading()" class="text-center py-20">
+      <p class="text-secondary text-lg">Loading...</p>
+    </div>
+
+    <div *ngIf="!isLoading() && !deliverable()" class="card card-md text-center">
+      <p class="text-secondary mb-4">Deliverable not found.</p>
+      <button class="btn btn-primary" (click)="goBack()">Back to Bookings</button>
+    </div>
+
+      <div *ngIf="!isLoading() && deliverable() as del">
+      <div *ngIf="error()" class="p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm mb-4">
+        {{ error() }}
+      </div>
+
+      <div *ngIf="del.qualityScore != null" class="mb-4 flex items-center gap-2">
+        <span class="text-xs font-semibold text-secondary">Quality Score</span>
+        <span class="text-xs px-2 py-0.5 rounded-full font-bold"
+              [ngClass]="{
+                'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': del.qualityScore >= 70,
+                'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': del.qualityScore >= 40,
+                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': del.qualityScore < 40
+              }">
+          {{ del.qualityScore }}/100
+        </span>
+        <div *ngIf="$any(del.qualityWarnings)?.length" class="text-[10px] text-amber-600 dark:text-amber-400">
+          {{ $any(del.qualityWarnings).join(' | ') }}
+        </div>
+      </div>
+
+      <div class="card card-md mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-bold text-primary dark:text-white">{{ del.title || 'Untitled' }}</h2>
+          <span class="text-xs px-2 py-1 rounded-full font-semibold" [ngClass]="getStatusClass(del.status)">
+            {{ del.status | titlecase }}
+          </span>
+        </div>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p class="text-secondary">Provider</p>
+            <p class="font-medium text-primary dark:text-white">{{ del.providerName || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-secondary">Version</p>
+            <p class="font-medium text-primary dark:text-white">{{ del.version || 1 }}</p>
+          </div>
+          <div>
+            <p class="text-secondary">Created</p>
+            <p class="font-medium text-primary dark:text-white">{{ del.createdAt | date:'medium' }}</p>
+          </div>
+          <div *ngIf="del.submittedAt">
+            <p class="text-secondary">Submitted</p>
+            <p class="font-medium text-primary dark:text-white">{{ del.submittedAt | date:'medium' }}</p>
+          </div>
+          <div *ngIf="del.reviewedAt" class="col-span-2">
+            <p class="text-secondary">Last Reviewed</p>
+            <p class="font-medium text-primary dark:text-white">{{ del.reviewedAt | date:'medium' }}</p>
+          </div>
+        </div>
+        <div *ngIf="del.description" class="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+          <p class="text-sm text-secondary">{{ del.description }}</p>
+        </div>
+      </div>
+
+      <div class="card card-md mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-lg font-semibold text-primary dark:text-white">Attachments</h3>
+          <div *ngIf="isProvider && (del.status === 'DRAFT' || del.status === 'REVISION_REQUESTED')">
+            <label class="btn btn-secondary btn-sm cursor-pointer">
+              Add File
+              <input type="file" class="hidden" (change)="onAddAttachment($event)" />
+            </label>
+          </div>
+        </div>
+        <div *ngIf="!del.attachments || del.attachments.length === 0" class="text-sm text-secondary">
+          No attachments.
+        </div>
+        <div *ngIf="del.attachments && del.attachments.length > 0" class="space-y-2">
+          <div *ngFor="let att of del.attachments" class="flex items-center justify-between p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+            <div>
+              <p class="text-sm font-medium text-primary dark:text-white">{{ att.fileName || 'File' }}</p>
+              <p class="text-xs text-secondary">{{ att.fileSize | number }} bytes</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <a *ngIf="att.fileUrl" [href]="att.fileUrl" target="_blank" class="btn btn-secondary btn-sm">Download</a>
+              <button
+                *ngIf="isProvider && (del.status === 'DRAFT' || del.status === 'REVISION_REQUESTED')"
+                class="text-red-500 hover:text-red-700 text-sm"
+                (click)="deleteAttachment(att.id)"
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-md mb-6">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-3">Actions</h3>
+        <div class="flex gap-3">
+          <button *ngIf="canSubmit()" class="btn btn-primary" [disabled]="isSubmitting()" (click)="submitDeliverable()">
+            {{ isSubmitting() ? 'Submitting...' : 'Submit for Review' }}
+          </button>
+          <a *ngIf="canReview()" class="btn btn-primary" [routerLink]="['/deliverables', deliverableId(), 'review']">
+            Review Deliverable
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="history().length > 0" class="card card-md">
+        <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">Review History</h3>
+        <div class="space-y-4">
+          <div *ngFor="let review of history()" class="flex gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-700 last:border-0 last:pb-0">
+            <div class="flex-shrink-0">
+              <div class="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-600 flex items-center justify-center text-xs font-bold text-primary dark:text-white">
+                {{ (review.reviewerName || '?')[0] | uppercase }}
+              </div>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-sm font-semibold text-primary dark:text-white">{{ review.reviewerName || 'Reviewer' }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-semibold" [ngClass]="getDecisionClass(review.decision)">
+                  {{ review.decision }}
+                </span>
+              </div>
+              <p *ngIf="review.comment" class="text-sm text-secondary">{{ review.comment }}</p>
+              <p *ngIf="review.reviewedAt" class="text-xs text-secondary mt-1">{{ review.reviewedAt | date:'medium' }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

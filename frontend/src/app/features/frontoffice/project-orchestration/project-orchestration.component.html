@@ -1,0 +1,1059 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-8 px-4">
+
+    <!-- Header -->
+    <div class="mb-6">
+      <a routerLink="/projects" class="text-xs text-secondary hover:text-esprit-red inline-flex items-center gap-1 mb-3 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+        Back to Projects
+      </a>
+      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+        <div class="flex-1">
+          <div *ngIf="!isEditingProject()">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h1 class="text-2xl font-bold text-primary dark:text-white">{{ project()?.title || 'Project' }}</h1>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase"
+                    [ngClass]="{
+                      'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': project()?.status === 'COMPLETED',
+                      'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': project()?.status === 'IN_PROGRESS',
+                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': project()?.status === 'CANCELLED',
+                      'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300': !project()?.status || project()?.status === 'PLANNED'
+                    }">{{ project()?.status || 'PLANNED' }}</span>
+              <span *ngIf="project()?.priority" class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                    [ngClass]="{
+                      'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': project()?.priority === 'HIGH' || project()?.priority === 'CRITICAL',
+                      'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': project()?.priority === 'MEDIUM',
+                      'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300': project()?.priority === 'LOW'
+                    }">{{ project()?.priority }}</span>
+            </div>
+            <p *ngIf="project()?.details" class="text-sm text-secondary mt-1">{{ project()?.details }}</p>
+            <div class="flex flex-wrap items-center gap-3 mt-2 text-xs text-secondary">
+              <span *ngIf="project()?.budget">{{ project()?.budget }} TND</span>
+              <span *ngIf="project()?.startDate">{{ project()?.startDate | date:'shortDate' }} &rarr; {{ project()?.estimatedEndDate ? (project()?.estimatedEndDate | date:'shortDate') : '?' }}</span>
+              <span *ngIf="(project()?.members?.length ?? 0) > 0">{{ project()!.members!.length }} member{{ project()!.members!.length !== 1 ? 's' : '' }}</span>
+              <button *ngIf="canManage()" class="text-esprit-red hover:underline" (click)="startEditProject()">Edit</button>
+              <div *ngIf="canManage() && statusMenuOpen()" class="relative">
+                <div class="absolute left-0 top-5 z-20 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg py-1 min-w-[140px]">
+                  <button *ngFor="let s of availableStatusTransitions()" class="w-full text-left px-3 py-1.5 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 text-primary dark:text-white" (click)="changeProjectStatus(s)">{{ s }}</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <form *ngIf="isEditingProject()" [formGroup]="projectEditForm" (ngSubmit)="saveProjectEdit()" class="space-y-2 mt-1">
+            <div class="flex gap-2">
+              <input formControlName="title" placeholder="Title" class="form-input flex-1 text-lg font-bold" />
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="projectEditForm.invalid || isSubmitting()">Save</button>
+              <button type="button" class="btn btn-secondary btn-sm" (click)="cancelEditProject()">Cancel</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+              <input formControlName="details" placeholder="Details" class="form-input text-sm" />
+              <select formControlName="priority" class="form-input text-sm"><option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option></select>
+              <input type="number" min="0" formControlName="budget" class="form-input text-sm" placeholder="Budget (TND)" />
+              <div class="grid grid-cols-2 gap-1">
+                <input type="date" formControlName="startDate" class="form-input text-sm" />
+                <input type="date" formControlName="estimatedEndDate" class="form-input text-sm" />
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="flex items-center gap-2 flex-wrap shrink-0">
+          <app-paradox-tip *ngIf="canManage()" text="Generate AI-suggested milestone schedule with smart week assignments based on provider availability, project urgency, and workload fairness." label="Auto-Schedule" value="AI-Powered">
+            <button class="btn btn-secondary btn-sm text-xs" (click)="generateSchedule()" [disabled]="isLoadingSchedule()">
+              {{ isLoadingSchedule() ? 'Generating...' : 'Auto-Schedule' }}
+            </button>
+          </app-paradox-tip>
+          <app-paradox-tip text="Create bookings for all allocated services across milestones in a single action." label="Allocate & Book" value="Bulk Action">
+            <button *ngIf="canManage()" class="btn btn-primary btn-sm text-xs" (click)="allocateAndBook()" [disabled]="isExecutingWorkflow()">
+              {{ isExecutingWorkflow() ? '...' : 'Allocate & Book' }}
+            </button>
+          </app-paradox-tip>
+          <app-paradox-tip text="Run the full automated workflow: generate schedule, create bookings, and advance milestone states." label="Auto-Execute" value="End-to-End">
+            <button *ngIf="canManage()" class="btn btn-secondary btn-sm text-xs" (click)="executeAutomatedWorkflow()" [disabled]="isExecutingWorkflow()">
+              {{ isExecutingWorkflow() ? '...' : 'Auto-Exec' }}
+            </button>
+          </app-paradox-tip>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div *ngIf="error()" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">{{ error() }}</div>
+    <div *ngIf="success()" class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">{{ success() }}</div>
+
+    <!-- Workflow result banner -->
+    <div *ngIf="showWorkflowResult() && workflowResult()" class="mb-6 p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-semibold text-green-700 dark:text-green-400">Workflow Complete</span>
+        <button class="text-xs text-secondary hover:underline" (click)="closeWorkflowResult()">Dismiss</button>
+      </div>
+      <p class="text-xs text-secondary">{{ (workflowResult()?.createdBookings?.length ?? 0) }} booking(s) created<span *ngIf="(workflowResult()?.warnings?.length ?? 0) > 0">, {{ workflowResult()!.warnings!.length }} warning(s)</span></p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex items-center gap-1 border-b border-neutral-200 dark:border-neutral-700 mb-6 overflow-x-auto scrollbar-none">
+      <button *ngFor="let tab of [{key:'overview',label:'Workflow',short:'Workflow'},{key:'milestones',label:'Milestones & Team',short:'Milestones'},{key:'schedule',label:'Schedule',short:'Schedule'},{key:'assistant',label:'AI Assistant',short:'AI'}]"
+              class="px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap shrink-0"
+              [class]="activeTab() === tab.key
+                ? 'border-esprit-red text-esprit-red'
+                : 'border-transparent text-secondary hover:text-primary dark:text-neutral-400 dark:hover:text-white'"
+              (click)="onTabChange($any(tab.key))">
+        <span class="hidden sm:inline">{{ tab.label }}</span><span class="sm:hidden">{{ tab.short }}</span>
+      </button>
+    </div>
+
+    <!-- ============== OVERVIEW TAB (Workflow Canvas) ============== -->
+    <ng-container *ngIf="activeTab() === 'overview'">
+      <div *ngIf="isLoading()" class="flex items-center justify-center py-20">
+        <div class="animate-pulse text-secondary text-sm">Loading workflow...</div>
+      </div>
+
+      <div *ngIf="!isLoading()" class="wf-canvas-wrap relative rounded-xl overflow-hidden border border-neutral-800 bg-[#0a0e1a]" style="height: min(600px, 70vh);">
+        <!-- Toolbar -->
+        <div class="absolute top-0 left-0 right-0 z-20 flex flex-wrap items-center justify-between gap-1.5 px-2 sm:px-3 py-2 bg-[#0f1629]/90 backdrop-blur-md border-b border-neutral-800">
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <span class="text-xs font-bold text-white/90">Workflow</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/40">{{ wfNodes().length }} node{{ wfNodes().length !== 1 ? 's' : '' }}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/40">{{ wfEdges().length }} dep{{ wfEdges().length !== 1 ? 's' : '' }}</span>
+          </div>
+          <div class="flex items-center gap-1.5 sm:gap-2">
+            <!-- Search -->
+            <div class="relative">
+              <input
+                type="text"
+                class="wf-search-input text-[11px] w-28 sm:w-44 px-2 py-1 rounded-md bg-white/5 border border-neutral-700 text-white/80 placeholder-white/25 outline-none focus:border-esprit-red/50 focus:bg-white/8 transition-all"
+                placeholder="Search..."
+                [value]="wfSearchTerm()"
+                (input)="wfOnSearchInput($event)"
+                (focus)="wfSearchOpen.set(true)"
+                (blur)="wfOnSearchBlur()"
+                (keydown)="wfOnSearchKeydown($event)" />
+              <svg class="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-white/20 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <!-- Search dropdown -->
+              <div *ngIf="wfSearchOpen() && wfSearchTerm() && wfSearchResults().length > 0" class="absolute top-full left-0 right-0 mt-1 bg-[#151b2e] border border-neutral-700 rounded-lg shadow-2xl overflow-hidden z-50">
+                <div *ngFor="let r of wfSearchResults()" class="flex items-center gap-2 px-3 py-2 hover:bg-white/5 cursor-pointer transition-colors" (mousedown)="wfFocusNode(r.id)">
+                  <span class="w-2 h-2 rounded-full shrink-0" [style.background]="wfNodeStatusColor(r.status)"></span>
+                  <span class="text-xs text-white/80 truncate">{{ r.title }}</span>
+                  <span class="text-[9px] text-white/30 ml-auto shrink-0">{{ r.status }}</span>
+                </div>
+              </div>
+              <div *ngIf="wfSearchOpen() && wfSearchTerm() && wfSearchResults().length === 0" class="absolute top-full left-0 right-0 mt-1 bg-[#151b2e] border border-neutral-700 rounded-lg shadow-2xl p-3 z-50">
+                <span class="text-xs text-white/30">No matching milestones</span>
+              </div>
+            </div>
+            <div class="hidden sm:block w-px h-5 bg-neutral-700"></div>
+            <app-paradox-tip text="Zoom to fit all nodes in view">
+              <button class="text-[11px] px-2 py-1 rounded-md bg-white/5 text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors" (click)="wfFitView()">Fit</button>
+            </app-paradox-tip>
+            <app-paradox-tip text="Zoom in on the canvas">
+              <button class="text-[11px] px-2 py-1 rounded-md bg-white/5 text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors" (click)="wfZoomIn()">+</button>
+            </app-paradox-tip>
+            <app-paradox-tip text="Zoom out of the canvas">
+              <button class="text-[11px] px-2 py-1 rounded-md bg-white/5 text-white/50 hover:text-white/80 hover:bg-white/10 transition-colors" (click)="wfZoomOut()">&minus;</button>
+            </app-paradox-tip>
+            <button *ngIf="canManage()" class="text-[11px] px-2 sm:px-2.5 py-1 rounded-md bg-esprit-red text-white hover:bg-esprit-700 transition-colors font-semibold" (click)="wfAddMilestone()">+ Milestone</button>
+            <button *ngIf="canManage()" class="text-[11px] px-2 sm:px-2.5 py-1 rounded-md bg-amber-500 text-white hover:bg-amber-600 transition-colors font-semibold" (click)="wfAddCondition()">+ Condition</button>
+          </div>
+        </div>
+
+        <!-- Context menu -->
+        <div *ngIf="wfContextMenuNodeId() !== null" class="absolute z-30 bg-[#151b2e] border border-neutral-700 rounded-lg shadow-2xl py-1 min-w-[170px]" [style.left.px]="wfContextMenuPos().x" [style.top.px]="wfContextMenuPos().y">
+          <button class="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white/80" (click)="onWfNodeDblClick(wfContextMenuNodeId()!)">Rename</button>
+          <button class="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white/80" (click)="wfEditFromContext()">Edit Details</button>
+          <div class="border-t border-neutral-800 my-1"></div>
+          <button *ngFor="let dep of wfGetDependenciesForNode(wfContextMenuNodeId()!)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-500/10 text-red-400" (click)="wfDeleteDependency(dep.id!)">
+            Remove &rarr; {{ dep.predecessorMilestoneId === wfContextMenuNodeId() ? dep.successorMilestoneTitle : dep.predecessorMilestoneTitle }}
+          </button>
+          <div class="border-t border-neutral-800 my-1"></div>
+          <button class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-500/10 text-red-400" (click)="wfDeleteSelected()">Delete Node</button>
+          <button class="w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 text-white/30" (click)="closeWfContextMenu()">Cancel</button>
+        </div>
+
+        <!-- SVG Canvas -->
+        <svg
+          class="wf-canvas-svg w-full h-full"
+          [class.wf-grabbing]="wfIsPanning()"
+          (mousedown)="onWfSvgMouseDown($event)"
+          (mousemove)="onWfSvgMouseMove($event)"
+          (mouseup)="onWfSvgMouseUp($event)"
+          (mouseleave)="onWfSvgMouseUp()"
+          (wheel)="onWfWheel($event)"
+          (click)="onWfSvgClick($event)"
+          (touchstart)="onWfTouchStart($event)"
+          (touchmove)="onWfTouchMove($event)"
+          (touchend)="onWfTouchEnd($event)"
+          (contextmenu)="$event.preventDefault()">
+          <defs>
+            <marker id="wf-arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6" fill="#475569" />
+            </marker>
+            <marker id="wf-arrow-active" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6" fill="#e11d48" />
+            </marker>
+            <marker id="wf-arrow-dim" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+              <path d="M0,0 L8,3 L0,6" fill="#1e293b" />
+            </marker>
+            <filter id="wf-node-shadow" x="-10%" y="-10%" width="120%" height="140%">
+              <feDropShadow dx="0" dy="4" stdDeviation="10" flood-color="#000" flood-opacity="0.4" />
+            </filter>
+            <filter id="wf-glow-selected" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#e11d48" flood-opacity="0.6" />
+            </filter>
+            <filter id="wf-glow-search-match" x="-15%" y="-15%" width="130%" height="130%">
+              <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#8b5cf6" flood-opacity="0.5" />
+            </filter>
+            <linearGradient id="wf-node-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#1a2235" />
+              <stop offset="100%" stop-color="#0d1321" />
+            </linearGradient>
+            <linearGradient id="wf-node-gradient-dim" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#111827" />
+              <stop offset="100%" stop-color="#0a0e17" />
+            </linearGradient>
+            <pattern id="wf-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#334155" stroke-width="0.4" />
+            </pattern>
+          </defs>
+
+          <g [attr.transform]="'translate(' + wfPan().x + ',' + wfPan().y + ') scale(' + wfZoom() + ')'">
+            <!-- Grid -->
+            <rect x="-2000" y="-2000" width="6000" height="6000" fill="url(#wf-grid)" opacity="0.4" />
+
+            <!-- Edges -->
+            <g *ngFor="let edge of wfEdges()">
+              <g class="wf-edge" [class.wf-edge-dim]="wfSearchTerm() && !(wfSearchMatchIds().has(edge.fromId) || wfSearchMatchIds().has(edge.toId))">
+                 <path
+                   [attr.d]="wfBezierPath(edge.fromX, edge.fromY, edge.toX, edge.toY, edge.isBottomPort)"
+                   fill="none" stroke="transparent" stroke-width="16"
+                   class="wf-edge-hitarea"
+                   [class.cursor-pointer]="wfEditableEdgeIds().has(edge.id)"
+                   [class.cursor-default]="!wfEditableEdgeIds().has(edge.id)"
+                   (click)="wfEditableEdgeIds().has(edge.id) ? wfEdgeClick(edge.id) : null" />
+                 <path
+                   [attr.d]="wfBezierPath(edge.fromX, edge.fromY, edge.toX, edge.toY, edge.isBottomPort)"
+                   fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="6,3"
+                   marker-end="url(#wf-arrow)"
+                   class="pointer-events-none" />
+              </g>
+            </g>
+
+            <!-- Active connecting line -->
+            <ng-container *ngIf="wfConnectingFrom() !== null">
+              <ng-container *ngIf="wfConnectingFromPortPos() as fp">
+                <path
+                  [attr.d]="wfBezierPath(fp.x, fp.y, wfConnectingMouse().x, wfConnectingMouse().y, wfConnectingSide() === 'bottom')"
+                  fill="none" stroke="#e11d48" stroke-width="2.5" stroke-dasharray="8,4"
+                  marker-end="url(#wf-arrow-active)"
+                  opacity="0.8" />
+              </ng-container>
+            </ng-container>
+
+            <!-- Nodes -->
+            <g *ngFor="let node of wfNodes()">
+              <g
+                class="wf-node-group"
+                [attr.data-node-id]="node.id"
+                [class.wf-node-dim]="wfSearchTerm() && !wfSearchMatchIds().has(node.id)"
+                [attr.transform]="'translate(' + node.x + ',' + node.y + ')'"
+                (dblclick)="onWfNodeDblClick(node.id)"
+                (contextmenu)="onWfContextMenu($event, node.id)">
+
+                <!-- === CONDITION node (diamond shape) === -->
+                <ng-container *ngIf="node.isDiamond; else regularNode">
+                  <g [attr.transform]="'translate(' + (DIAMOND_SIZE / 2) + ',' + (DIAMOND_SIZE / 2) + ')'">
+                    <rect
+                      [attr.width]="DIAMOND_SIZE * 0.75" [attr.height]="DIAMOND_SIZE * 0.75"
+                      rx="8" ry="8"
+                      [attr.fill]="wfSearchTerm() && !wfSearchMatchIds().has(node.id) ? 'url(#wf-node-gradient-dim)' : 'url(#wf-node-gradient)'"
+                      [attr.filter]="node.isSelected ? 'url(#wf-glow-selected)' : wfSearchMatchIds().has(node.id) && wfSearchTerm() ? 'url(#wf-glow-search-match)' : 'url(#wf-node-shadow)'"
+                      [attr.stroke]="node.isSelected ? '#e11d48' : wfSearchMatchIds().has(node.id) && wfSearchTerm() ? '#8b5cf6' : '#f59e0b'"
+                      stroke-width="2"
+                      transform="rotate(45)"
+                      [attr.x]="-(DIAMOND_SIZE * 0.75 / 2)"
+                      [attr.y]="-(DIAMOND_SIZE * 0.75 / 2)" />
+
+                    <text y="-10" fill="#f59e0b" font-size="9" font-weight="700" text-anchor="middle" class="pointer-events-none">CONDITION</text>
+                    <text y="8" fill="#f1f5f9" font-size="11" font-weight="600" text-anchor="middle" class="pointer-events-none">
+                      {{ node.title.length > 18 ? node.title.slice(0, 18) + '...' : node.title }}
+                    </text>
+                    <text *ngIf="node.conditionExpression" y="24" fill="#64748b" font-size="8" text-anchor="middle" class="pointer-events-none">
+                      {{ node.conditionExpression.length > 24 ? node.conditionExpression.slice(0, 24) + '...' : node.conditionExpression }}
+                    </text>
+
+                    <!-- Yes/No labels on ports -->
+                    <text [attr.x]="DIAMOND_SIZE * 0.55" y="4" fill="#22c55e" font-size="8" font-weight="700" class="pointer-events-none">Yes</text>
+                    <text [attr.y]="DIAMOND_SIZE * 0.55" x="4" fill="#ef4444" font-size="8" font-weight="700" class="pointer-events-none">No</text>
+                  </g>
+
+                  <!-- Output port (right) -->
+                  <circle
+                    [attr.cx]="DIAMOND_SIZE" [attr.cy]="DIAMOND_SIZE / 2" [attr.r]="PORT_R"
+                    fill="#1e293b" stroke="#22c55e" stroke-width="1.5"
+                    [class.cursor-crosshair]="node.isEditable"
+                    [class.wf-port]="node.isEditable"
+                    [class.wf-port-out]="node.isEditable"
+                    [class.pointer-events-none]="!node.isEditable"
+                    (mousedown)="node.isEditable && onWfPortMouseDown($event, node.id, 'out')" />
+
+                  <!-- Input port (left) -->
+                  <circle
+                    cx="0" [attr.cy]="DIAMOND_SIZE / 2" [attr.r]="PORT_R"
+                    fill="#1e293b" stroke="#64748b" stroke-width="1.5"
+                    [class.cursor-crosshair]="node.isEditable"
+                    [class.wf-port]="node.isEditable"
+                    [class.wf-port-in]="node.isEditable"
+                    [class.pointer-events-none]="!node.isEditable"
+                    (mousedown)="node.isEditable && onWfPortMouseDown($event, node.id, 'in')" />
+
+                  <!-- Bottom port (No branch) -->
+                  <circle
+                    [attr.cx]="DIAMOND_SIZE / 2" [attr.cy]="DIAMOND_SIZE" [attr.r]="PORT_R"
+                    fill="#1e293b" stroke="#ef4444" stroke-width="1.5"
+                    [class.cursor-crosshair]="node.isEditable"
+                    [class.wf-port]="node.isEditable"
+                    [class.wf-port-out]="node.isEditable"
+                    [class.pointer-events-none]="!node.isEditable"
+                    (mousedown)="node.isEditable && onWfPortMouseDown($event, node.id, 'bottom')" />
+                </ng-container>
+
+                <!-- === Regular MILESTONE node === -->
+                <ng-template #regularNode>
+                <!-- Node shadow + bg (captures pointer events for drag) -->
+                <rect
+                  [attr.width]="NODE_W" [attr.height]="NODE_H"
+                  rx="12" ry="12"
+                  [attr.fill]="wfSearchTerm() && !wfSearchMatchIds().has(node.id) ? 'url(#wf-node-gradient-dim)' : 'url(#wf-node-gradient)'"
+                  [attr.filter]="node.isSelected ? 'url(#wf-glow-selected)' : wfSearchMatchIds().has(node.id) && wfSearchTerm() ? 'url(#wf-glow-search-match)' : 'url(#wf-node-shadow)'"
+                  [attr.stroke]="node.isSelected ? '#e11d48' : wfSearchMatchIds().has(node.id) && wfSearchTerm() ? '#8b5cf6' : '#1e293b'"
+                  stroke-width="1.5" />
+
+                <!-- Status accent bar at top -->
+                <rect [attr.width]="NODE_W" height="4" rx="2" ry="2" [attr.fill]="wfNodeStatusColor(node.status)" class="pointer-events-none" />
+
+                <!-- Status dot -->
+                <circle cx="16" cy="20" r="5" [attr.fill]="wfNodeStatusColor(node.status)" class="pointer-events-none" />
+                <text x="28" y="24" fill="#94a3b8" font-size="10" font-weight="600" class="pointer-events-none">{{ node.status }}</text>
+
+                <!-- Title -->
+                <ng-container *ngIf="node.isEditing; else showTitle">
+                  <foreignObject x="16" y="32" [attr.width]="NODE_W - 32" height="24" xmlns="http://www.w3.org/1999/xhtml">
+                    <input xmlns="http://www.w3.org/1999/xhtml"
+                      [id]="'wf-edit-' + node.id"
+                      type="text"
+                      class="wf-edit-input"
+                      [value]="node.title"
+                      (mousedown)="$event.stopPropagation()"
+                      (input)="wfEditingTitle.set($any($event.target).value)"
+                      (blur)="onWfEditBlur(node.id)"
+                      (keydown)="onWfEditKeydown($event, node.id)" />
+                  </foreignObject>
+                </ng-container>
+                <ng-template #showTitle>
+                  <text x="16" y="50" fill="#f1f5f9" font-size="13" font-weight="600" class="pointer-events-none">
+                    {{ node.title.length > 22 ? node.title.slice(0, 22) + '...' : node.title }}
+                  </text>
+                </ng-template>
+
+                <!-- Services count -->
+                <g *ngIf="node.svcCount > 0" class="pointer-events-none">
+                  <rect x="16" y="62" [attr.width]="NODE_W - 32" height="20" rx="4" fill="#1e293b" stroke="#334155" stroke-width="0.5" />
+                  <text x="24" y="76" fill="#64748b" font-size="9">
+                    {{ node.svcCount }} service{{ node.svcCount !== 1 ? 's' : '' }}{{ node.bookingCount > 0 ? ' &middot; ' + node.bookingCount + ' booking' + (node.bookingCount !== 1 ? 's' : '') : '' }}
+                  </text>
+                </g>
+
+                <!-- Service badges (show up to 3) -->
+                <g *ngIf="node.services && node.services.length > 0" class="pointer-events-none">
+                  <rect x="16" y="86" [attr.width]="NODE_W - 32" height="16" rx="3" fill="#0f172a" />
+                  <text x="22" y="97" fill="#94a3b8" font-size="8">{{ wfServiceLabels(node.services) }}</text>
+                </g>
+
+                <!-- Lock badge for non-editable nodes -->
+                <g *ngIf="!node.isEditable" class="pointer-events-none">
+                  <circle [attr.cx]="NODE_W - 16" cy="20" r="10" fill="#334155" />
+                  <text [attr.x]="NODE_W - 16" y="24" fill="#64748b" font-size="9" text-anchor="middle">&#x1f512;</text>
+                </g>
+
+                <!-- Index badge (editable only) -->
+                <circle *ngIf="node.isEditable" [attr.cx]="NODE_W - 16" cy="20" r="10" fill="#334155" class="pointer-events-none" />
+                <text *ngIf="node.isEditable" [attr.x]="NODE_W - 16" y="24" fill="#94a3b8" font-size="9" font-weight="600" text-anchor="middle" class="pointer-events-none">{{ node.index + 1 }}</text>
+
+                <!-- Output port (right) — interactive only for editable nodes -->
+                <circle
+                  [attr.cx]="NODE_W" [attr.cy]="NODE_H / 2" [attr.r]="PORT_R"
+                  fill="#1e293b" stroke="#64748b" stroke-width="1.5"
+                  [class.cursor-crosshair]="node.isEditable"
+                  [class.wf-port]="node.isEditable"
+                  [class.wf-port-out]="node.isEditable"
+                  [class.pointer-events-none]="!node.isEditable"
+                  [ngClass]="{'opacity-40': !node.isEditable}"
+                  (mousedown)="node.isEditable && onWfPortMouseDown($event, node.id, 'out')" />
+
+                <!-- Input port (left) — interactive only for editable nodes -->
+                <circle
+                  cx="0" [attr.cy]="NODE_H / 2" [attr.r]="PORT_R"
+                  fill="#1e293b" stroke="#64748b" stroke-width="1.5"
+                  [class.cursor-crosshair]="node.isEditable"
+                  [class.wf-port]="node.isEditable"
+                  [class.wf-port-in]="node.isEditable"
+                  [class.pointer-events-none]="!node.isEditable"
+                  [ngClass]="{'opacity-40': !node.isEditable}"
+                  (mousedown)="node.isEditable && onWfPortMouseDown($event, node.id, 'in')" />
+                </ng-template>
+              </g>
+            </g>
+
+            <!-- Empty state -->
+            <g *ngIf="wfNodes().length === 0" transform="translate(200, 200)">
+              <text x="0" y="0" fill="#64748b" font-size="14" font-weight="500">No milestones yet</text>
+              <text x="0" y="24" fill="#475569" font-size="11">Click "+ Milestone" to start building your workflow</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </ng-container>
+
+    <!-- ============== MILESTONES TAB ============== -->
+    <ng-container *ngIf="activeTab() === 'milestones'">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="space-y-4">
+          <div class="card card-md p-5" *ngIf="canManage()">
+            <h2 class="text-sm font-bold text-primary dark:text-white mb-3">{{ editingMilestoneId() ? 'Edit Node' : 'Add Node' }}</h2>
+            <form [formGroup]="milestoneForm" (ngSubmit)="saveMilestone()" class="space-y-2">
+              <select formControlName="milestoneType" class="form-input text-sm mb-2">
+                <option value="MILESTONE">Milestone (Standard Task)</option>
+                <option value="CONDITION">Condition (Dynamic Branching)</option>
+                <option value="START">Start Node</option>
+                <option value="END">End Node</option>
+              </select>
+
+              <input formControlName="title" [placeholder]="milestoneForm.get('milestoneType')?.value === 'CONDITION' ? 'Condition Title (e.g., Budget Check)' : 'Milestone title'" class="form-input text-sm" />
+              <textarea formControlName="details" rows="1" placeholder="Details (optional)" class="form-input text-sm"></textarea>
+              
+              <div *ngIf="milestoneForm.get('milestoneType')?.value === 'CONDITION'" class="space-y-1">
+                <input formControlName="conditionExpression" placeholder="e.g. #project.budget > 5000" class="form-input text-sm border-blue-300" />
+                <p class="text-xs text-gray-500 ml-1">SpEL expression. Evaluates dynamically to skip or run branch.</p>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2" *ngIf="milestoneForm.get('milestoneType')?.value !== 'CONDITION'">
+                <input type="date" formControlName="plannedStartDate" class="form-input text-sm" title="Planned Start Date" />
+                <input type="date" formControlName="plannedEndDate" class="form-input text-sm" title="Planned End Date" />
+                <select formControlName="status" class="form-input text-sm" title="Status"><option *ngFor="let s of milestoneStatusOptions" [value]="s">{{ s }}</option></select>
+                <input type="number" min="0" formControlName="sortOrder" class="form-input text-sm" placeholder="Order" title="Sort Order" />
+              </div>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2" *ngIf="milestoneForm.get('milestoneType')?.value === 'CONDITION'">
+                <select formControlName="status" class="form-input text-sm" title="Status"><option *ngFor="let s of milestoneStatusOptions" [value]="s">{{ s }}</option></select>
+                <input type="number" min="0" formControlName="sortOrder" class="form-input text-sm" placeholder="Order" title="Sort Order" />
+              </div>
+
+              <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-primary btn-sm" [disabled]="milestoneForm.invalid || isSubmitting()">{{ editingMilestoneId() ? 'Update Node' : 'Create Node' }}</button>
+                <button *ngIf="editingMilestoneId()" type="button" class="btn btn-secondary btn-sm" (click)="cancelEditMilestone()">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card card-md p-5" *ngIf="canManage()">
+            <h2 class="text-sm font-bold text-primary dark:text-white mb-3">Add Dependency</h2>
+            <form [formGroup]="dependencyForm" (ngSubmit)="createDependency()" class="space-y-2">
+              <div class="grid grid-cols-2 gap-2">
+                <select formControlName="predecessorMilestoneId" class="form-input text-sm"><option value="0">From...</option><option *ngFor="let m of milestones()" [value]="m.id">{{ m.title }}</option></select>
+                <select formControlName="successorMilestoneId" class="form-input text-sm"><option value="0">To...</option><option *ngFor="let m of milestones()" [value]="m.id">{{ m.title }}</option></select>
+              </div>
+              <button type="submit" class="btn btn-secondary btn-sm" [disabled]="dependencyForm.invalid || isSubmitting()">Create Dependency</button>
+            </form>
+          </div>
+
+          <!-- Dependencies list -->
+          <div *ngIf="dependencies().length > 0" class="card card-md p-5">
+            <h2 class="text-sm font-bold text-primary dark:text-white mb-3">Dependencies</h2>
+            <div class="space-y-2">
+              <div *ngFor="let d of dependencies()" class="flex items-center justify-between p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="px-2 py-1 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-medium text-primary dark:text-white">{{ d.predecessorMilestoneTitle }}</span>
+                  <svg class="w-3.5 h-3.5 text-esprit-red shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"/></svg>
+                  <span class="px-2 py-1 rounded-md bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 font-medium text-primary dark:text-white">{{ d.successorMilestoneTitle }}</span>
+                </div>
+                <button *ngIf="canManage()" class="text-xs text-red-400 hover:text-red-600 font-semibold" (click)="deleteDependency(d)">Delete</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div *ngIf="isReordering()" class="text-xs text-esprit-red mb-2 font-semibold">Saving order...</div>
+          <div *ngIf="milestones().length === 0" class="card card-md p-8 text-center">
+            <p class="text-sm text-secondary mb-4">No milestones yet. Start from a template or create manually.</p>
+            <div class="flex gap-2 justify-center flex-wrap">
+              <button class="btn btn-primary btn-sm" (click)="showTemplateGallery.set(true); loadWorkflowTemplates()">
+                Browse Templates
+              </button>
+              <button class="btn btn-secondary btn-sm" (click)="wfAddMilestone()">
+                + Add Milestone
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="showTemplateGallery()" class="card card-md p-6 mb-4">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-sm font-bold text-primary dark:text-white">Choose a Workflow Template</h4>
+              <button class="text-xs text-secondary hover:text-red-500" (click)="showTemplateGallery.set(false)">Close</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div *ngFor="let tpl of workflowTemplates()" class="border border-neutral-200 dark:border-neutral-700 rounded-xl p-4 cursor-pointer hover:border-esprit-red hover:bg-esprit-red/5 transition-all"
+                   (click)="applyWorkflowTemplate(tpl.id)">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="w-8 h-8 rounded-lg bg-esprit-red/10 flex items-center justify-center text-esprit-red text-sm font-bold">{{ tpl.name[0] }}</span>
+                  <h5 class="text-sm font-bold text-primary dark:text-white">{{ tpl.name }}</h5>
+                </div>
+                <p class="text-xs text-secondary mb-3">{{ tpl.description }}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-neutral-400">{{ tpl.milestones.length }} milestones</span>
+                  <span class="text-xs font-semibold text-esprit-red">Use Template</span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="applyingTemplate()" class="mt-3 text-center">
+              <span class="animate-spin inline-block w-4 h-4 border-2 border-esprit-red border-t-transparent rounded-full"></span>
+              <span class="text-xs text-secondary ml-2">Applying template...</span>
+            </div>
+          </div>
+          <div *ngFor="let m of milestones()"
+               class="card card-md p-4 mb-3 border-l-4"
+               [class.border-l-green-500]="m.status === 'COMPLETED'"
+               [class.border-l-blue-500]="m.status === 'IN_PROGRESS'"
+               [class.border-l-red-500]="m.status === 'BLOCKED'"
+               [class.border-l-neutral-300]="m.status === 'PLANNED'"
+               [draggable]="canManage()"
+               (dragstart)="onMilestoneDragStart(m.id)" (dragend)="onMilestoneDragEnd()" (dragover)="onMilestoneDragOver($event)" (drop)="onMilestoneDrop(m.id)">
+            <div class="flex items-start justify-between gap-2 mb-1">
+              <div class="min-w-0">
+                <p class="font-semibold text-sm text-primary dark:text-white">{{ m.title }}</p>
+                <p *ngIf="m.details" class="text-xs text-secondary mt-0.5">{{ m.details }}</p>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0" [ngClass]="statusClass(m.status)">{{ m.status | titlecase }}</span>
+            </div>
+            <div class="text-[11px] text-secondary mb-2">{{ m.plannedStartDate ? (m.plannedStartDate | date:'shortDate') : '?' }} &rarr; {{ m.plannedEndDate ? (m.plannedEndDate | date:'shortDate') : '?' }}</div>
+
+            <div *ngIf="($any(m).services?.length ?? 0) > 0" class="flex flex-wrap gap-1 mb-2">
+              <span *ngFor="let svc of $any(m).services || []" class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                {{ svc.name }}
+                <span *ngIf="canManage()" class="inline-flex items-center gap-1">
+                  <app-paradox-tip text="Estimated hours for this service within the milestone. Used by the scheduler to balance workload.">
+                    <input type="number" min="0.5" max="100" step="0.5"
+                      class="w-12 h-6 text-xs text-center rounded border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-neutral-800"
+                      [value]="svc.estimatedHours ?? 2"
+                      (change)="updateServiceHours(m.id!, svc.id!, +$any($event.target).value)" />
+                  </app-paradox-tip>
+                  <span class="text-[10px] text-emerald-600 dark:text-emerald-400">h</span>
+                </span>
+                <span *ngIf="!canManage()" class="opacity-60 text-xs">{{ svc.estimatedHours ?? 2 }}h</span>
+                <span *ngIf="svc.providerName" class="opacity-60">({{ svc.providerName }})</span>
+                <button *ngIf="canManage()" class="text-red-400 hover:text-red-600 font-bold ml-0.5" (click)="unlinkServiceFromMilestone(m.id!, svc.id!)">&times;</button>
+              </span>
+            </div>
+
+            <div *ngIf="schedule(); let sched" class="mb-2">
+              <ng-container *ngFor="let ms of sched?.milestones || []">
+                <span *ngIf="ms.milestoneId === m.id" class="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                  {{ ms.suggestedWeekStart | date:'shortDate' }} &rarr; {{ ms.suggestedWeekEnd | date:'shortDate' }} ({{ ms.estimatedDurationDays || 0 }}d)
+                </span>
+              </ng-container>
+            </div>
+
+            <div *ngIf="(m.linkedBookingIds?.length ?? 0) > 0" class="flex flex-wrap gap-1 mb-2">
+              <span *ngFor="let bid of m.linkedBookingIds || []" class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                Booking #{{ bid }}
+              </span>
+            </div>
+
+            <!-- Inline assign service -->
+            <div *ngIf="canManage() && assigningServiceMilestoneId() === m.id" class="mb-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+              <input type="text" class="form-input text-xs mb-1.5" placeholder="Search services..." [value]="serviceSearchForMilestone()" (input)="serviceSearchForMilestone.set($any($event.target).value)" />
+              <div class="max-h-28 overflow-auto space-y-0.5">
+                <div *ngFor="let svc of filteredEligibleServicesForMilestone(m.id)" class="flex items-center justify-between p-1.5 rounded hover:bg-emerald-100 dark:hover:bg-emerald-900/30">
+                  <div><span class="text-xs font-medium text-primary dark:text-white">{{ svc.name }}</span><span class="text-[10px] text-secondary ml-1">{{ svc.category }} &middot; {{ svc.providerName }}</span></div>
+                  <button class="text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-semibold" (click)="linkServiceToMilestone(svc.id!)">Assign</button>
+                </div>
+              </div>
+              <button class="text-[10px] text-secondary hover:underline mt-1" (click)="cancelAssignService()">Cancel</button>
+            </div>
+
+
+            <div *ngIf="canManage()" class="flex gap-2 flex-wrap pt-2 border-t border-neutral-100 dark:border-neutral-800">
+              <button class="text-xs text-secondary hover:text-primary px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="moveMilestone(m.id, -1)">&uarr;</button>
+              <button class="text-xs text-secondary hover:text-primary px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="moveMilestone(m.id, 1)">&darr;</button>
+              <button class="text-xs text-secondary hover:text-primary px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="startAssignService(m.id!)" *ngIf="assigningServiceMilestoneId() !== m.id">+ Service</button>
+              <button class="text-xs text-secondary hover:text-primary px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="editMilestone(m)">Edit</button>
+              <button class="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20" (click)="deleteMilestone(m)">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ============== SCHEDULE TAB ============== -->
+    <ng-container *ngIf="activeTab() === 'schedule'">
+      <!-- Slot Recommendations -->
+      <div class="card card-md p-5 mb-6 tip-card" *ngIf="canManage()">
+        <h2 class="text-sm font-bold text-primary dark:text-white mb-1">Slot Recommendations</h2>
+        <p class="text-xs text-secondary mb-4">Pick a service and date to generate scored scheduling suggestions.</p>
+
+        <div *ngIf="projectServices().length === 0" class="text-center py-8">
+          <p class="text-sm text-secondary mb-3">No services linked yet.</p>
+          <a routerLink="/services" class="btn btn-secondary btn-sm">Browse Services</a>
+        </div>
+
+        <ng-container *ngIf="projectServices().length > 0">
+          <div class="mb-3">
+            <div class="relative mb-2">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="text" class="form-input pl-8 text-sm" placeholder="Search services..." [value]="serviceSearchTerm()" (input)="serviceSearchTerm.set($any($event.target).value)" />
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              @for (svc of filteredProjectServices(); track svc.id) {
+                <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+                  [class]="recommendationServiceId() === svc.id ? 'border-esprit-red bg-esprit-red/5 text-esprit-red' : 'border-neutral-200 dark:border-neutral-700 text-secondary hover:border-esprit-red/40'"
+                  (click)="recommendationServiceId.set(svc.id)">{{ svc.name }}</button>
+              }
+            </div>
+          </div>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2 pt-3 border-t border-neutral-200 dark:border-neutral-700">
+            <div class="flex-1"><label class="text-[10px] text-secondary block mb-0.5">Date</label><input type="date" class="form-input text-sm" [value]="recommendationDate()" (change)="recommendationDate.set($any($event.target).value)" /></div>
+            <div class="flex-1">
+              <label class="text-[10px] text-secondary block mb-0.5">Mode</label>
+              <div class="flex rounded-lg border border-neutral-300 dark:border-neutral-600 overflow-hidden">
+                <button type="button" class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors" [class]="recommendationMode() === 'PROJECT_FIRST' ? 'bg-esprit-red text-white' : 'bg-white dark:bg-neutral-700 text-secondary'" (click)="recommendationMode.set('PROJECT_FIRST')">Priority</button>
+                <button type="button" class="flex-1 px-3 py-1.5 text-xs font-medium transition-colors" [class]="recommendationMode() === 'COMPETITIVE' ? 'bg-esprit-red text-white' : 'bg-white dark:bg-neutral-700 text-secondary'" (click)="recommendationMode.set('COMPETITIVE')">Standard</button>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" [disabled]="isLoadingRecommendations() || !recommendationServiceId()" (click)="runProjectRecommendations()">{{ isLoadingRecommendations() ? '...' : 'Generate' }}</button>
+          </div>
+        </ng-container>
+
+        <div *ngIf="recommendationResult().length > 0" class="mt-4 space-y-2">
+          <div *ngFor="let r of recommendationResult()" class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-sm font-semibold text-primary dark:text-white">#{{ r.rank }} {{ r.start | date:'shortTime' }} &rarr; {{ r.end | date:'shortTime' }}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold" [ngClass]="insightBadgeClass(r.reasonCode)">{{ r.reasonCode || 'N/A' }}</span>
+            </div>
+            <p class="text-xs text-secondary">Score: <span class="font-bold text-esprit-red">{{ r.score || 0 | number:'1.2-3' }}</span></p>
+            <div class="mt-2 grid grid-cols-3 sm:grid-cols-7 gap-1 text-center">
+              <div class="tip-wrap"><div class="rounded bg-emerald-50 dark:bg-emerald-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Avail</p><p class="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">{{ (r.availabilityWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Availability <span class="tip-value">w &times;0.35</span></span><p>Slot availability. 1.0 = free, 0.0 = taken.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-blue-50 dark:bg-blue-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Scar.</p><p class="text-[11px] font-semibold text-blue-700 dark:text-blue-400">{{ (r.scarcityWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Scarcity <span class="tip-value">w &times;0.20</span></span><p>Remaining capacity vs max concurrent.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-amber-50 dark:bg-amber-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Urg.</p><p class="text-[11px] font-semibold text-amber-700 dark:text-amber-400">{{ (r.projectUrgencyWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Urgency <span class="tip-value">w &times;0.15</span></span><p>Proximity to project deadline.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-purple-50 dark:bg-purple-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Prog.</p><p class="text-[11px] font-semibold text-purple-700 dark:text-purple-400">{{ (r.projectProgressWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Progress <span class="tip-value">w &times;0.10</span></span><p>Inverse of milestone completion.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-teal-50 dark:bg-teal-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Reliab.</p><p class="text-[11px] font-semibold text-teal-700 dark:text-teal-400">{{ (r.reliabilityWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Reliability <span class="tip-value">w &times;0.10</span></span><p>Provider track record.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-pink-50 dark:bg-pink-900/20 px-1 py-1"><p class="text-[9px] text-secondary">Fair.</p><p class="text-[11px] font-semibold text-pink-700 dark:text-pink-400">{{ (r.fairnessWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Fairness <span class="tip-value">w &times;0.05</span></span><p>Workload distribution across providers.</p></div></div>
+              <div class="tip-wrap"><div class="rounded bg-neutral-50 dark:bg-neutral-800 px-1 py-1"><p class="text-[9px] text-secondary">Tie</p><p class="text-[11px] font-semibold text-neutral-700 dark:text-neutral-300">{{ (r.tieBreakerWeight || 0) | number:'1.0-2' }}</p></div><div class="tip"><span class="tip-label">Tie-breaker <span class="tip-value">w &times;0.05</span></span><p>Time-of-day / weekday preference.</p></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Estimated Schedule -->
+      <div *ngIf="schedule()" class="card card-md p-5 mb-6 border-l-4 border-esprit-red">
+        <h2 class="text-sm font-bold text-primary dark:text-white mb-1">Estimated Schedule</h2>
+        <p *ngIf="schedule()?.projectStartDate" class="text-xs text-secondary mb-3">{{ schedule()?.projectStartDate | date:'shortDate' }} &rarr; {{ schedule()?.projectEndDate | date:'shortDate' }}</p>
+        <div class="space-y-2">
+          <div *ngFor="let ms of schedule()?.milestones || []" class="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-sm font-semibold text-primary dark:text-white">{{ ms.milestoneTitle }}</span>
+              <span class="text-[10px] text-secondary">~{{ ms.estimatedDurationDays || 0 }}d</span>
+            </div>
+            <p class="text-xs text-esprit-red font-medium">{{ ms.suggestedWeekStart | date:'shortDate' }} &rarr; {{ ms.suggestedWeekEnd | date:'shortDate' }}</p>
+            <div *ngIf="(ms.services?.length ?? 0) > 0" class="mt-1.5 space-y-0.5">
+              <div *ngFor="let svc of ms.services" class="flex items-center justify-between text-xs">
+                <span class="text-primary dark:text-white">{{ svc.serviceName }} <span class="text-secondary">({{ svc.providerName }})</span></span>
+                <span *ngIf="svc.suggestedDate" class="text-secondary">{{ svc.suggestedDate | date:'shortDate' }} &middot; {{ svc.estimatedDuration || 0 }}h</span>
+                <span *ngIf="svc.available === false" class="text-red-600 dark:text-red-400 font-semibold">Unavailable</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Calendar -->
+      <div class="card card-md p-5 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-bold text-primary dark:text-white">Project Calendar</h2>
+          <div class="flex items-center gap-2">
+            <button class="w-7 h-7 rounded-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-secondary hover:text-primary dark:hover:text-white hover:border-esprit-red transition-colors" (click)="calNav(-1)">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+            </button>
+            <span class="text-xs sm:text-sm font-semibold text-primary dark:text-white min-w-[120px] sm:min-w-[140px] text-center">{{ calMonthLabel() }}</span>
+            <button class="w-7 h-7 rounded-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-secondary hover:text-primary dark:hover:text-white hover:border-esprit-red transition-colors" (click)="calNav(1)">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Month grid -->
+        <div class="grid grid-cols-7 gap-px bg-neutral-200 dark:bg-neutral-700 rounded-lg overflow-hidden mb-4">
+          @for (wd of calWeekDays(); track wd) {
+            <div class="bg-neutral-100 dark:bg-neutral-800 py-1.5 sm:py-2 text-center text-[9px] sm:text-[10px] font-bold uppercase text-secondary tracking-wider">{{ wd }}</div>
+          }
+          @for (cell of calDays(); track cell.date) {
+            <div class="bg-white dark:bg-neutral-900 min-h-[48px] sm:min-h-[72px] p-0.5 sm:p-1 cursor-pointer transition-colors"
+                 [class]="calSelectedDate() === cell.date ? 'ring-2 ring-esprit-red ring-inset' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+                 (click)="calSelectDate(cell.date)">
+              <div class="flex items-center justify-between mb-0.5">
+                <span class="text-[11px]" [class]="cell.isCurrentMonth ? 'font-medium text-primary dark:text-white' : 'text-neutral-400 dark:text-neutral-600'">{{ cell.dayNum }}</span>
+                <span *ngIf="cell.isToday" class="w-1.5 h-1.5 rounded-full bg-esprit-red"></span>
+              </div>
+              @for (b of cell.bookings.slice(0, 2); track b.id) {
+                <div class="text-[9px] px-1 py-0.5 rounded truncate mb-0.5" [ngClass]="calBookingClass(b.status)">
+                  {{ b.serviceName }}
+                </div>
+              }
+              @if (cell.bookings.length > 2) {
+                <div class="text-[9px] text-secondary px-1">+{{ cell.bookings.length - 2 }} more</div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Selected date detail -->
+        @if (calSelectedDate(); as selDate) {
+          <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-xs font-bold text-primary dark:text-white">{{ selDate | date:'fullDate' }}</h3>
+              <button class="text-[10px] text-secondary hover:text-primary" (click)="calSelectDate(selDate)">Close</button>
+            </div>
+            @if (calSelectedDateBookings().length === 0) {
+              <p class="text-xs text-secondary">No bookings on this date.</p>
+            }
+            @for (b of calSelectedDateBookings(); track b.id) {
+              <div class="flex items-center gap-3 p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 mb-1.5 last:mb-0">
+                <div class="w-1 h-8 rounded-full shrink-0" [ngClass]="calBookingBarClass(b.status)"></div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-semibold text-primary dark:text-white truncate">{{ b.serviceName }}</p>
+                  <p class="text-[11px] text-secondary">{{ b.providerName }} &middot; {{ b.duration }}h</p>
+                </div>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0" [ngClass]="statusClass(b.status)">{{ b.status }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Allocation Insights -->
+      <div class="card card-md p-5" *ngIf="canManage()">
+        <h2 class="text-sm font-bold text-primary dark:text-white mb-1">Allocation Insights</h2>
+        <p class="text-xs text-secondary mb-3">Historical scored slot recommendations for this project.</p>
+        <div *ngIf="allocationAudit().length === 0" class="text-xs text-secondary">No records yet.</div>
+        <div *ngIf="allocationAudit().length > 0" class="space-y-2">
+          <div *ngFor="let a of allocationAudit() | slice:0:6" class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <div class="flex flex-wrap items-center gap-2 mb-1">
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-esprit-red/10 text-esprit-red font-semibold">{{ modeLabel(a.mode || a.policyProfile) }}</span>
+              <span class="text-xs text-secondary">{{ a.slotStart | date:'short' }} &rarr; {{ a.slotEnd | date:'short' }}</span>
+              <span class="text-xs font-bold text-esprit-red">{{ a.finalScore || 0 | number:'1.2-3' }}</span>
+            </div>
+            <button type="button" class="text-[10px] text-secondary hover:underline" (click)="toggleInsight(a.id)">{{ isInsightExpanded(a.id) ? 'Hide' : 'Show ideas' }}</button>
+            <div *ngIf="isInsightExpanded(a.id)" class="mt-2 p-2 rounded bg-neutral-100 dark:bg-neutral-800">
+              <ul class="text-[11px] text-secondary space-y-0.5"><li *ngFor="let idea of ideasForInsight(a)">- {{ idea }}</li></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ============== AI ASSISTANT TAB ============== -->
+    <ng-container *ngIf="activeTab() === 'assistant'">
+      <div *ngIf="isLoadingAssistant()" class="text-sm text-secondary py-8 text-center">Loading AI analysis...</div>
+
+      <div *ngIf="!isLoadingAssistant()" class="space-y-4">
+        <!-- AI Project Decomposition -->
+        <div class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">AI Project Decomposition</h3>
+          <p class="text-xs text-secondary mb-3">Describe your project and the AI will generate a full workflow with milestones, dependencies, and budget estimates.</p>
+          <div class="flex gap-2 mb-3">
+            <input [value]="decomposeInput()" (input)="decomposeInput.set($any($event.target).value)" placeholder="e.g. Build an e-commerce website with payment integration, user accounts, and admin dashboard" class="form-input text-sm flex-1" />
+            <button class="btn btn-primary btn-sm" [disabled]="!decomposeInput().trim() || decomposing()" (click)="decomposeProject()">
+              {{ decomposing() ? 'Analyzing...' : 'Decompose' }}
+            </button>
+          </div>
+          <div *ngIf="decomposition()">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 font-semibold">AI</span>
+              <span class="text-xs text-secondary">{{ decomposition()!.categoryDetected | uppercase }} project &middot; {{ decomposition()!.suggestedMilestoneCount }} phases &middot; {{ decomposition()!.totalServicesMatched }} services matched</span>
+            </div>
+            <div *ngIf="decomposition()!.estimatedBudget" class="grid grid-cols-3 gap-2 mb-3 p-3 rounded-lg bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
+              <div class="text-center">
+                <p class="text-[10px] text-secondary uppercase tracking-wide">Est. Budget</p>
+                <p class="text-sm font-bold text-esprit-red">{{ decomposition()!.estimatedBudget }} TND</p>
+              </div>
+              <div class="text-center">
+                <p class="text-[10px] text-secondary uppercase tracking-wide">Timeline</p>
+                <p class="text-sm font-bold text-primary dark:text-white">{{ decomposition()!.estimatedDays }} days</p>
+              </div>
+              <div class="text-center">
+                <p class="text-[10px] text-secondary uppercase tracking-wide">With Buffer</p>
+                <p class="text-sm font-bold text-amber-600 dark:text-amber-400">{{ decomposition()!.estimatedBudgetWithBuffer }} TND</p>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div *ngFor="let ms of decomposition()!.milestones; let i = index" class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-700">
+                <div class="flex items-center justify-between mb-1">
+                  <div class="flex items-center gap-2">
+                    <span class="w-5 h-5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-[10px] font-bold flex items-center justify-center">{{ i + 1 }}</span>
+                    <span class="text-xs font-bold text-primary dark:text-white">{{ ms.title }}</span>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <span *ngIf="ms.estimatedDays" class="text-[10px] text-secondary">{{ ms.estimatedDays }}d</span>
+                    <span *ngIf="ms.estimatedCost" class="text-[10px] text-esprit-red font-semibold">{{ ms.estimatedCost }} TND</span>
+                  </div>
+                </div>
+                <div *ngIf="ms.services && ms.services.length > 0" class="ml-7 space-y-0.5">
+                  <div *ngFor="let svc of ms.services" class="flex items-center justify-between text-xs">
+                    <span class="text-secondary">{{ svc.serviceName }}</span>
+                    <div class="flex items-center gap-2">
+                      <span *ngIf="svc.price" class="text-esprit-red font-semibold">{{ svc.price }} TND</span>
+                      <span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">{{ (svc.relevanceScore * 10 | number:'1.0-0') }}%</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="decomposition()!.suggestedMilestoneCount > 1" class="flex items-center gap-2 pl-3 py-1">
+                <svg class="w-3.5 h-3.5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                <span class="text-[10px] text-secondary">Sequential dependencies will be auto-created between all phases</span>
+              </div>
+            </div>
+            <button *ngIf="canManage() && decomposition()!.suggestedMilestoneCount > 0" class="btn btn-primary btn-sm mt-3 w-full" [disabled]="applyingDecomposition()" (click)="applyDecomposition()">
+              {{ applyingDecomposition() ? 'Creating workflow...' : 'Create Workflow with Dependencies' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Scope Change Detection -->
+        <div class="card card-md p-5" *ngIf="scopeChanges().length > 0">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">Scope Changes Detected</h3>
+          <div class="space-y-2">
+            <div *ngFor="let change of scopeChanges()" class="p-3 rounded-lg border"
+              [ngClass]="{
+                'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20': change.severity === 'HIGH',
+                'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20': change.severity === 'MEDIUM',
+                'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20': change.severity === 'LOW'
+              }">
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-xs font-bold text-primary dark:text-white">{{ change.milestoneTitle }}</span>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded"
+                    [ngClass]="{
+                      'bg-red-200 text-red-800 dark:bg-red-900/40 dark:text-red-400': change.severity === 'HIGH',
+                      'bg-amber-200 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400': change.severity === 'MEDIUM',
+                      'bg-blue-200 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400': change.severity === 'LOW'
+                    }">{{ change.severity }}</span>
+                  <span class="text-[10px] font-semibold text-secondary">{{ change.changeScore | number:'1.0-0' }}% changed</span>
+                </div>
+              </div>
+              <div *ngFor="let c of change.changes" class="text-xs text-secondary">{{ c }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Risk Assessment -->
+        <div class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">Risk Assessment</h3>
+          <div *ngIf="riskAssessment()">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs text-secondary">Overall Risk:</span>
+              <span class="text-sm font-bold px-3 py-1 rounded-full" [ngClass]="severityClass((riskAssessment()?.overallRiskScore ?? 0) >= 0.5 ? 'HIGH' : (riskAssessment()?.overallRiskScore ?? 0) >= 0.2 ? 'MEDIUM' : 'LOW')">{{ (riskAssessment()?.overallRiskScore ?? 0) | number:'1.0-2' }}</span>
+            </div>
+            <div *ngIf="(riskAssessment()?.alerts?.length ?? 0) === 0" class="text-xs text-green-600 dark:text-green-400">No risk alerts.</div>
+            <div *ngFor="let alert of riskAssessment()?.alerts" class="p-2.5 rounded-lg border mb-1.5" [ngClass]="severityClass(alert.severity)">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded" [ngClass]="severityClass(alert.severity)">{{ alert.severity }}</span>
+                <span class="text-[10px] text-secondary">{{ alert.type }}</span>
+              </div>
+              <p class="text-xs mt-0.5">{{ alert.message }}</p>
+            </div>
+            <div *ngIf="(riskAssessment()?.criticalPath?.length ?? 0) > 0" class="mt-3 flex flex-wrap gap-1">
+              <span *ngFor="let cp of riskAssessment()?.criticalPath" class="text-[10px] px-2 py-0.5 rounded-full"
+                [ngClass]="cp.isOnCriticalPath ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 font-semibold' : 'bg-neutral-100 text-neutral-500 dark:bg-neutral-700'">
+                {{ cp.milestoneTitle }}<span *ngIf="cp.isOnCriticalPath"> *</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Predictive Timeline -->
+        <div class="card card-md p-5" *ngIf="delayPrediction()">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">Predictive Timeline</h3>
+          <div class="flex items-center gap-4 mb-3">
+            <div class="flex-1">
+              <p class="text-[10px] text-secondary mb-0.5">On-Time Probability</p>
+              <div class="flex items-center gap-2">
+                <div class="flex-1 h-2 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+                  <div class="h-full rounded-full transition-all"
+                    [style.width.%]="(delayPrediction()!.onTimeProbability ?? 0) * 100"
+                    [ngClass]="{
+                      'bg-green-500': (delayPrediction()!.onTimeProbability ?? 0) >= 0.7,
+                      'bg-amber-500': (delayPrediction()!.onTimeProbability ?? 0) >= 0.4,
+                      'bg-red-500': (delayPrediction()!.onTimeProbability ?? 0) < 0.4
+                    }"></div>
+                </div>
+                <span class="text-xs font-bold text-primary dark:text-white">{{ (delayPrediction()!.onTimeProbability ?? 0) * 100 | number:'1.0-0' }}%</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-[10px] text-secondary">Risk Level</p>
+              <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                [ngClass]="severityClass(delayPrediction()?.delayRiskLevel || 'LOW')">{{ delayPrediction()?.delayRiskLevel }}</span>
+            </div>
+          </div>
+          <div *ngIf="delayPrediction()!.estimatedDelayDays" class="p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+            <p class="text-xs text-amber-800 dark:text-amber-400">Estimated delay: <strong>{{ delayPrediction()!.estimatedDelayDays }} days</strong></p>
+          </div>
+          <p *ngIf="delayPrediction()!.recommendation" class="text-xs text-secondary mt-2">{{ delayPrediction()!.recommendation }}</p>
+        </div>
+
+        <!-- Dependency Suggestions -->
+        <div class="card card-md p-5 relative">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-sm font-bold text-primary dark:text-white">Dependency Suggestions</h3>
+            <button *ngIf="depSuggestions().length > 0 && canManage()" (click)="bulkApplyDependencies()" class="btn btn-primary btn-sm text-[10px] py-1 px-2 h-auto min-h-0" [disabled]="isApplyingDependencies()">
+              {{ isApplyingDependencies() ? 'Applying...' : 'Apply All' }}
+            </button>
+          </div>
+          <div *ngIf="depSuggestions().length === 0" class="text-xs text-secondary">No new suggestions found.</div>
+          <div *ngFor="let s of depSuggestions()" class="p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 mb-1.5 bg-neutral-50 dark:bg-neutral-800/50">
+            <div class="flex items-center gap-1.5 text-xs flex-wrap">
+              <span class="font-semibold text-primary dark:text-white">{{ s.predecessorMilestoneTitle }}</span>
+              <span class="text-secondary">&rarr;</span>
+              <span class="font-semibold text-primary dark:text-white">{{ s.successorMilestoneTitle }}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 ml-auto">{{ (s.confidence ?? 0) | number:'1.0-2' }}</span>
+              <button *ngIf="canManage()" class="btn btn-primary text-[10px] py-0 px-2" (click)="applyDepSuggestion(s)">Apply</button>
+            </div>
+            <p class="text-[11px] text-secondary mt-0.5">{{ s.reason }}</p>
+          </div>
+        </div>
+
+        <!-- Schedule Optimization -->
+        <div class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">Schedule Optimization</h3>
+          <div *ngIf="scheduleOptimization()">
+            <div *ngFor="let note of scheduleOptimization()?.optimizationNotes ?? []" class="text-[11px] text-amber-700 dark:text-amber-400 mb-1">{{ note }}</div>
+            <div *ngFor="let rec of scheduleOptimization()?.recommendations ?? []" class="p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 mb-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-primary dark:text-white">{{ rec.serviceName }}</span>
+                <span *ngIf="rec.score" class="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 font-semibold">{{ rec.score | number:'1.0-2' }}</span>
+              </div>
+              <p *ngIf="rec.recommendedDate" class="text-[11px] text-secondary mt-0.5">{{ rec.recommendedDate | date:'mediumDate' }} ({{ rec.recommendedDuration }}h)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Progress Report -->
+        <div class="card card-md p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-bold text-primary dark:text-white">AI Progress Report</h3>
+            <button class="text-xs text-esprit-red hover:underline" (click)="loadProgressReport()">Refresh</button>
+          </div>
+          <div *ngIf="progressReport()">
+            <div class="grid grid-cols-2 gap-3 mb-3">
+              <div class="text-center">
+                <p class="text-xl font-bold" [ngClass]="progressReport()!.completionPercentage >= 80 ? 'text-emerald-500' : progressReport()!.completionPercentage >= 50 ? 'text-blue-500' : progressReport()!.completionPercentage > 0 ? 'text-amber-500' : 'text-neutral-400'">
+                  {{ progressReport()!.completionPercentage }}%
+                </p>
+                <p class="text-[10px] text-secondary">Milestones Done</p>
+              </div>
+              <div class="text-center">
+                <p class="text-xl font-bold text-primary dark:text-white">{{ progressReport()!.completedMilestones }}/{{ progressReport()!.totalMilestones }}</p>
+                <p class="text-[10px] text-secondary">Completed</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-4 gap-2 mb-3 text-[10px]">
+              <div class="text-center p-1.5 rounded bg-blue-50 dark:bg-blue-900/20">
+                <p class="font-bold text-blue-600 dark:text-blue-400">{{ progressReport()!.inProgressMilestones }}</p>
+                <p class="text-secondary">Active</p>
+              </div>
+              <div class="text-center p-1.5 rounded bg-amber-50 dark:bg-amber-900/20">
+                <p class="font-bold text-amber-600 dark:text-amber-400">{{ progressReport()!.plannedMilestones }}</p>
+                <p class="text-secondary">Planned</p>
+              </div>
+              <div class="text-center p-1.5 rounded bg-red-50 dark:bg-red-900/20">
+                <p class="font-bold text-red-600 dark:text-red-400">{{ progressReport()!.overdueMilestones }}</p>
+                <p class="text-secondary">Overdue</p>
+              </div>
+              <div class="text-center p-1.5 rounded bg-purple-50 dark:bg-purple-900/20">
+                <p class="font-bold text-purple-600 dark:text-purple-400">{{ progressReport()!.blockedMilestones }}</p>
+                <p class="text-secondary">Blocked</p>
+              </div>
+            </div>
+            <div *ngIf="progressReport()!.budgetTotal > 0" class="mb-3">
+              <div class="flex justify-between text-[11px] mb-1">
+                <span class="text-secondary">Budget</span>
+                <span class="font-semibold">{{ progressReport()!.budgetUsed }} / {{ progressReport()!.budgetTotal }} TND</span>
+              </div>
+              <div class="w-full h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700">
+                <div class="h-full rounded-full transition-all" [ngClass]="progressReport()!.budgetPercentage > 90 ? 'bg-red-500' : 'bg-esprit-red'"                 [style.width.%]="clampPercent(progressReport()!.budgetPercentage)"></div>
+              </div>
+            </div>
+            <div *ngIf="progressReport()!.riskAlerts && progressReport()!.riskAlerts.length > 0" class="space-y-1.5 mb-3">
+              <div *ngFor="let alert of progressReport()!.riskAlerts" class="flex items-start gap-1.5 text-[11px] p-2 rounded" [ngClass]="{ 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400': alert.severity === 'HIGH', 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400': alert.severity === 'MEDIUM', 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400': alert.severity === 'LOW' }">
+                <span class="font-bold uppercase shrink-0">{{ alert.severity }}</span>
+                <span>{{ alert.message }}</span>
+              </div>
+            </div>
+            <div class="p-2.5 rounded-lg bg-neutral-50 dark:bg-neutral-800 text-[11px] text-secondary">{{ progressReport()!.overallAssessment }}</div>
+          </div>
+          <div *ngIf="!progressReport()" class="text-xs text-secondary animate-pulse">Loading report...</div>
+        </div>
+
+        <!-- ML Delay Prediction -->
+        <div class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-3">ML Delay Prediction</h3>
+          <p class="text-[11px] text-secondary mb-3">Trained model predicting on-time completion.</p>
+          <div *ngIf="mlDelayPrediction()">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs text-secondary">On-Time:</span>
+              <span class="text-sm font-bold px-3 py-1 rounded-full" [ngClass]="{ 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': mlDelayPrediction()?.delayRiskLevel === 'LOW', 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': mlDelayPrediction()?.delayRiskLevel === 'MEDIUM', 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': mlDelayPrediction()?.delayRiskLevel === 'HIGH' || mlDelayPrediction()?.delayRiskLevel === 'CRITICAL' }">
+                {{ (mlDelayPrediction()?.onTimeProbability ?? 0) * 100 | number:'1.0-0' }}%
+              </span>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full" [ngClass]="{ 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': mlDelayPrediction()?.delayRiskLevel === 'LOW', 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': mlDelayPrediction()?.delayRiskLevel === 'MEDIUM', 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': mlDelayPrediction()?.delayRiskLevel === 'HIGH' || mlDelayPrediction()?.delayRiskLevel === 'CRITICAL' }">{{ mlDelayPrediction()?.delayRiskLevel }}</span>
+            </div>
+            <div *ngIf="mlDelayPrediction()?.estimatedDelayDays != null" class="text-xs text-red-600 dark:text-red-400 mb-2">~{{ mlDelayPrediction()?.estimatedDelayDays }} days delay</div>
+            <div *ngIf="mlDelayPrediction()?.keyFactors?.length" class="space-y-0.5 mb-2">
+              <div *ngFor="let factor of mlDelayPrediction()?.keyFactors" class="text-[11px] text-secondary pl-2 border-l-2 border-neutral-200 dark:border-neutral-700">- {{ factor }}</div>
+            </div>
+            <div *ngIf="mlDelayPrediction()?.recommendation" class="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-700 dark:text-blue-400">{{ mlDelayPrediction()?.recommendation }}</div>
+          </div>
+          <div *ngIf="!mlDelayPrediction()" class="text-xs text-secondary">Loading...</div>
+        </div>
+
+        <!-- Service Risk Analysis -->
+        <div *ngIf="serviceRiskAnalysis() && (serviceRiskAnalysis()?.services?.length ?? 0) > 0" class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-1">Service Risk Analysis</h3>
+          <p class="text-[11px] text-secondary mb-3">Per-service completion predictions across project milestones.</p>
+          <div class="space-y-2">
+            <div *ngFor="let svc of serviceRiskAnalysis()?.services || []" class="p-3 rounded-lg border border-neutral-200 dark:border-neutral-700">
+              <div class="flex items-center justify-between gap-2 mb-0.5">
+                <span class="text-xs font-semibold text-primary dark:text-white">{{ svc.serviceName }} <span *ngIf="svc.category" class="text-neutral-400 font-normal">{{ svc.category }}</span></span>
+                <span class="text-[10px] px-2 py-0.5 rounded-full font-bold" [ngClass]="serviceRiskClass(svc.riskLevel)">{{ serviceRiskLabel(svc.riskLevel) }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-[11px] text-secondary">
+                <span>{{ svc.providerName }}</span>
+                <span *ngIf="svc.milestoneTitle" class="text-neutral-400">&middot; {{ svc.milestoneTitle }}</span>
+                <span class="ml-auto font-semibold" [ngClass]="svc.completionProbability && svc.completionProbability >= 0.6 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'">{{ (svc.completionProbability ?? 0) * 100 | number:'1.0-0' }}%</span>
+              </div>
+              <p *ngIf="svc.recommendation" class="text-[11px] text-secondary mt-1 italic">{{ svc.recommendation }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milestone Templates -->
+        <div *ngIf="canManage() && milestones().length === 0" class="card card-md p-5">
+          <h3 class="text-sm font-bold text-primary dark:text-white mb-2">Milestone Templates</h3>
+          <p class="text-xs text-secondary mb-3">Auto-generate milestone phases based on your project services.</p>
+          <button class="btn btn-primary btn-sm" (click)="applyTemplates()" [disabled]="isLoadingAssistant()">Generate Milestones</button>
+        </div>
+      </div>
+    </ng-container>
+
+  </div>
+
+  <app-footer></app-footer>
+</div>

@@ -1,0 +1,104 @@
+<div class="py-8 px-4">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-4xl font-bold text-primary mb-8">Performance Report</h1>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-esprit-red"></div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6" role="alert">
+      <strong class="font-bold">Error!</strong>
+      <span class="block sm:inline ml-2">{{ errorMessage }}</span>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && !errorMessage">
+      <!-- Aggregated Metrics Grid -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div class="card card-md text-center bg-white shadow-sm rounded-lg p-6 border border-neutral-100">
+          <h3 class="text-sm text-neutral-500 mb-2 font-medium uppercase tracking-wider">Total Offers</h3>
+          <p class="text-4xl font-bold text-primary">{{ totalJobOffers }}</p>
+        </div>
+        <div class="card card-md text-center bg-white shadow-sm rounded-lg p-6 border border-neutral-100">
+          <h3 class="text-sm text-neutral-500 mb-2 font-medium uppercase tracking-wider">Total Applications</h3>
+          <p class="text-4xl font-bold text-esprit-red">{{ totalApplications }}</p>
+        </div>
+        <div class="card card-md text-center bg-white shadow-sm rounded-lg p-6 border border-neutral-100">
+          <h3 class="text-sm text-neutral-500 mb-2 font-medium uppercase tracking-wider">Avg Match Score</h3>
+          <p class="text-4xl font-bold text-green-600">{{ avgMatchingScoreOverall }}%</p>
+        </div>
+        <div class="card card-md text-center bg-white shadow-sm rounded-lg p-6 border border-neutral-100">
+          <h3 class="text-sm text-neutral-500 mb-2 font-medium uppercase tracking-wider">Avg Completion Rate</h3>
+          <p class="text-4xl font-bold text-blue-600">{{ avgCompletionRateOverall }}%</p>
+        </div>
+      </div>
+
+      <h2 class="text-2xl font-bold text-primary mb-6">Detailed Report by Job Offer</h2>
+      
+      <!-- Empty State -->
+      <div *ngIf="performanceReports.length === 0" class="text-center py-12 bg-neutral-50 rounded-lg border border-dashed border-neutral-300">
+        <p class="text-neutral-500">No performance data available yet.</p>
+      </div>
+
+      <!-- Performance Table -->
+      <div *ngIf="performanceReports.length > 0" class="overflow-x-auto bg-white rounded-lg shadow-sm border border-neutral-200">
+        <table class="min-w-full divide-y divide-neutral-200">
+          <thead class="bg-neutral-50">
+            <tr>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Job Offer</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Company</th>
+              <th scope="col" class="px-6 py-4 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+              <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Applications</th>
+              <th scope="col" class="px-6 py-4 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Avg Match Score</th>
+              <th scope="col" class="px-6 py-4 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Interview Completion</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-neutral-200">
+            <tr *ngFor="let report of performanceReports" class="hover:bg-neutral-50 transition-colors">
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm font-semibold text-primary">{{ report.title }}</div>
+                <div class="text-xs text-neutral-500">{{ report.type }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="text-sm text-neutral-700">{{ report.companyName || 'N/A' }}</div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-center">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      [ngClass]="{
+                        'bg-green-100 text-green-800': report.status === 'PUBLISHED',
+                        'bg-yellow-100 text-yellow-800': report.status === 'DRAFT',
+                        'bg-red-100 text-red-800': report.status === 'CLOSED'
+                      }">
+                  {{ report.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-neutral-900">
+                {{ report.applicationCount }}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-right">
+                <div class="text-sm font-medium" [ngClass]="{
+                  'text-green-600': report.averageMatchingScore >= 70,
+                  'text-yellow-600': report.averageMatchingScore >= 40 && report.averageMatchingScore < 70,
+                  'text-red-600': report.averageMatchingScore < 40 && report.averageMatchingScore > 0,
+                  'text-neutral-400': report.averageMatchingScore === 0
+                }">
+                  {{ report.averageMatchingScore > 0 ? report.averageMatchingScore + '%' : '-' }}
+                </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <div class="w-full bg-neutral-200 rounded-full h-2.5 mr-2 max-w-[100px]">
+                    <div class="bg-blue-600 h-2.5 rounded-full" [style.width]="report.interviewCompletionRate + '%'"></div>
+                  </div>
+                  <span class="text-sm text-neutral-700">{{ report.interviewCompletionRate }}%</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

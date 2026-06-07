@@ -1,0 +1,57 @@
+@startuml events-sequence-create-event
+title Events: Create an Event
+
+actor Administrator
+participant "Frontend\n(Angular)" as FE
+participant "Backend API\n(Spring Boot)" as API
+participant "Auth Service\n(JWT)" as AUTH
+database "PostgreSQL" as DB
+
+Administrator -> FE: Click "Create New Event"
+FE --> Administrator: Display event creation modal
+
+Administrator -> FE: Fill in event details\n(name, description, date,\nlocation, type)
+FE -> API: POST /api/events\n{name, description, date, location, type}
+API -> AUTH: Validate JWT (admin role)
+AUTH --> API: Token valid (adminId)
+
+API -> DB: INSERT event\nSET status = DRAFT
+DB --> API: Event created (eventId)
+API --> FE: 201 Created (event)
+FE --> Administrator: Event created\nwith draft status
+
+Administrator -> FE: Click "Reserve Stall"
+FE -> API: GET /api/events/{id}/blocks
+API -> DB: SELECT blocks, stalls
+DB --> API: Block/stall data
+API --> FE: 200 OK (interactive campus map)
+FE --> Administrator: Display campus map\nwith available blocks
+
+Administrator -> FE: Select Block G, Stall 102
+FE -> API: POST /api/stall-reservations\n{eventId, stallId}
+API -> DB: UPDATE stall SET isAvailable = false\nINSERT stall_reservation
+DB --> API: Stall reserved
+API --> FE: 200 OK (reservation confirmed)
+FE --> Administrator: Stall reservation confirmed
+
+Administrator -> FE: Click "Reserve Equipment"
+FE -> API: GET /api/equipment
+API -> DB: SELECT equipment\nWHERE availableStock > 0
+DB --> API: Equipment list
+API --> FE: 200 OK (equipment with stock)
+FE --> Administrator: Display equipment panel
+
+Administrator -> FE: Select 50 chairs,\n10 tables
+FE -> API: POST /api/equipment-reservations\n{eventId, [{equipmentId, quantity}]}
+API -> DB: CHECK availableStock >= quantity\nINSERT equipment_reservation\nUPDATE equipment SET availableStock -= quantity
+DB --> API: Equipment reserved
+API --> FE: 200 OK (reservation summary)
+FE --> Administrator: Display reservation\nsummary for confirmation
+
+Administrator -> FE: Click "Confirm Reservation"
+FE -> API: POST /api/events/{id}/confirm-reservation
+API -> DB: UPDATE event SET status = PUBLISHED
+DB --> API: Event published
+API --> FE: 200 OK
+FE --> Administrator: Event published\nsuccessfully
+@enduml

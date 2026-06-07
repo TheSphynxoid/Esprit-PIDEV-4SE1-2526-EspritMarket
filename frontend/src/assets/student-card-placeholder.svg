@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" role="img" aria-label="Carte etudiant placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="960" height="600" fill="url(#bg)" rx="28"/>
+  <rect x="40" y="40" width="880" height="520" rx="20" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="80" y="90" width="180" height="220" rx="12" fill="#dbeafe"/>
+  <circle cx="170" cy="165" r="48" fill="#93c5fd"/>
+  <rect x="120" y="228" width="100" height="16" rx="8" fill="#93c5fd"/>
+  <rect x="300" y="110" width="320" height="28" rx="8" fill="#0f172a"/>
+  <rect x="300" y="165" width="250" height="16" rx="8" fill="#64748b"/>
+  <rect x="300" y="200" width="280" height="16" rx="8" fill="#64748b"/>
+  <rect x="300" y="235" width="230" height="16" rx="8" fill="#64748b"/>
+  <rect x="80" y="370" width="800" height="2" fill="#e2e8f0"/>
+  <text x="80" y="430" font-size="40" fill="#0f172a" font-family="Arial, sans-serif" font-weight="700">Carte Etudiant</text>
+  <text x="80" y="478" font-size="26" fill="#475569" font-family="Arial, sans-serif">Image non fournie par l'API (placeholder)</text>
+</svg>

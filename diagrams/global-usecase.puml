@@ -1,0 +1,171 @@
+@startuml global-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Buyer
+actor Seller
+actor Service Provider
+actor Courier
+actor Event Organizer
+event Participant
+actor Company
+actor Student
+actor Administrator
+
+rectangle "ESPRIT Market Platform" {
+    package "Marketplace Module" {
+        usecase "Browse Products" as UC1
+        usecase "Search Products" as UC2
+        usecase "View Product Details" as UC3
+        usecase "Place Order" as UC4
+        usecase "View Orders" as UC5
+        usecase "Submit Review" as UC6
+        usecase "Manage Store" as UC7
+        usecase "Manage Products" as UC8
+        usecase "View Sales Analytics" as UC9
+    }
+
+    package "Services & Projects Module" {
+        usecase "Browse Services" as UC10
+        usecase "Book Service" as UC11
+        usecase "Publish Service" as UC12
+        usecase "Manage Availability" as UC13
+        usecase "View Projects" as UC14
+        usecase "Create Project" as UC15
+        usecase "Assign to Project" as UC16
+        usecase "Track Milestones" as UC17
+    }
+
+    package "Delivery Module" {
+        usecase "Create Delivery Order" as UC18
+        usecase "Track Delivery" as UC19
+        usecase "View Delivery Status" as UC20
+        usecase "Register as Courier" as UC21
+        usecase "Manage Vehicles" as UC22
+        usecase "Accept Delivery" as UC23
+        usecase "Update Location" as UC24
+    }
+
+    package "Events Module" {
+        usecase "Create Event" as UC25
+        usecase "Browse Events" as UC26
+        usecase "Register for Event" as UC27
+        usecase "Reserve Stall" as UC28
+        usecase "Book Equipment" as UC29
+        usecase "Manage Schedule" as UC30
+        usecase "Export Participants" as UC31
+    }
+
+    package "Partnerships Module" {
+        usecase "Browse Job Offers" as UC32
+        usecase "Apply to Offer" as UC33
+        usecase "View Applications" as UC34
+        usecase "Schedule Interview" as UC35
+        usecase "View Matching Score" as UC36
+    }
+
+    package "Common Module" {
+        usecase "Register Account" as UC37
+        usecase "Login" as UC38
+        usecase "Manage Profile" as UC39
+        usecase "Upload Documents" as UC40
+    }
+
+    package "Administration" {
+        usecase "Approve Seller" as UC41
+        usecase "Approve Courier" as UC42
+        usecase "Approve Company" as UC43
+        usecase "Moderate Content" as UC44
+        usecase "View Platform Statistics" as UC45
+    }
+}
+
+Buyer --> UC1
+Buyer --> UC2
+Buyer --> UC3
+Buyer --> UC4
+Buyer --> UC5
+Buyer --> UC6
+Buyer --> UC10
+Buyer --> UC11
+Buyer --> UC18
+Buyer --> UC19
+Buyer --> UC20
+Buyer --> UC26
+Buyer --> UC27
+Buyer --> UC32
+Buyer --> UC33
+Buyer --> UC37
+Buyer --> UC38
+Buyer --> UC39
+Buyer --> UC40
+
+Seller --> UC4
+Seller --> UC5
+Seller --> UC7
+Seller --> UC8
+Seller --> UC9
+Seller --> UC37
+Seller --> UC38
+Seller --> UC39
+
+Service Provider --> UC12
+Service Provider --> UC13
+Service Provider --> UC14
+Service Provider --> UC15
+Service Provider --> UC16
+Service Provider --> UC17
+Service Provider --> UC37
+Service Provider --> UC38
+
+Courier --> UC18
+Courier --> UC19
+Courier --> UC20
+Courier --> UC21
+Courier --> UC22
+Courier --> UC23
+Courier --> UC24
+Courier --> UC37
+Courier --> UC38
+Courier --> UC40
+
+Event Organizer --> UC25
+Event Organizer --> UC28
+Event Organizer --> UC29
+Event Organizer --> UC30
+Event Organizer --> UC31
+Event Organizer --> UC37
+Event Organizer --> UC38
+
+Participant --> UC26
+Participant --> UC27
+Participant --> UC37
+Participant --> UC38
+
+Company --> UC32
+Company --> UC34
+Company --> UC35
+Company --> UC36
+Company --> UC37
+Company --> UC38
+
+Student --> UC26
+Student --> UC27
+Student --> UC32
+Student --> UC33
+Student --> UC37
+Student --> UC38
+
+Administrator --> UC41
+Administrator --> UC42
+Administrator --> UC43
+Administrator --> UC44
+Administrator --> UC45
+
+UC1 ..> UC2 : <<include>>
+UC4 ..> UC18 : <<extend>>
+UC11 ..> UC18 : <<extend>>
+UC18 ..> UC24 : <<include>>
+UC33 ..> UC36 : <<include>>
+@enduml

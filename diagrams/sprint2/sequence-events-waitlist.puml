@@ -1,0 +1,111 @@
+@startuml events-sprint2-sequence-waitlist
+skinparam style strictuml
+
+actor Attendee
+participant "EventController" as EC
+participant "WaitingListService" as WS
+participant "EventService" as ES
+participant "NotificationService" as NS
+participant "WaitingListRepository" as WR
+database "Database" as DB
+
+Attendee -> EC : POST /api/events/{id}/waitlist\n{userId}
+activate EC
+
+EC -> ES : checkCapacity(eventId)
+activate ES
+ES -> DB : SELECT FROM events WHERE id = ?
+activate DB
+DB --> ES : Event (capacity full)
+deactivate DB
+ES --> EC : atCapacity = true
+deactivate ES
+
+EC -> WS : addToWaitingList(eventId, userId)
+activate WS
+
+WS -> WR : findByEventIdOrderByPosition(eventId)
+activate WR
+WR -> DB : SELECT FROM waiting_list_entries\nWHERE eventId ORDER BY position
+activate DB
+DB --> WR : entries
+deactivate DB
+WR --> WS : existingEntries
+deactivate WR
+
+WS -> WS : newPosition = existingEntries.size + 1
+
+WS -> WR : save(WaitingListEntry)
+activate WR
+WR -> DB : INSERT INTO waiting_list_entries
+activate DB
+DB --> WR : entry (with id)
+deactivate DB
+WR --> WS : savedEntry
+deactivate WR
+
+WS --> EC : WaitingListDTO {position, estimatedWait}
+deactivate WS
+
+EC --> Attendee : 201 Created\n{waitlistId, position}
+deactivate EC
+
+== Auto-Promote When Spot Opens ==
+
+actor Organizer
+
+Organizer -> EC : DELETE /api/events/{id}/registrations/{regId}
+activate EC
+
+EC -> ES : cancelRegistration(eventId, registrationId)
+activate ES
+ES -> DB : DELETE FROM registrations
+activate DB
+DB --> ES : ok
+deactivate DB
+ES --> EC : cancelled
+deactivate ES
+
+EC -> WS : promoteNext(eventId)
+activate WS
+
+WS -> WR : findFirstByEventIdOrderByPosition(eventId)
+activate WR
+WR -> DB : SELECT FROM waiting_list_entries\nWHERE eventId ORDER BY position LIMIT 1
+activate DB
+DB --> WR : nextEntry
+deactivate DB
+WR --> WS : entry
+deactivate WR
+
+WS -> ES : registerAttendee(eventId, entry.userId)
+activate ES
+ES -> DB : INSERT INTO registrations
+activate DB
+DB --> ES : registration
+deactivate DB
+ES --> WS : confirmed
+deactivate ES
+
+WS -> WR : delete(entry)
+activate WR
+WR -> DB : DELETE FROM waiting_list_entries
+activate DB
+DB --> WR : ok
+deactivate DB
+WR --> WS : deleted
+deactivate WR
+
+WS -> NS : notifyAttendee(entry.userId, "You have been promoted from the waitlist!")
+activate NS
+NS -> NS : sendEmail(user, event, confirmation)
+NS --> WS : sent
+deactivate NS
+
+WS --> EC : promoted: userId
+deactivate WS
+
+EC --> Organizer : 200 OK
+deactivate EC
+
+@enduml

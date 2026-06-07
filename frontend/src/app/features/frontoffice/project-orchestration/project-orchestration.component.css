@@ -1,0 +1,185 @@
+/* Paradox-style tooltips — zero-gap bridge, grace period, recursive nesting */
+
+.tip-card {
+  overflow: visible !important;
+}
+
+.tip-wrap {
+  position: relative;
+  cursor: help;
+}
+
+.tip-wrap > .tip {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 100%;
+  width: 254px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(26, 34, 52);
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: none;
+  z-index: 9999;
+}
+
+.tip-wrap > .tip::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: 0;
+  right: 0;
+  height: 8px;
+}
+
+.tip-wrap:hover > .tip {
+  display: block;
+}
+
+.tip .tip-wrap > .tip {
+  top: 100%;
+  left: 0;
+  transform: none;
+  width: 230px;
+  background: rgb(17, 24, 39);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 10000;
+}
+
+.tip .tip-wrap > .tip::before {
+  top: -6px;
+  height: 6px;
+}
+
+.tip-label {
+  display: block;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+}
+
+.tip-value {
+  color: #fbbf24;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.tip-highlight {
+  color: #93c5fd;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+  white-space: nowrap;
+}
+
+.tip-highlight:hover {
+  color: #bfdbfe;
+}
+
+/* ===== Workflow Canvas (n8n-style, always dark) ===== */
+
+.wf-canvas-wrap {
+  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.05), 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.wf-canvas-svg {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(139, 92, 246, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(225, 29, 72, 0.03) 0%, transparent 70%),
+    #0a0e1a;
+}
+
+.wf-canvas-svg.wf-grabbing {
+  cursor: grabbing;
+}
+
+.wf-node-group {
+  cursor: grab;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.wf-node-group:active {
+  cursor: grabbing;
+}
+
+.wf-node-dim {
+  opacity: 0.25;
+  transition: opacity 0.3s ease;
+}
+
+.wf-edge-dim {
+  opacity: 0.15;
+  transition: opacity 0.3s ease;
+}
+
+.wf-port {
+  transition: all 0.15s ease;
+}
+
+.wf-port-in:hover,
+.wf-port-out:hover {
+  r: 8;
+  fill: #e11d48;
+  stroke: #e11d48;
+  filter: drop-shadow(0 0 6px rgba(225, 29, 72, 0.7));
+}
+
+.wf-edit-input {
+  width: 100%;
+  background: rgba(225, 29, 72, 0.05);
+  border: 1px solid #e11d48;
+  border-radius: 6px;
+  color: #f1f5f9;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 8px;
+  outline: none;
+  box-shadow: 0 0 12px rgba(225, 29, 72, 0.3);
+}
+
+.wf-edge path {
+  transition: stroke 0.2s ease;
+}
+
+.wf-edge-hitarea {
+  cursor: default;
+}
+
+.wf-edge-hitarea.cursor-pointer:hover ~ path {
+  stroke: #ef4444 !important;
+  stroke-width: 2.5 !important;
+  stroke-dasharray: 4 4 !important;
+  filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4));
+}
+
+.wf-edge:hover path {
+  stroke: #e11d48;
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+  marker-end: url(#wf-arrow-active);
+}
+
+.wf-search-input::placeholder {
+  opacity: 0.4;
+}
+
+.wf-search-input:focus {
+  width: 11rem;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

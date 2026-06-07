@@ -1,0 +1,101 @@
+:host {
+  display: block;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  padding: 16px;
+}
+
+.card-md {
+  padding: 16px;
+}
+
+.card-lg {
+  padding: 20px;
+}
+
+.badge {
+  font-size: 0.72rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.badge-online {
+  background-color: #ebf4ff;
+  color: #1e40af;
+  border: 1px solid #3b82f6;
+}
+
+.badge-offline {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+
+.badge-success {
+  background-color: #ddf5ec;
+  color: #047857;
+  border: 1px solid #34d399;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: white;
+  transition: border-color 0.25s ease;
+}
+
+.input:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+textarea.input {
+  font-family: inherit;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-ghost {
+  background-color: rgba(248, 250, 252, 1);
+  color: #1f2937;
+}
+
+.btn-danger {
+  background-color: #f43f5e;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+

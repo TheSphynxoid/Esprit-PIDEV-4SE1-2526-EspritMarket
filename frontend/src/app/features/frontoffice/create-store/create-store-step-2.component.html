@@ -1,0 +1,84 @@
+<app-header [hideCartAndDashboard]="true"></app-header>
+<div class="form-container">
+
+    <form (ngSubmit)="onSubmit(storeForm)" #storeForm="ngForm">
+        <div class="logo-area">
+            <div class="logo-esprit">ESPRIT<span>Market</span></div>
+            <div class="logo-sub">{{ isEditMode ? 'Store Edit' : 'Store Setup - Step 2' }}</div>
+            <div class="divider"></div>
+        </div>
+
+        <div class="input-group">
+            <label for="storeName">Store name</label>
+            <div class="input-wrap">
+                <input #storeNameModel="ngModel" id="storeName" name="storeName" type="text" [(ngModel)]="storeName" placeholder="e.g., My Esprit Store" required minlength="3" maxlength="60" pattern="^[A-Za-z0-9 ]{3,60}$" [class.is-invalid]="storeNameModel.invalid && (storeNameModel.dirty || storeNameModel.touched || submitAttempted)">
+            </div>
+            <p class="error-text" *ngIf="storeName && nameError" style="color: #d32f2f; margin: 0;">
+                {{ nameError }}
+            </p>
+        </div>
+
+        <div class="input-group">
+            <label for="logo">Store logo</label>
+            <div class="input-wrap file-wrap">
+                <input id="logo" type="file" accept="image/*" (change)="onLogoSelected($event)">
+            </div>
+            <p class="error-text" *ngIf="logoFieldError || logoError" style="color: #d32f2f; margin: 0;">
+                {{ logoFieldError || logoError }}
+            </p>
+            <div class="logo-preview" *ngIf="logoDataUrl">
+                <img [src]="logoDataUrl" alt="Logo preview" />
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="category">Category</label>
+            <div class="input-wrap">
+                <select #categoryModel="ngModel" id="category" name="category" [(ngModel)]="category" (ngModelChange)="onCategoryChange()" [class.is-invalid]="categoryModel.invalid && (categoryModel.dirty || categoryModel.touched || submitAttempted)">
+                    <option value="">Choose a category (optional)</option>
+                    <option *ngFor="let item of categories" [value]="item.id">{{ item.label }}</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <label for="phone">Phone number</label>
+            <div class="input-wrap">
+                <input #phoneModel="ngModel" id="phone" name="phone" type="tel" [(ngModel)]="phone" placeholder="Ex: 22123456" pattern="^[0-9]{8}$" [class.is-invalid]="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched || submitAttempted)">
+            </div>
+            <p class="error-text" *ngIf="phone && phoneError" style="color: #d32f2f; margin: 0;">
+                {{ phoneError }}
+            </p>
+        </div>
+
+        <div class="input-group">
+            <label for="address">Address</label>
+            <div class="input-wrap">
+                <input id="address" name="address" type="text" [(ngModel)]="address" placeholder="Address" minlength="3">
+            </div>
+            <p class="error-text" *ngIf="address && addressError" style="color: #d32f2f; margin: 0;">
+                {{ addressError }}
+            </p>
+        </div>
+
+        <div class="input-group">
+            <label for="description">Store description</label>
+            <div class="input-wrap">
+                <textarea #descriptionModel="ngModel" id="description" name="description" [(ngModel)]="description" placeholder="Describe your store..." minlength="10" maxlength="500" [class.is-invalid]="descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched || submitAttempted)"></textarea>
+            </div>
+            <p class="error-text" *ngIf="description && descriptionError" style="color: #d32f2f; margin: 0;">
+                {{ descriptionError }}
+            </p>
+        </div>
+
+        <p class="error-text" *ngIf="submitError">{{ submitError }}</p>
+        <p class="success-text" *ngIf="submitMessage">{{ submitMessage }}</p>
+        <p class="success-text" *ngIf="createdStoreId">Created store ID: {{ createdStoreId }}</p>
+
+        <button type="submit" class="submit-button btn-gradient radius-lg" [disabled]="isLoading || !canSubmit || storeForm.invalid">
+            <span *ngIf="!isLoading">{{ isEditMode ? 'Save changes' : 'Open my store' }}</span>
+            <div class="loader" *ngIf="isLoading"></div>
+        </button>
+    </form>
+</div>
+<app-footer></app-footer>

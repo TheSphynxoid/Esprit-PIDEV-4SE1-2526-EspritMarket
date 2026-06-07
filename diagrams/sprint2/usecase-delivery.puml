@@ -1,0 +1,25 @@
+@startuml delivery-sprint2-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Buyer
+actor Courier
+actor Administrator
+
+rectangle "Delivery Optimization (Sprint 2)" {
+    usecase "Dynamic Pricing Calculation" as UC1
+    usecase "Real-Time Tracking (WebSocket)" as UC2
+    usecase "View Delivery Metrics" as UC3
+    usecase "View Performance Dashboard" as UC4
+    usecase "Demand-Based Pricing" as UC5
+}
+
+Buyer --> UC2
+Courier --> UC3
+Administrator --> UC4
+Administrator --> UC5
+
+UC2 ..> UC1 : <<extend>>
+UC5 ..> UC1 : <<include>>
+@enduml

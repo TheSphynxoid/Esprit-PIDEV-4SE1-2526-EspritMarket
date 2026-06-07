@@ -1,0 +1,45 @@
+@startuml partnerships-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Administrator
+actor Recruiter
+actor Student
+
+rectangle "Partnerships & Applications Module" {
+    usecase "Create Company" as UC1
+    usecase "Update Company" as UC2
+    usecase "Deactivate Company" as UC3
+    usecase "Create Job Offer" as UC4
+    usecase "Update Job Offer" as UC5
+    usecase "Close Job Offer" as UC6
+    usecase "View Available Offers" as UC7
+    usecase "View Offer Details" as UC8
+    usecase "Apply to Offer" as UC9
+    usecase "View Applications" as UC10
+    usecase "Change Application Status" as UC11
+    usecase "Schedule Interview" as UC12
+    usecase "Calculate Matching Score" as UC13
+    usecase "View Matching Score" as UC14
+}
+
+Administrator --> UC1
+Administrator --> UC2
+Administrator --> UC3
+
+Recruiter --> UC4
+Recruiter --> UC5
+Recruiter --> UC6
+Recruiter --> UC10
+Recruiter --> UC11
+Recruiter --> UC12
+Recruiter --> UC14
+
+Student --> UC7
+Student --> UC8
+Student --> UC9
+
+UC9 ..> UC13 : <<include>>
+UC10 ..> UC14 : <<extend>>
+@enduml

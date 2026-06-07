@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package net.thesphynx.espritmarket.placeholder;
+
+message Placeholder {
+  string message = 1;
+}

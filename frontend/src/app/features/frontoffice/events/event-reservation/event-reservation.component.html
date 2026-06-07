@@ -1,0 +1,229 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-8 px-4">
+    <!-- Back Button -->
+    <div class="mb-6">
+      <button 
+        routerLink="/events"
+        class="flex items-center gap-2 text-primary hover:text-esprit-red transition-colors">
+        <span>←</span>
+        <span>Back to Events</span>
+      </button>
+    </div>
+
+    <!-- Success/Error Message -->
+    <div 
+      *ngIf="submitMessage"
+      [class]="'mb-6 p-4 rounded-lg ' + (submitMessage.type === 'success' 
+        ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200' 
+        : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200')">
+      <p class="font-semibold">
+        {{ submitMessage.type === 'success' ? '✓ Success' : '✗ Error' }}
+      </p>
+      <p>{{ submitMessage.text }}</p>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex items-center justify-center py-12">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-esprit-red mb-4"></div>
+        <p class="text-secondary">Loading event details...</p>
+      </div>
+    </div>
+
+    <!-- Event Details Section -->
+    <div *ngIf="event && !loading" class="mb-12">
+      <div class="card card-lg bg-gradient-to-br from-esprit-red/5 to-transparent border border-esprit-red/10">
+        <div class="flex items-start gap-6">
+          <div class="text-5xl">🎪</div>
+          <div class="flex-1">
+            <h1 class="text-4xl font-bold text-primary mb-3">{{ event.name }}</h1>
+            <div class="grid md:grid-cols-3 gap-4 text-sm">
+              <div class="flex items-center gap-2 text-secondary">
+                <span>📅</span>
+                <span>{{ event.date }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-secondary">
+                <span>📍</span>
+                <span>{{ event.location }}</span>
+              </div>
+              <div class="flex items-center gap-2 text-secondary">
+                <span>📝</span>
+                <span>{{ event.description || 'Event Details' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reservations Tabs -->
+    <div *ngIf="!loading" class="space-y-6">
+      <!-- Tickets Section -->
+      <div class="card card-lg bg-gradient-to-r from-esprit-red/10 to-esprit-700/10 dark:from-esprit-red/20 dark:to-esprit-700/20 border-2 border-esprit-red/30">
+        <div class="mb-6">
+          <h2 class="text-2xl font-bold text-primary dark:text-white mb-2 flex items-center gap-2">
+            <span>🎟️</span>
+            <span>Buy Tickets</span>
+          </h2>
+          <p class="text-secondary dark:text-neutral-400 text-sm">Purchase tickets for this event</p>
+        </div>
+
+        <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 mb-6">
+          <div class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="form-group flex-1">
+              <label class="block text-sm font-medium text-primary dark:text-white mb-2">
+                Ticket Type
+              </label>
+              <select
+                [(ngModel)]="ticketType"
+                (change)="onTicketTypeChange(ticketType)"
+                class="input w-full rounded-lg"
+              >
+                <option value="STUDENT">🎓 STUDENT - {{ ticketPrices['STUDENT'] }} DT</option>
+                <option value="REGULAR">🎟️ REGULAR - {{ ticketPrices['REGULAR'] }} DT</option>
+                <option value="VIP">⭐ VIP - {{ ticketPrices['VIP'] }} DT</option>
+              </select>
+            </div>
+
+            <div class="form-group flex-1">
+              <label class="block text-sm font-medium text-primary dark:text-white mb-2">
+                Number of Tickets
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="10"
+                [(ngModel)]="ticketQuantity"
+                class="input w-full rounded-lg"
+              />
+              <p class="text-xs text-secondary dark:text-neutral-400 mt-1">Maximum 10 tickets per purchase</p>
+            </div>
+
+            <div class="form-group">
+              <div class="text-right">
+                <p class="text-sm text-secondary dark:text-neutral-400 mb-2">Total Price</p>
+                <p class="text-2xl font-bold text-esprit-red">{{ totalTicketPrice | number:'1.2-2' }} DT</p>
+              </div>
+            </div>
+            <div class="form-group flex flex-col md:flex-row items-center gap-2">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  class="btn btn-outline btn-esprit-red text-sm px-4 py-2 rounded-lg"
+                  (click)="chooseRandomPromo()"
+                >
+                  🎲 Choisir promo aléatoire
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Libellé promo (ex: Promo -10%)"
+                  [(ngModel)]="manualPromoLabel"
+                  class="input rounded-lg w-48"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  [(ngModel)]="manualPromoDiscount"
+                  class="input rounded-lg w-24"
+                />
+                <button
+                  type="button"
+                  class="btn btn-esprit-red text-white text-sm px-4 py-2 rounded-lg"
+                  (click)="applyManualPromo()"
+                >
+                  Appliquer promo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost text-sm px-3 py-2 rounded-lg"
+                  (click)="clearManualPromo()"
+                >
+                  Supprimer
+                </button>
+              </div>
+
+              <div *ngIf="activePromoOffer" class="text-sm text-secondary ml-4">
+                <strong>Promo active:</strong> {{ activePromoOffer.discountLabel }} ({{ (activePromoOffer.discountRate * 100) | number:'1.0-0' }}% off)
+              </div>
+            </div>
+            <button 
+              type="button" 
+              class="btn btn-esprit-red text-white text-lg px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300 whitespace-nowrap"
+              (click)="buyTickets()"
+            >
+              🎟️ Buy {{ ticketQuantity }} Ticket(s)
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="purchasedTickets.length > 0" class="bg-white dark:bg-neutral-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-primary dark:text-white mb-4">Your Purchased Tickets</h3>
+          <div class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
+            <table class="w-full text-sm">
+              <thead class="bg-neutral-100 dark:bg-neutral-800">
+                <tr>
+                  <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Purchase Date</th>
+                  <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Type</th>
+                  <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Quantity</th>
+                  <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Unit Price</th>
+                  <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Total</th>
+                  <th class="text-center px-4 py-4 font-semibold text-primary dark:text-white">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let ticket of purchasedTickets" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                  <td class="px-4 py-4 text-secondary dark:text-neutral-400">
+                    {{ ticket.purchasedAt | date:'short' }}
+                  </td>
+                  <td class="px-4 py-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                      [class.bg-blue-50]="ticket.type === 'STUDENT'"
+                      [class.dark:bg-blue-900/30]="ticket.type === 'STUDENT'"
+                      [class.text-blue-700]="ticket.type === 'STUDENT'"
+                      [class.dark:text-blue-400]="ticket.type === 'STUDENT'"
+                      [class.bg-orange-50]="ticket.type === 'REGULAR'"
+                      [class.dark:bg-orange-900/30]="ticket.type === 'REGULAR'"
+                      [class.text-orange-700]="ticket.type === 'REGULAR'"
+                      [class.dark:text-orange-400]="ticket.type === 'REGULAR'"
+                      [class.bg-purple-50]="ticket.type === 'VIP'"
+                      [class.dark:bg-purple-900/30]="ticket.type === 'VIP'"
+                      [class.text-purple-700]="ticket.type === 'VIP'"
+                      [class.dark:text-purple-400]="ticket.type === 'VIP'">
+                      <span *ngIf="ticket.type === 'STUDENT'">🎓 STUDENT</span>
+                      <span *ngIf="ticket.type === 'REGULAR'">🎟️ REGULAR</span>
+                      <span *ngIf="ticket.type === 'VIP'">⭐ VIP</span>
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 font-medium text-primary dark:text-white">
+                    {{ ticket.quantity }}
+                  </td>
+                  <td class="px-4 py-4 text-primary dark:text-white font-semibold">
+                    {{ ticket.price | number:'1.2-2' }} DT
+                  </td>
+                  <td class="px-4 py-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-esprit-red/10 text-esprit-red dark:bg-esprit-red/20 dark:text-esprit-400 font-semibold">
+                      {{ ticket.totalPrice | number:'1.2-2' }} DT
+                    </span>
+                  </td>
+                  <td class="px-4 py-4 text-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold">
+                      ✓ Confirmed
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

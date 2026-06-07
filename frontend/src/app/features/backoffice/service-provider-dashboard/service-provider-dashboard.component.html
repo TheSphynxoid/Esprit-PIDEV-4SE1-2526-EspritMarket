@@ -1,0 +1,606 @@
+<app-backoffice-layout
+  title="Provider Dashboard"
+  [navItems]="navItems"
+  [activeTab]="activeTab()"
+  (tabChange)="onTabChange($event)"
+  (logout)="logout()"
+>
+<div class="space-y-6">
+
+  <!-- Overview -->
+  <div *ngIf="activeTab() === 'overview'" class="animate-fade-in space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <h1 class="text-2xl font-bold text-primary dark:text-white">Provider Dashboard</h1>
+      <button class="btn btn-primary" (click)="openCreateServiceModal()">+ New Service</button>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="card card-md text-center">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-lg mx-auto mb-2">🧰</div>
+        <p class="text-2xl font-bold text-primary dark:text-white">{{ services().length }}</p>
+        <p class="text-xs text-secondary font-medium uppercase tracking-wide">Services</p>
+      </div>
+      <div class="card card-md text-center">
+        <div class="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-lg mx-auto mb-2">📋</div>
+        <p class="text-2xl font-bold text-primary dark:text-white">{{ allBookings().length }}</p>
+        <p class="text-xs text-secondary font-medium uppercase tracking-wide">Bookings</p>
+      </div>
+      <div class="card card-md text-center">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-lg mx-auto mb-2">✅</div>
+        <p class="text-2xl font-bold text-primary dark:text-white">{{ availableServicesCount() }}</p>
+        <p class="text-xs text-secondary font-medium uppercase tracking-wide">Available</p>
+      </div>
+      <div class="card card-md text-center">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-lg mx-auto mb-2">⏳</div>
+        <p class="text-2xl font-bold text-primary dark:text-white">{{ pendingBookingsCount() }}</p>
+        <p class="text-xs text-secondary font-medium uppercase tracking-wide">Pending</p>
+      </div>
+      <div class="card card-md text-center">
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-lg mx-auto mb-2">⭐</div>
+        <p class="text-2xl font-bold text-primary dark:text-white">{{ completedReviewsCount() }}</p>
+        <p class="text-xs text-secondary font-medium uppercase tracking-wide">Recent Reviews</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700"><h3 class="font-semibold text-primary dark:text-white">Quick Actions</h3></div>
+      <div class="p-6 grid sm:grid-cols-2 gap-4">
+        <button class="btn btn-secondary justify-start" (click)="setActiveTab('services')">🧰 Manage Services</button>
+        <button class="btn btn-secondary justify-start" (click)="setActiveTab('bookings')">📋 View Bookings</button>
+      </div>
+    </div>
+    <div class="card" *ngIf="recentCompletedReviews().length > 0">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+        <h3 class="font-semibold text-primary dark:text-white">Recent Completed Booking Reviews</h3>
+      </div>
+      <div class="p-6 space-y-3">
+        <div *ngFor="let review of recentCompletedReviews()" class="rounded-lg border border-neutral-100 dark:border-neutral-700 p-3">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-sm font-semibold text-primary dark:text-white">{{ review.userName || 'Client' }}</p>
+            <span class="text-sm font-medium text-amber-600">{{ review.rating ?? '-' }}/5</span>
+          </div>
+          <p class="text-sm text-secondary mt-1">{{ review.comment || 'No comment provided.' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Services -->
+  <div *ngIf="activeTab() === 'services'" class="animate-fade-in space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <h1 class="text-2xl font-bold text-primary dark:text-white">My Services</h1>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-secondary" (click)="toggleProviderProjectParticipation()">
+          {{ providerProjectParticipationEnabled() ? 'Disable Projects for All' : 'Enable Projects for All' }}
+        </button>
+        <button class="btn btn-primary" (click)="openCreateServiceModal()">+ New Service</button>
+      </div>
+    </div>
+    <div class="lg:hidden space-y-3">
+      <div *ngFor="let service of services()" class="card card-md">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="font-semibold text-primary dark:text-white">{{ service.name }}</p>
+            <p class="text-sm text-secondary">{{ service.category }} · {{ service.pricingType }}</p>
+          </div>
+          <span class="{{ serviceStatusBadgeClass(service.status) }}">{{ formatStatusLabel(service.status) }}</span>
+        </div>
+        <p class="font-semibold text-esprit-red mb-3">{{ service.price }} DT</p>
+        <div class="mb-3 text-xs">
+          <span class="px-2 py-1 rounded-full font-semibold"
+                [ngClass]="service.allowProjectParticipation ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300'">
+            {{ service.allowProjectParticipation ? 'Project-enabled' : 'Service-only' }}
+          </span>
+        </div>
+        <div class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+          <button class="btn btn-primary btn-sm flex-1" (click)="toggleServiceProjectParticipation(service)">
+            {{ service.allowProjectParticipation ? 'Disable Projects' : 'Enable Projects' }}
+          </button>
+          <button class="btn btn-secondary btn-sm flex-1" (click)="openEditServiceModal(service)">Edit</button>
+          <button class="btn btn-danger btn-sm flex-1" (click)="deleteService(service.id)">Delete</button>
+        </div>
+      </div>
+      <div *ngIf="services().length === 0" class="text-center py-12 text-secondary">
+        <div class="text-4xl mb-3">🧰</div>
+        <p class="text-lg font-medium">No services yet</p>
+        <p class="text-sm mt-1">Create your first service to get started.</p>
+      </div>
+    </div>
+    <div class="hidden lg:block card overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-neutral-50 dark:bg-neutral-700">
+          <tr>
+            <th class="text-left p-4 text-xs font-semibold text-secondary uppercase tracking-wide">Service</th>
+            <th class="text-left p-4 text-xs font-semibold text-secondary uppercase tracking-wide">Category</th>
+            <th class="text-left p-4 text-xs font-semibold text-secondary uppercase tracking-wide">Price</th>
+            <th class="text-left p-4 text-xs font-semibold text-secondary uppercase tracking-wide">Status</th>
+            <th class="text-left p-4 text-xs font-semibold text-secondary uppercase tracking-wide">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let service of services()" class="border-t border-neutral-100 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-700/50">
+            <td class="p-4 text-sm font-medium text-primary dark:text-white">{{ service.name }}</td>
+            <td class="p-4 text-sm text-secondary">{{ service.category }}</td>
+            <td class="p-4 text-sm font-semibold text-esprit-red">{{ service.price }} DT</td>
+            <td class="p-4">
+              <div class="flex flex-col gap-1">
+                <span class="{{ serviceStatusBadgeClass(service.status) }}">{{ formatStatusLabel(service.status) }}</span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full w-fit"
+                      [ngClass]="service.allowProjectParticipation ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300'">
+                  {{ service.allowProjectParticipation ? 'Project-enabled' : 'Service-only' }}
+                </span>
+              </div>
+            </td>
+            <td class="p-4"><div class="flex gap-2">
+              <button class="btn btn-primary btn-sm" (click)="toggleServiceProjectParticipation(service)">
+                {{ service.allowProjectParticipation ? 'Disable Projects' : 'Enable Projects' }}
+              </button>
+              <button class="btn btn-secondary btn-sm" (click)="openEditServiceModal(service)">Edit</button>
+              <button class="btn btn-danger btn-sm" (click)="deleteService(service.id)">Delete</button>
+            </div></td>
+          </tr>
+          <tr *ngIf="services().length === 0"><td colspan="5" class="p-12 text-center">
+            <div class="text-4xl mb-3">🧰</div>
+            <p class="text-lg font-medium text-secondary">No services yet</p>
+            <p class="text-sm text-muted mt-1">Create your first service to get started.</p>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Projects -->
+  <div *ngIf="activeTab() === 'projects'" class="animate-fade-in space-y-6">
+    <h1 class="text-2xl font-bold text-primary dark:text-white">Projects</h1>
+
+    <div>
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-secondary mb-3">My Projects</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div *ngFor="let project of projects()" class="card card-md">
+          <div class="flex justify-between items-start mb-2">
+            <p class="font-semibold text-primary dark:text-white">{{ project.title }}</p>
+            <span class="badge badge-info">{{ project.status }}</span>
+          </div>
+          <p class="text-sm text-secondary mb-3 line-clamp-2">{{ project.details }}</p>
+          <div class="flex justify-between text-sm">
+            <span class="text-secondary">{{ project.priority }}</span>
+            <span class="font-semibold text-esprit-red">{{ project.budget }} TND</span>
+          </div>
+          <a class="btn btn-primary btn-sm mt-3 w-full" [routerLink]="['/projects', project.id]">Open Orchestration</a>
+        </div>
+        <div *ngIf="projects().length === 0" class="text-center py-12 text-secondary col-span-full">
+          <p class="text-sm">No projects you are participating in yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-secondary mb-3">Open Positions</h2>
+      <p class="text-xs text-secondary mb-3">Active projects looking for service providers. Book a service linked to one of these projects to join.</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div *ngFor="let project of openPositionProjects()" class="card card-md border-l-4 border-l-esprit-red">
+          <div class="flex justify-between items-start mb-2">
+            <p class="font-semibold text-primary dark:text-white">{{ project.title }}</p>
+            <span class="badge badge-info">{{ project.status }}</span>
+          </div>
+          <p class="text-sm text-secondary mb-3 line-clamp-2">{{ project.details }}</p>
+          <div class="flex justify-between text-sm">
+            <span class="text-secondary">{{ project.priority }}</span>
+            <span class="font-semibold text-esprit-red">{{ project.budget }} TND</span>
+          </div>
+          <a class="btn btn-secondary btn-sm mt-3 w-full" [routerLink]="['/projects', project.id]">View Project</a>
+        </div>
+        <div *ngIf="openPositionProjects().length === 0" class="text-center py-12 text-secondary col-span-full">
+          <p class="text-sm">No open positions right now.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scheduling -->
+  <div *ngIf="activeTab() === 'scheduling'" class="animate-fade-in space-y-4">
+    <h1 class="text-2xl font-bold text-primary dark:text-white">Schedule</h1>
+
+    <!-- Provider Calendar -->
+    <div class="card card-md p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-primary dark:text-white">Booking Calendar</h2>
+        <div class="flex items-center gap-2">
+          <button class="w-7 h-7 rounded-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-secondary hover:text-primary dark:hover:text-white hover:border-esprit-red transition-colors" (click)="providerCalNav(-1)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+          </button>
+          <span class="text-sm font-semibold text-primary dark:text-white min-w-[140px] text-center">{{ providerCalMonthLabel() }}</span>
+          <button class="w-7 h-7 rounded-lg border border-neutral-200 dark:border-neutral-700 flex items-center justify-center text-secondary hover:text-primary dark:hover:text-white hover:border-esprit-red transition-colors" (click)="providerCalNav(1)">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-7 gap-px bg-neutral-200 dark:bg-neutral-700 rounded-lg overflow-hidden mb-4">
+        @for (wd of providerCalWeekDays(); track wd) {
+          <div class="bg-neutral-100 dark:bg-neutral-800 py-2 text-center text-[10px] font-bold uppercase text-secondary tracking-wider">{{ wd }}</div>
+        }
+        @for (cell of providerCalDays(); track cell.date) {
+          <div class="bg-white dark:bg-neutral-900 min-h-[72px] p-1 cursor-pointer transition-colors"
+               [class]="providerCalSelectedDate() === cell.date ? 'ring-2 ring-esprit-red ring-inset' : 'hover:bg-neutral-50 dark:hover:bg-neutral-800'"
+               (click)="providerCalToggleDate(cell.date)">
+            <div class="flex items-center justify-between mb-0.5">
+              <span class="text-[11px]" [class]="cell.isCurrentMonth ? 'font-medium text-primary dark:text-white' : 'text-neutral-400 dark:text-neutral-600'">{{ cell.dayNum }}</span>
+              <span *ngIf="cell.isToday" class="w-1.5 h-1.5 rounded-full bg-esprit-red"></span>
+            </div>
+            @for (b of cell.bookings.slice(0, 2); track b.id) {
+              <div class="text-[9px] px-1 py-0.5 rounded truncate mb-0.5" [ngClass]="providerCalBookingClass(b.status)">
+                {{ b.serviceName }}
+              </div>
+            }
+            @if (cell.bookings.length > 2) {
+              <div class="text-[9px] text-secondary px-1">+{{ cell.bookings.length - 2 }} more</div>
+            }
+          </div>
+        }
+      </div>
+
+      @if (providerCalSelectedDate(); as selDate) {
+        <div class="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold text-primary dark:text-white">{{ selDate | date:'fullDate' }}</h3>
+            <button class="text-[10px] text-secondary hover:text-primary" (click)="providerCalToggleDate(selDate)">Close</button>
+          </div>
+          @if (providerCalSelectedBookings().length === 0) {
+            <p class="text-xs text-secondary">No bookings on this date.</p>
+          }
+          @for (b of providerCalSelectedBookings(); track b.id) {
+            <div class="flex items-center gap-3 p-2.5 rounded-lg border border-neutral-200 dark:border-neutral-700 mb-1.5 last:mb-0">
+              <div class="w-1 h-8 rounded-full shrink-0" [ngClass]="providerCalBarClass(b.status)"></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-primary dark:text-white truncate">{{ b.serviceName }}</p>
+                <p class="text-[11px] text-secondary">{{ b.userName }} &middot; {{ b.duration }}h &middot; {{ b.totalPrice }} TND</p>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full font-bold shrink-0" [ngClass]="bookingStatusBadgeClass(b.status)">{{ formatStatusLabel(b.status) }}</span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div *ngFor="let item of scheduledBookings()" class="card card-md">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p class="font-semibold text-primary dark:text-white">{{ item.serviceName }}</p>
+          <p class="text-sm text-secondary">{{ item.userName }} · {{ item.date | date:'medium' }} · {{ item.duration }}h</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="{{ bookingStatusBadgeClass(item.status) }}">{{ formatStatusLabel(item.status) }}</span>
+          <div *ngIf="item.status === BookingResponse.StatusEnum.Approved" class="flex gap-2">
+            <button class="btn btn-primary btn-sm" (click)="updateBookingStatus(item, BookingResponse.StatusEnum.InProgress)">Start</button>
+            <button class="btn btn-secondary btn-sm" (click)="updateBookingStatus(item, BookingResponse.StatusEnum.Completed)">Complete</button>
+          </div>
+          <div *ngIf="item.status === BookingResponse.StatusEnum.InProgress" class="flex gap-2">
+            <button class="btn btn-primary btn-sm" (click)="submitWork(item)">Submit Work</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div *ngIf="scheduledBookings().length === 0" class="text-center py-16 text-secondary">
+      <div class="text-4xl mb-3">🗓️</div>
+      <p class="text-lg font-medium">No scheduled tasks</p>
+      <p class="text-sm mt-1">Approved bookings will appear here.</p>
+    </div>
+  </div>
+
+  <!-- Bookings -->
+  <div *ngIf="activeTab() === 'bookings'" class="animate-fade-in space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <h1 class="text-2xl font-bold text-primary dark:text-white">Bookings</h1>
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" [ngModel]="bookingsSearch()" (ngModelChange)="bookingsSearch.set($event); onBookingsFilterChange()"
+            placeholder="Search service or client..."
+            class="pl-9 pr-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm bg-white dark:bg-neutral-800 w-48 focus:outline-none focus:ring-2 focus:ring-esprit-red/50 transition-colors" />
+        </div>
+        <select [ngModel]="bookingsStatusFilter()" (ngModelChange)="bookingsStatusFilter.set($event); onBookingsFilterChange()"
+          class="px-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-lg text-sm bg-white dark:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-esprit-red/50 transition-colors">
+          <option *ngFor="let opt of bookingFilterOptions" [value]="opt.value">{{ opt.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <ng-container *ngIf="filteredBookings().length > 0; else noBookings">
+      <!-- Pending Section -->
+      <ng-container *ngIf="paginatedBookings().pending.length > 0">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="badge badge-warning">{{ paginatedBookings().pending.length }}</span>
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-secondary">Awaiting Confirmation</h2>
+        </div>
+        <div class="space-y-3">
+          <div *ngFor="let booking of paginatedBookings().pending" class="card card-md border-l-4 border-l-amber-400">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <p class="font-semibold text-primary dark:text-white">{{ booking.serviceName }}</p>
+                <p class="text-sm text-secondary">{{ booking.userName }} &middot; {{ booking.date | date:'short' }} &middot; {{ booking.duration }}h</p>
+              </div>
+              <div class="text-right">
+                <span class="{{ bookingStatusBadgeClass(booking.status) }}">{{ formatStatusLabel(booking.status) }}</span>
+                <p *ngIf="booking.totalPrice" class="font-semibold text-esprit-red text-sm mt-1">{{ booking.totalPrice }} TND</p>
+                <div *ngIf="bookingPredictions().get(booking.id!)" class="mt-2">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                    [ngClass]="{
+                      'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400': bookingPredictions().get(booking.id!)?.riskLevel === 'LOW',
+                      'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400': bookingPredictions().get(booking.id!)?.riskLevel === 'MEDIUM',
+                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': bookingPredictions().get(booking.id!)?.riskLevel === 'HIGH' || bookingPredictions().get(booking.id!)?.riskLevel === 'CRITICAL'
+                    }">
+                    AI: {{ bookingPredictions().get(booking.id!)?.riskLevel }} ({{ bookingPredictions().get(booking.id!)?.completionProbability ?? 0 }})
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm flex-1 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" (click)="updateBookingStatus(booking, BookingResponse.StatusEnum.Approved)">Approve</button>
+              <button class="btn btn-sm flex-1 bg-rose-600 hover:bg-rose-700 text-white border border-rose-700" (click)="updateBookingStatus(booking, BookingResponse.StatusEnum.Rejected)">Reject</button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Other Bookings Section -->
+      <ng-container *ngIf="paginatedBookings().others.length > 0">
+        <div *ngIf="paginatedBookings().pending.length > 0" class="flex items-center gap-2 mt-6 mb-2">
+          <h2 class="text-sm font-semibold uppercase tracking-wide text-secondary">Other Bookings</h2>
+        </div>
+        <div class="space-y-3">
+          <div *ngFor="let booking of paginatedBookings().others" class="card card-md">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <p class="font-semibold text-primary dark:text-white">{{ booking.serviceName }}</p>
+                <p class="text-sm text-secondary">{{ booking.userName }} &middot; {{ booking.date | date:'short' }} &middot; {{ booking.duration }}h</p>
+              </div>
+              <div class="text-right">
+                <span class="{{ bookingStatusBadgeClass(booking.status) }}">{{ formatStatusLabel(booking.status) }}</span>
+                <p *ngIf="booking.totalPrice" class="font-semibold text-esprit-red text-sm mt-1">{{ booking.totalPrice }} TND</p>
+              </div>
+            </div>
+            <div *ngIf="booking.status === BookingResponse.StatusEnum.Approved" class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm flex-1 bg-blue-600 hover:bg-blue-700 text-white border border-blue-700" (click)="updateBookingStatus(booking, BookingResponse.StatusEnum.InProgress)">Start</button>
+              <button class="btn btn-sm flex-1 bg-esprit-red hover:bg-[#a10d28] text-white border border-[#9b0d28]" (click)="viewDeliverable(booking)">Workspace</button>
+              <button class="btn btn-sm flex-1 bg-rose-600 hover:bg-rose-700 text-white border border-rose-700" (click)="cancelBooking(booking)">Cancel</button>
+            </div>
+            <div *ngIf="booking.status === BookingResponse.StatusEnum.InProgress" class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm flex-1 bg-esprit-red hover:bg-[#a10d28] text-white border border-[#9b0d28]" (click)="viewDeliverable(booking)">Workspace</button>
+              <button class="btn btn-sm flex-1 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700" (click)="submitWork(booking)">Submit Work</button>
+              <button class="btn btn-sm flex-1 bg-rose-600 hover:bg-rose-700 text-white border border-rose-700" (click)="cancelBooking(booking)">Cancel</button>
+            </div>
+            <div *ngIf="booking.status === BookingResponse.StatusEnum.PendingReview" class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm flex-1 bg-esprit-red hover:bg-[#a10d28] text-white border border-[#9b0d28]" (click)="viewDeliverable(booking)">Workspace</button>
+              <button class="btn btn-sm flex-1 bg-amber-500 hover:bg-amber-600 text-white border border-amber-600" (click)="viewDeliverable(booking)">View Deliverable</button>
+              <button class="btn btn-sm flex-1 bg-neutral-700 hover:bg-neutral-800 text-white border border-neutral-800" (click)="downloadDeliverable(booking)">Download Deliverable</button>
+            </div>
+            <div *ngIf="booking.status === BookingResponse.StatusEnum.Disputed" class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm flex-1 bg-esprit-red hover:bg-[#a10d28] text-white border border-[#9b0d28]" (click)="viewDeliverable(booking)">Workspace</button>
+              <button class="btn btn-sm flex-1 bg-amber-500 hover:bg-amber-600 text-white border border-amber-600" (click)="viewDeliverable(booking)">View Deliverable</button>
+              <button class="btn btn-sm flex-1 bg-neutral-700 hover:bg-neutral-800 text-white border border-neutral-800" (click)="downloadDeliverable(booking)">Download Deliverable</button>
+            </div>
+            <div *ngIf="booking.status === BookingResponse.StatusEnum.Pending || booking.status === BookingResponse.StatusEnum.Confirmed || booking.status === BookingResponse.StatusEnum.Tentative || booking.status === BookingResponse.StatusEnum.PendingEvaluation || booking.status === BookingResponse.StatusEnum.Completed || booking.status === BookingResponse.StatusEnum.Cancelled || booking.status === BookingResponse.StatusEnum.Rejected" class="flex gap-2 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+              <button class="btn btn-sm w-full bg-esprit-red hover:bg-[#a10d28] text-white border border-[#9b0d28]" (click)="viewDeliverable(booking)">Open Workspace</button>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Pagination -->
+      <div *ngIf="bookingsTotalPages() > 1" class="flex items-center justify-center gap-1 pt-4">
+        <button class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          [class.text-neutral-300]="bookingsCurrentPage() === 0"
+          [class.dark:text-neutral-600]="bookingsCurrentPage() === 0"
+          [class.hover:bg-neutral-100]="bookingsCurrentPage() > 0"
+          [class.dark:hover:bg-neutral-700]="bookingsCurrentPage() > 0"
+          [disabled]="bookingsCurrentPage() === 0"
+          (click)="bookingsGoToPage(bookingsCurrentPage() - 1)">
+          Previous
+        </button>
+        <button *ngFor="let p of bookingsPageRange()"
+          class="w-9 h-9 rounded-lg text-sm font-medium transition-colors"
+          [class.bg-esprit-red]="p === bookingsCurrentPage()"
+          [class.text-white]="p === bookingsCurrentPage()"
+          [class.hover:bg-neutral-100]="p !== bookingsCurrentPage()"
+          [class.dark:hover:bg-neutral-700]="p !== bookingsCurrentPage()"
+          (click)="bookingsGoToPage(p)">
+          {{ p + 1 }}
+        </button>
+        <button class="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          [class.text-neutral-300]="bookingsCurrentPage() >= bookingsTotalPages() - 1"
+          [class.dark:text-neutral-600]="bookingsCurrentPage() >= bookingsTotalPages() - 1"
+          [class.hover:bg-neutral-100]="bookingsCurrentPage() < bookingsTotalPages() - 1"
+          [class.dark:hover:bg-neutral-700]="bookingsCurrentPage() < bookingsTotalPages() - 1"
+          [disabled]="bookingsCurrentPage() >= bookingsTotalPages() - 1"
+          (click)="bookingsGoToPage(bookingsCurrentPage() + 1)">
+          Next
+        </button>
+      </div>
+
+      <p class="text-center text-xs text-secondary">{{ filteredBookings().length }} booking{{ filteredBookings().length !== 1 ? 's' : '' }} found</p>
+    </ng-container>
+
+    <ng-template #noBookings>
+      <div class="text-center py-16 text-secondary">
+        <div class="text-4xl mb-3">📋</div>
+        <p class="text-lg font-medium">No bookings found</p>
+        <p class="text-sm mt-1">Bookings will appear here when clients book your services.</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Availability (Redesigned) -->
+  <div *ngIf="activeTab() === 'availability'" class="animate-fade-in space-y-6">
+    <h1 class="text-2xl font-bold text-primary dark:text-white">Availability</h1>
+
+    <!-- My Default Schedule -->
+    <div class="card">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-primary dark:text-white">My Default Schedule</h3>
+            <p class="text-sm text-secondary mt-0.5">This applies to all your services unless you set a custom one per service</p>
+          </div>
+          <span *ngIf="globalTemplates().length > 0" class="badge badge-success" brnTooltip="Your default weekly schedule is active and will be used for services without a custom schedule">Active</span>
+          <span *ngIf="globalTemplates().length === 0" class="badge badge-warning" brnTooltip="Set your default schedule so new services have availability automatically">Not Set</span>
+        </div>
+      </div>
+      <div class="p-6">
+        <app-weekly-schedule-editor
+          [providerId]="providerId()!"
+          [templates]="globalTemplates()"
+          (saved)="onGlobalScheduleSaved($event)">
+        </app-weekly-schedule-editor>
+      </div>
+    </div>
+
+    <!-- Service-Specific Schedules -->
+    <div class="card">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+        <h3 class="font-semibold text-primary dark:text-white">Service Schedules</h3>
+        <p class="text-sm text-secondary mt-0.5">Override your default schedule for specific services</p>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-secondary mb-1.5">Select a service to configure</label>
+          <select class="w-full sm:w-64 px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+            [value]="selectedScheduleServiceId() ?? ''"
+            (change)="onServiceScheduleSelected(+$any($event.target).value)">
+            <option value="">-- Select Service --</option>
+            <option *ngFor="let s of services()" [value]="s.id">{{ s.name }}</option>
+          </select>
+        </div>
+
+        <div *ngIf="selectedScheduleServiceId()" class="pt-2 border-t border-neutral-100 dark:border-neutral-700">
+          <p class="text-sm text-secondary mb-3">
+            Setting custom schedule for <strong class="text-primary dark:text-white">{{ selectedScheduleService()?.name }}</strong>
+          </p>
+          <app-weekly-schedule-editor
+            [providerId]="providerId()!"
+            [serviceId]="selectedScheduleServiceId()!"
+            [templates]="serviceTemplates()"
+            (saved)="onServiceScheduleSaved($event)">
+          </app-weekly-schedule-editor>
+        </div>
+
+        <div *ngIf="services().length === 0" class="text-sm text-secondary py-4 text-center">
+          Create a service first to configure its schedule.
+        </div>
+      </div>
+    </div>
+
+    <!-- Exceptions -->
+    <div class="card">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+        <h3 class="font-semibold text-primary dark:text-white">Exceptions & Blocked Dates</h3>
+        <p class="text-sm text-secondary mt-0.5">Block specific dates or set custom hours that differ from your regular schedule</p>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+          <div>
+            <label class="block text-xs font-semibold text-secondary mb-1">Date</label>
+            <input type="date" class="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              [value]="newExceptionForm().date"
+              (input)="newExceptionForm.set({...newExceptionForm(), date: $any($event.target).value})" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-secondary mb-1">Type</label>
+            <select class="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              [value]="newExceptionForm().type"
+              (change)="newExceptionForm.set({...newExceptionForm(), type: $any($event.target).value})">
+              <option value="BLOCKED">Blocked</option>
+              <option value="CUSTOM_HOURS">Custom Hours</option>
+            </select>
+          </div>
+          <div *ngIf="newExceptionForm().type === 'CUSTOM_HOURS'">
+            <label class="block text-xs font-semibold text-secondary mb-1">Start</label>
+            <input type="time" class="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              [value]="newExceptionForm().startHour"
+              (input)="newExceptionForm.set({...newExceptionForm(), startHour: $any($event.target).value})" />
+          </div>
+          <div *ngIf="newExceptionForm().type === 'CUSTOM_HOURS'">
+            <label class="block text-xs font-semibold text-secondary mb-1">End</label>
+            <input type="time" class="w-full px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              [value]="newExceptionForm().endHour"
+              (input)="newExceptionForm.set({...newExceptionForm(), endHour: $any($event.target).value})" />
+          </div>
+          <div class="sm:col-span-2 lg:col-span-1">
+            <button class="btn btn-primary w-full" (click)="createException()">Add Exception</button>
+          </div>
+        </div>
+        <div *ngIf="providerExceptions().length > 0" class="space-y-2 mt-4">
+          <div *ngFor="let e of providerExceptions()" class="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+            <div class="flex items-center gap-4">
+              <span class="text-sm text-primary dark:text-white">{{ e.date }}</span>
+              <span class="text-xs font-semibold px-2 py-1 rounded" [class.bg-red-50]="e.type === 'BLOCKED'" [class.text-red-700]="e.type === 'BLOCKED'" [class.dark:bg-red-900/30]="e.type === 'BLOCKED'" [class.dark:text-red-400]="e.type === 'BLOCKED'" [class.bg-yellow-50]="e.type === 'CUSTOM_HOURS'" [class.text-yellow-700]="e.type === 'CUSTOM_HOURS'" [class.dark:bg-yellow-900/30]="e.type === 'CUSTOM_HOURS'" [class.dark:text-yellow-400]="e.type === 'CUSTOM_HOURS'"
+                [brnTooltip]="e.type === 'BLOCKED' ? 'No bookings accepted on this date' : 'These hours override your regular schedule for this date'"
+                position="bottom">{{ e.type }}</span>
+              <span *ngIf="e.type === 'CUSTOM_HOURS'" class="text-xs text-secondary">{{ e.startHour }} - {{ e.endHour }}</span>
+              <span *ngIf="e.reason" class="text-xs text-secondary">{{ e.reason }}</span>
+            </div>
+            <button class="btn btn-danger btn-sm" (click)="deleteException(e.id)">Remove</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking Limits -->
+    <div class="grid sm:grid-cols-2 gap-6">
+      <!-- Provider Mandate (Global) -->
+      <div class="card">
+        <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+          <h3 class="font-semibold text-primary dark:text-white">Total Booking Limit</h3>
+          <p class="text-sm text-secondary mt-0.5">Max concurrent bookings across all services</p>
+        </div>
+        <div class="p-6 space-y-3">
+          <div *ngIf="providerMandate()" class="flex items-center justify-between p-3 rounded-lg" [class.bg-red-50]="providerMandate()!.overbooked" [class.dark:bg-red-900/20]="providerMandate()!.overbooked" [class.bg-green-50]="!providerMandate()!.overbooked" [class.dark:bg-green-900/20]="!providerMandate()!.overbooked">
+            <span class="text-sm">{{ providerMandate()!.currentBookings }} / {{ providerMandate()!.maxBookings }} active</span>
+            <span *ngIf="providerMandate()!.overbooked" class="text-xs font-bold text-red-600 dark:text-red-400" brnTooltip="You have reached or exceeded your total booking limit" position="right">OVERBOOKED</span>
+          </div>
+          <div class="flex gap-3">
+            <input type="number" min="1" class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              placeholder="Max bookings"
+              [value]="newProviderMandateForm().maxBookings"
+              (input)="newProviderMandateForm.set({...newProviderMandateForm(), maxBookings: +$any($event.target).value})" />
+            <button class="btn btn-primary" (click)="saveProviderMandate()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service Mandates -->
+      <div class="card">
+        <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-700">
+          <h3 class="font-semibold text-primary dark:text-white">Per-Service Limits</h3>
+          <p class="text-sm text-secondary mt-0.5">Max concurrent bookings per service</p>
+        </div>
+        <div class="p-6 space-y-3">
+          <div *ngFor="let m of serviceMandates()" class="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+            <div>
+              <span class="text-sm text-primary dark:text-white">{{ m.serviceName || 'Service #' + m.serviceId }}</span>
+              <span class="text-xs text-secondary ml-2">{{ m.currentBookings }}/{{ m.maxBookings }}</span>
+              <span *ngIf="m.overbooked" class="text-xs font-bold text-red-600 dark:text-red-400 ml-2" brnTooltip="This service has reached its booking limit" position="right">OVERBOOKED</span>
+            </div>
+            <button class="btn btn-danger btn-sm" (click)="deleteServiceMandate(m.id)">Remove</button>
+          </div>
+          <div class="flex gap-3">
+            <select class="flex-1 px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              [value]="newMandateForm().serviceId"
+              (change)="newMandateForm.set({...newMandateForm(), serviceId: +$any($event.target).value})">
+              <option value="0">-- Select Service --</option>
+              <option *ngFor="let s of services()" [value]="s.id">{{ s.name }}</option>
+            </select>
+            <input type="number" min="1" class="w-20 px-3 py-2 border border-neutral-300 rounded-lg text-sm dark:bg-neutral-700 dark:border-neutral-600"
+              placeholder="Max"
+              [value]="newMandateForm().maxBookings"
+              (input)="newMandateForm.set({...newMandateForm(), maxBookings: +$any($event.target).value})" />
+            <button class="btn btn-primary" (click)="createServiceMandate()">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</app-backoffice-layout>
+
+<app-modal [isOpen]="isServiceModalOpen()" [title]="isEditingService() ? 'Edit Service' : 'New Service'" [isSubmitting]="isSubmittingService()" (close)="closeServiceModal()" (submitted)="submitServiceForm()">
+  <app-service-form #serviceForm></app-service-form>
+</app-modal>

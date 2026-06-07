@@ -1,0 +1,53 @@
+@startuml marketplace-usecase
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+actor Visitor
+actor Buyer
+actor Seller
+actor Administrator
+
+rectangle "Marketplace Module" {
+    usecase "Browse Products" as UC1
+    usecase "View Product Details" as UC2
+    usecase "Filter Products" as UC3
+    usecase "View Seller Profile" as UC4
+    usecase "Create Store" as UC5
+    usecase "Add Product" as UC6
+    usecase "Update Product" as UC7
+    usecase "Delete Product" as UC8
+    usecase "Add to Cart" as UC9
+    usecase "View Cart" as UC10
+    usecase "Place Order" as UC11
+    usecase "Track Order Status" as UC12
+    usecase "Approve Seller Request" as UC13
+    usecase "Manage Products" as UC14
+    usecase "View Dashboard" as UC15
+    usecase "Submit Seller Request" as UC16
+}
+
+Visitor --> UC1
+Visitor --> UC2
+Visitor --> UC3
+Visitor --> UC4
+
+Buyer --> UC1
+Buyer --> UC2
+Buyer --> UC9
+Buyer --> UC10
+Buyer --> UC11
+Buyer --> UC12
+
+Seller --> UC5
+Seller --> UC6
+Seller --> UC7
+Seller --> UC8
+Seller --> UC15
+Seller --> UC16
+
+Administrator --> UC13
+Administrator --> UC14
+
+UC5 ..> UC16 : <<include>>
+@enduml

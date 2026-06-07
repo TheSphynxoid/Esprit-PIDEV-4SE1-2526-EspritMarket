@@ -1,0 +1,148 @@
+<app-header></app-header>
+
+<ng-container *ngIf="product() as item; else loadingState">
+  <div class="product-page">
+    <div class="product-container">
+      <div class="product-shell">
+        <section class="gallery-panel card-surface">
+          <div class="main-image-card">
+            <img *ngIf="activeImage() && activeImage() !== '🛍️'; else emojiImage" [src]="activeImage()" [alt]="item.name" class="main-image" />
+            <ng-template #emojiImage>
+              <div class="emoji-image">{{ item.image }}</div>
+            </ng-template>
+          </div>
+
+          <div class="thumb-grid" *ngIf="images().length > 1">
+            <button
+              *ngFor="let img of images()"
+              type="button"
+              (click)="chooseImage(img)"
+              class="thumb-btn"
+              [class.thumb-active]="img === activeImage()"
+            >
+              <img [src]="img" alt="Thumb" class="thumb-image" />
+            </button>
+          </div>
+        </section>
+
+        <section class="info-panel card-surface">
+          <p class="seller-line">Boutique de {{ item.seller }}</p>
+          <h1 class="product-title">{{ item.name }}</h1>
+          <p class="item-ref">Ref #{{ item.id }}</p>
+
+          <div class="price-line">
+            <span class="main-price">TND {{ formatPrice(displayPrice()) }}</span>
+          </div>
+
+          <div class="rating-line" (mouseleave)="clearPreviewRating()">
+            <button
+              *ngFor="let star of [1,2,3,4,5]"
+              type="button"
+              (mouseenter)="previewRating(star)"
+              (click)="rateProduct(star)"
+              class="star-btn"
+              [class.star-off]="!isStarActive(star)"
+              [attr.aria-label]="'Rate ' + star + ' stars'"
+            >
+              *
+            </button>
+            <span class="rating-meta">{{ item.rating | number:'1.1-1' }} ({{ item.reviews }} reviews)</span>
+          </div>
+
+          <p class="bought-line">100+ bought</p>
+
+          <div class="availability-row">
+            <span>Availability:</span>
+            <strong [class.out-stock]="stockLeft() === 0">{{ stockLeft() > 0 ? 'In stock' : 'Out of stock' }}</strong>
+          </div>
+
+          <div *ngIf="(item.variants || []).length > 0" class="variant-block">
+            <p class="variant-title">Variants</p>
+            <div class="variant-list">
+              <button
+                *ngFor="let variant of item.variants; let i = index"
+                type="button"
+                (click)="chooseVariant(i)"
+                class="variant-btn"
+                [class.variant-active]="i === selectedVariantIndex()"
+              >
+                {{ variant.size || 'One size' }} | {{ variant.color || 'Default' }}
+              </button>
+            </div>
+          </div>
+
+          <div class="description-block">
+            <h2>Description</h2>
+            <p>{{ cleanDescription() || 'Aucune description.' }}</p>
+          </div>
+
+          <section class="availability-table-block">
+            <h2>Disponibilite</h2>
+            <div class="availability-table">
+              <div class="availability-head">
+                <span>Magasin</span>
+                <span>Statut</span>
+                <span>Delai</span>
+              </div>
+              <div class="availability-row-item">
+                <span>{{ item.seller }}</span>
+                <strong [class.table-out-stock]="stockLeft() === 0">{{ stockLeft() > 0 ? 'En stock' : 'Commande' }}</strong>
+                <span>{{ stockLeft() > 0 ? 'Immediate' : '48h' }}</span>
+              </div>
+            </div>
+          </section>
+
+        </section>
+
+        <aside class="buy-panel card-surface">
+          <div class="buy-price">TND {{ formatPrice(displayPrice()) }}</div>
+          <div class="buy-old-price" *ngIf="item.originalPrice && item.originalPrice > displayPrice()">
+            TND {{ formatPrice(item.originalPrice) }}
+          </div>
+          <p class="delivery-line">Receive your product around <strong>{{ estimatedDelivery() }}</strong></p>
+
+          <div class="qty-wrap">
+            <span>QTY:</span>
+            <div class="qty-control">
+              <button type="button" (click)="decreaseQuantity()">-</button>
+              <span>{{ quantity() }}</span>
+              <button type="button" (click)="increaseQuantity()">+</button>
+            </div>
+          </div>
+
+          <button class="action-btn dark" [disabled]="stockLeft() === 0" (click)="addToCart()">ADD TO CART</button>
+          <button class="action-btn gold" [disabled]="stockLeft() === 0" (click)="buyNow()">BUY NOW</button>
+
+          <p class="secure-line">Transaction securisee</p>
+          <a routerLink="/marketplace" class="back-link">Back to marketplace</a>
+        </aside>
+      </div>
+
+      <section *ngIf="item.dimensionsLabel || (item.weight && item.weight > 0)" class="specs-block card-surface">
+        <h2 class="specs-title">Specifications</h2>
+        <div class="specs-grid">
+          <div *ngIf="item.dimensionsLabel" class="spec-row">
+            <span class="spec-label">Dimensions:</span>
+            <span class="spec-value">{{ item.dimensionsLabel }}</span>
+          </div>
+          <div *ngIf="item.weight && item.weight > 0" class="spec-row">
+            <span class="spec-label">Poids:</span>
+            <span class="spec-value">{{ item.weight }} kg</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #loadingState>
+  <div class="product-page">
+    <div class="container-wide max-w-3xl mx-auto card card-lg text-center" style="margin: 2rem auto;">
+      <h2 class="text-2xl font-bold text-primary">Product not found</h2>
+      <a routerLink="/marketplace" class="btn btn-primary mt-6 inline-flex">Back to marketplace</a>
+    </div>
+  </div>
+</ng-template>
+
+<app-footer></app-footer>
+

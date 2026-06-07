@@ -1,0 +1,46 @@
+@startuml events-sprint2-class
+
+class OnlineEvent {
+    - id: Long
+    - eventId: Long
+    - meetingLink: String
+    - platform: MeetingPlatform
+    - accessCode: String
+    - maxParticipants: int
+    - recordingEnabled: boolean
+    + generateMeetingLink(): String
+    + isAtCapacity(): boolean
+}
+
+class MeetingPlatform {
+    ZOOM
+    GOOGLE_MEET
+    TEAMS
+    CUSTOM
+}
+
+class WaitingListEntry {
+    - id: Long
+    - eventId: Long
+    - userId: Long
+    - position: int
+    - registeredAt: LocalDateTime
+    - notified: boolean
+    + promote(): void
+    + isNotified(): boolean
+}
+
+class WaitingList {
+    - id: Long
+    - eventId: Long
+    - entries: List<WaitingListEntry>
+    + add(userId: Long): WaitingListEntry
+    + promoteNext(): WaitingListEntry
+    + getPosition(userId: Long): int
+}
+
+Event "1" -- "0..1" OnlineEvent : extends >
+Event "1" -- "0..1" WaitingList : has >
+WaitingList "1" -- "0..*" WaitingListEntry : contains >
+OnlineEvent --> MeetingPlatform
+@enduml

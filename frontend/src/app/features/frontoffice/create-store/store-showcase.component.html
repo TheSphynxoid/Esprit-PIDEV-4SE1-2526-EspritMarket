@@ -1,0 +1,236 @@
+<app-header></app-header>
+<section class="store-page" [ngStyle]="themeVars" *ngIf="profile as shop">
+
+  <div class="bg-glow"></div>
+
+  <main class="store-shell">
+    <header class="hero" [style.background-image]="'url(' + heroImage + ')'">
+      <div class="hero-overlay"></div>
+      <img [src]="shop.logoDataUrl" [alt]="'Logo de ' + shop.name" class="shop-logo" />
+      <p class="chip">{{ theme.name }}</p>
+      <h1>{{ shop.name }}</h1>
+      <p class="hero-subtitle">{{ theme.vibe }}</p>
+    </header>
+
+    <section class="store-card details-card">
+      <div class="row">
+        <span class="label">Category</span>
+        <span class="value">{{ shop.categoryLabel }}</span>
+      </div>
+      <div class="row">
+        <span class="label">Telephone</span>
+        <span class="value">{{ shop.phone || '-' }}</span>
+      </div>
+      <div class="row" *ngIf="shop.balance !== undefined">
+        <span class="label">Solde de la boutique</span>
+        <span class="value" style="color: #059669; font-weight: 800; font-size: 1.1rem;">
+          {{ shop.balance | number:'1.2-2' }} DT
+        </span>
+      </div>
+
+
+      <div class="row description-row">
+        <span class="label">Description</span>
+        <p class="description">{{ shop.description }}</p>
+      </div>
+
+      <div class="actions">
+        <button *ngIf="canManageProducts" type="button" class="action-button ghost" (click)="openEditStore()">Edit my store</button>
+        <button *ngIf="canManageProducts" type="button" class="action-button ghost" (click)="goToVendorDashboard()">Manage my store</button>
+        <button *ngIf="canManageProducts" type="button" class="action-button primary" (click)="openAddProduct()">Add new product</button>
+        <button *ngIf="isStoreOwner" type="button" class="action-button danger" (click)="deleteStore()">Supprimer la boutique</button>
+        <a routerLink="/marketplace" class="action-button ghost">View marketplace</a>
+      </div>
+    </section>
+
+    <section class="store-products card-block">
+      <div class="section-head">
+        <h2>Store products</h2>
+        <p>Previous products appear here</p>
+      </div>
+
+      <div class="product-grid" *ngIf="storeProducts.length > 0; else emptyState">
+        <article
+          class="product-card"
+          *ngFor="let product of storeProducts"
+          (click)="openEditProduct(product)"
+          [class.editable]="canManageProducts"
+          [attr.title]="canManageProducts ? 'Click to edit this product' : null"
+        >
+          <div class="product-image-wrap">
+            <img *ngIf="isImageSource(product.image)" [src]="getImageUrl(product.image)" [alt]="product.name" class="product-image" />
+            <div *ngIf="!isImageSource(product.image)" class="product-emoji">{{ product.image || 'IMG' }}</div>
+            <div class="promo-badge" *ngIf="product.isPromotionActive">-{{ product.discountPercent }}%</div>
+            <div class="sold-out" *ngIf="product.stock === 0">Product ended</div>
+          </div>
+
+          <div class="product-body">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            
+            <div class="promo-banner" *ngIf="product.isPromotionActive">
+              <span class="promo-title">Active promotion until {{ formatPromoEndDate(product.promoEndAt) }}</span>
+              <span class="promo-timer">Time left: {{ formatTimeLeft(product.remainingSeconds) }}</span>
+            </div>
+
+            <div class="price-container">
+              <span class="old-price-strikethrough" *ngIf="product.isPromotionActive">{{ product.price }} DT</span>
+              <span class="price-label-small" *ngIf="product.isPromotionActive">A PARTIR DE</span>
+              <span class="big-orange-price">
+                {{ product.isPromotionActive ? product.discountedPrice : product.price }}
+              </span>
+              <span class="currency-label-bold">TND</span>
+            </div>
+
+            <div class="product-metadata">
+              <div class="metadata-item">
+                <span class="meta-label">Stock :</span>
+                <span class="meta-value">{{ product.stock }} items</span>
+              </div>
+              <div class="metadata-item">
+                <span class="meta-label">Dimensions :</span>
+                <span class="meta-value">{{ product.dimensionsLabel || 'N/A' }}</span>
+              </div>
+              <div class="metadata-item">
+                <span class="meta-label">Poids :</span>
+                <span class="meta-value">{{ product.weight ? (product.weight + ' kg') : 'N/A' }}</span>
+              </div>
+            </div>
+          </div>
+
+        </article>
+      </div>
+
+      <ng-template #emptyState>
+        <div class="empty-products">
+          <p>No products for this store.</p>
+          <button *ngIf="canManageProducts" type="button" class="action-button primary" (click)="openAddProduct()">Add first product</button>
+        </div>
+      </ng-template>
+    </section>
+  </main>
+
+  <div class="modal-backdrop" *ngIf="isAddProductOpen">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>New product</h3>
+        <button type="button" class="close-btn" (click)="closeAddProduct()">X</button>
+      </div>
+
+      <div class="modal-body">
+        <label>Nom du produit</label>
+        <input type="text" [(ngModel)]="form.name" placeholder="Nom du produit" />
+        
+        <label>Description</label>
+        <textarea [(ngModel)]="form.description" rows="3" placeholder="Description détaillée"></textarea>
+        
+        <label>Catégorie</label>
+        <select [(ngModel)]="selectedCategoryId">
+          <option [ngValue]="null">Sélectionner une catégorie</option>
+          <option *ngFor="let cat of categoryOptions" [ngValue]="cat.id">{{ cat.name }}</option>
+        </select>
+        <p class="error-text" *ngIf="categoryError">{{ categoryError }}</p>
+
+        <div class="split-row">
+          <div>
+            <label>Prix (DT)</label>
+            <input type="number" min="0" [(ngModel)]="form.price" />
+          </div>
+          <div>
+            <label>Quantité en stock</label>
+            <input type="number" min="0" [(ngModel)]="form.stock" />
+          </div>
+        </div>
+
+        <div class="split-row">
+          <div>
+            <label>Dimensions</label>
+            <input type="text" [(ngModel)]="form.dimensions" placeholder="Ex: 30 x 20 x 10 cm" />
+          </div>
+          <div>
+            <label>Poids (kg)</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.weight" placeholder="Ex: 0.75" />
+          </div>
+        </div>
+
+        <label>Product photo</label>
+        <input type="file" accept="image/*" (change)="onFileSelected($event)" />
+        <p class="error-text" *ngIf="imageError">{{ imageError }}</p>
+        <div class="image-preview" *ngIf="selectedProductImageDataUrl">
+          <img [src]="selectedProductImageDataUrl" alt="Product preview" />
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="action-button ghost" (click)="closeAddProduct()">Cancel</button>
+        <button type="button" class="action-button primary" [disabled]="isSubmitting" (click)="confirmAddProduct()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="isEditProductOpen">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Edit product</h3>
+        <button type="button" class="close-btn" (click)="closeEditProduct()">X</button>
+      </div>
+
+      <div class="modal-body" *ngIf="editingProduct as product">
+        <label>Product name</label>
+        <input type="text" [(ngModel)]="editForm.name" placeholder="Product name" />
+
+        <label>Description</label>
+        <textarea [(ngModel)]="editForm.description" rows="3" placeholder="Description"></textarea>
+
+        <div class="split-row">
+          <div>
+            <label>Price</label>
+            <input type="number" min="0.01" step="0.01" [(ngModel)]="editForm.price" />
+          </div>
+          <div>
+            <label>Stock</label>
+            <input type="number" min="0" step="1" [(ngModel)]="editForm.stock" />
+          </div>
+        </div>
+
+        <div class="split-row">
+          <div>
+            <label>Discount (%)</label>
+            <input type="number" min="0" max="100" step="1" [(ngModel)]="editForm.discountPercent" />
+          </div>
+          <div>
+            <label>Promotion end</label>
+            <input type="datetime-local" [(ngModel)]="editForm.promoEndAt" />
+          </div>
+        </div>
+
+        <div class="split-row">
+          <div>
+            <label>Dimensions</label>
+            <input type="text" [(ngModel)]="editForm.dimensionsLabel" placeholder="Ex: 30 x 20 x 10 cm" />
+          </div>
+          <div>
+            <label>Poids (kg)</label>
+            <input type="number" min="0" step="0.01" [(ngModel)]="editForm.weight" placeholder="Ex: 0.75" />
+          </div>
+        </div>
+
+        <p class="error-text" *ngIf="editError">{{ editError }}</p>
+      </div>
+
+      <div class="modal-actions space-between">
+        <button type="button" class="action-button danger" [disabled]="isSubmittingEdit" (click)="deleteCurrentProduct()">
+          Delete
+        </button>
+        <div class="action-group">
+          <button type="button" class="action-button ghost" (click)="closeEditProduct()">Cancel</button>
+          <button type="button" class="action-button primary" [disabled]="isSubmittingEdit" (click)="confirmEditProduct()">
+            {{ isSubmittingEdit ? 'Processing...' : 'Save' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<app-footer></app-footer>
+

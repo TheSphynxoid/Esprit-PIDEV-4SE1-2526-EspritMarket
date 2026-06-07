@@ -1,0 +1,148 @@
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 p-8">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-4xl font-bold text-primary dark:text-white mb-2">Events Scheduler Dashboard</h1>
+          <p class="text-secondary dark:text-neutral-400">Track event statuses, equipment and stalls availability</p>
+        </div>
+        <button
+          (click)="refresh()"
+          class="btn btn-primary"
+        >
+          🔄 Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center py-12">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p class="mt-4 text-secondary">Loading events...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="alert alert-error mb-6">
+      <div>
+        <span>{{ error }}</span>
+        <button (click)="refresh()" class="btn btn-sm">Retry</button>
+      </div>
+    </div>
+
+    <!-- Events List -->
+    <div *ngIf="!loading && !error && events.length > 0" class="space-y-6">
+      <div *ngFor="let event of events" class="card bg-white dark:bg-neutral-800 shadow-lg">
+        <!-- Event Header -->
+        <div class="card-body">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h2 class="card-title text-2xl text-primary dark:text-white">{{ event.name }}</h2>
+              <div class="flex gap-3 mt-2 flex-wrap">
+                <span class="text-sm text-secondary">📅 {{ event.date | date: 'MMM dd, yyyy' }}</span>
+                <span class="text-sm text-secondary">📍 {{ event.location }}</span>
+                <span class="badge" [class]="event.online ? 'badge-info' : 'badge-warning'">
+                  {{ event.online ? '🌐 Online' : '🏢 In-Person' }}
+                </span>
+                <span class="badge" [class]="getStatusBadgeColor(event.status)">
+                  {{ event.status }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Equipment Section -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-primary dark:text-white mb-3">🛠️ Equipment ({{ event.equipments.length }})</h3>
+            <div *ngIf="event.equipments.length > 0; else noEquipment" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div *ngFor="let equipment of event.equipments" class="p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <p class="font-semibold text-primary dark:text-white">{{ equipment.name }}</p>
+                    <p class="text-sm text-secondary">{{ equipment.type }}</p>
+                  </div>
+                  <span class="badge" [class]="getEquipmentStatusBadgeColor(equipment.status)">
+                    {{ equipment.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ng-template #noEquipment>
+              <p class="text-secondary text-sm italic">No equipment for this event</p>
+            </ng-template>
+          </div>
+
+          <!-- Stalls Section -->
+          <div>
+            <h3 class="text-lg font-semibold text-primary dark:text-white mb-3">🏪 Stalls ({{ event.stalls.length }})</h3>
+            <div *ngIf="event.stalls.length > 0; else noStalls" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div *ngFor="let stall of event.stalls" class="p-3 bg-neutral-100 dark:bg-neutral-700 rounded-lg">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <p class="font-semibold text-primary dark:text-white">{{ stall.name }}</p>
+                    <p class="text-sm text-secondary">Block {{ stall.location }} • #{{ stall.number }}</p>
+                  </div>
+                  <span class="badge" [class]="getStallStatusBadgeColor(stall.status)">
+                    {{ stall.status }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <ng-template #noStalls>
+              <p class="text-secondary text-sm italic">No stalls for this event</p>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ticket Sale Reminders -->
+    <div *ngIf="!loading && ticketReminders.length > 0" class="mt-8 card bg-white dark:bg-neutral-800 shadow-lg">
+      <div class="card-body">
+        <h2 class="text-2xl font-bold text-primary dark:text-white mb-4">🎟️ Ticket Sale Reminders</h2>
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div *ngFor="let reminder of ticketReminders" class="rounded-xl border p-4 bg-neutral-50 dark:bg-neutral-700/40" [class.border-red-300]="reminder.severity === 'danger'" [class.border-amber-300]="reminder.severity === 'warning'" [class.border-blue-300]="reminder.severity === 'info'">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p class="font-semibold text-primary dark:text-white">{{ reminder.title }}</p>
+                <p class="text-sm text-secondary dark:text-neutral-400">{{ reminder.eventName }}</p>
+              </div>
+              <span class="badge" [class.badge-error]="reminder.severity === 'danger'" [class.badge-warning]="reminder.severity === 'warning'" [class.badge-info]="reminder.severity === 'info'">
+                {{ reminder.status }}
+              </span>
+            </div>
+            <p class="text-sm text-primary dark:text-white mb-2">{{ reminder.message }}</p>
+            <p class="text-xs text-secondary dark:text-neutral-400">Remaining tickets: {{ reminder.remainingTickets }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && !error && events.length === 0" class="card bg-white dark:bg-neutral-800 shadow-lg text-center p-12">
+      <p class="text-lg text-secondary">No events found</p>
+      <button (click)="refresh()" class="btn btn-primary mt-4">Try Again</button>
+    </div>
+
+    <!-- Info Section -->
+    <div class="mt-8 alert bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700">
+      <div>
+        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div class="text-sm text-blue-700 dark:text-blue-200">
+          <p><strong>ℹ️ Scheduler Info:</strong></p>
+          <p>• Runs every day at midnight (00:00)</p>
+          <p>• Marks finished events (past date, ONGOING) as FINISHED</p>
+          <p>• Automatically sets equipment and stalls to AVAILABLE</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

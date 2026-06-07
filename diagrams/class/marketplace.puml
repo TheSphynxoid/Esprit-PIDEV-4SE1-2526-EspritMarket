@@ -1,0 +1,124 @@
+@startuml marketplace-class
+
+class User {
+    - id: Long
+    - email: String
+    - password: String
+    - firstName: String
+    - lastName: String
+    - role: UserRole
+    - createdAt: LocalDateTime
+}
+
+class Store {
+    - id: Long
+    - name: String
+    - description: String
+    - logo: String
+    - category: String
+    - phone: String
+    - address: String
+    - createdAt: LocalDateTime
+    + getProducts(): List<Product>
+    + getTotalOrders(): int
+    + getAverageRating(): double
+}
+
+class Product {
+    - id: Long
+    - name: String
+    - description: String
+    - price: double
+    - stock: int
+    - dimensions: String
+    - weight: double
+    - imageUrl: String
+    - category: Category
+    - availability: boolean
+    + updateStock(quantity: int): void
+    + getAverageRating(): double
+}
+
+class Category {
+    - id: Long
+    - name: String
+    - description: String
+}
+
+class Order {
+    - id: Long
+    - orderReference: String
+    - status: OrderStatus
+    - totalAmount: double
+    - createdAt: LocalDateTime
+    + calculateTotal(): double
+    + updateStatus(status: OrderStatus): void
+}
+
+class OrderLine {
+    - id: Long
+    - quantity: int
+    - unitPrice: double
+    + getLineTotal(): double
+}
+
+class Cart {
+    - id: Long
+    + addItem(product: Product, qty: int): void
+    + removeItem(productId: Long): void
+    + getTotal(): double
+}
+
+class CartItem {
+    - id: Long
+    - quantity: int
+}
+
+class SellerRequest {
+    - id: Long
+    - studentNumber: String
+    - verificationMethod: String
+    - status: RequestStatus
+    - submittedAt: LocalDateTime
+}
+
+enum OrderStatus {
+    PENDING
+    PROCESSING
+    SHIPPED
+    DELIVERED
+    CANCELLED
+}
+
+enum UserRole {
+    BUYER
+    SELLER
+    ADMIN
+    COURIER
+    RECRUITER
+    SERVICE_PROVIDER
+}
+
+enum RequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+User "1" -- "0..1" Store : owns >
+User "1" -- "0..*" Order : places >
+User "1" -- "0..1" Cart : has >
+User "1" -- "0..1" SellerRequest : submits >
+
+Store "1" -- "0..*" Product : contains >
+Store "1" -- "0..1" SellerRequest : results from >
+
+Product "1" -- "0..*" OrderLine : appears in >
+Product "1" -- "1" Category : belongs to >
+
+Order "1" -- "1..*" OrderLine : contains >
+
+Cart "1" -- "1..*" CartItem : contains >
+CartItem "1" -- "1" Product : references >
+
+@enduml

@@ -1,0 +1,60 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-6xl mx-auto py-12 px-4">
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-3xl font-bold text-primary dark:text-white">My Favorites</h1>
+      <button class="btn btn-secondary" (click)="router.navigate(['/services'])">Browse Services</button>
+    </div>
+
+    <div *ngIf="isLoading()" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      @for (s of [1,2,3,4,5,6]; track s) {
+        <div class="card card-md flex flex-col gap-3 p-4">
+          <app-skeleton variant="card"></app-skeleton>
+          <app-skeleton variant="text"></app-skeleton>
+          <app-skeleton variant="text" style="width: 60%"></app-skeleton>
+          <div class="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-700">
+            <app-skeleton variant="text" style="width: 40%"></app-skeleton>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div *ngIf="!isLoading() && favorites().length === 0" class="text-center py-20">
+      <p class="text-secondary text-lg mb-4">No favorite services yet.</p>
+      <button class="btn btn-primary" (click)="router.navigate(['/services'])">Browse Services</button>
+    </div>
+
+    <div *ngIf="!isLoading() && favorites().length > 0" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        *ngFor="let service of favorites()"
+        class="group card card-md hover:shadow-lg hover:-translate-y-1 cursor-pointer transition-all duration-300 flex flex-col"
+        (click)="goToServiceDetail(service.id)"
+      >
+        <div *ngIf="service.imageUrl" class="mb-3 rounded-lg overflow-hidden h-40 bg-neutral-100 dark:bg-neutral-700">
+          <img [src]="service.imageUrl" [alt]="service.name" class="w-full h-full object-cover" />
+        </div>
+        <div class="flex items-center gap-2 mb-2">
+          <span class="text-xs px-2 py-1 rounded-full bg-esprit-red/10 text-esprit-red font-semibold">{{ service.category }}</span>
+        </div>
+        <h3 class="text-lg font-bold text-primary dark:text-white mb-1 group-hover:text-esprit-red transition-colors">{{ service.name }}</h3>
+        <p class="text-xs text-secondary mb-2">by {{ service.providerName || 'Provider' }}</p>
+        <p class="text-sm text-secondary mb-4 flex-1">{{ service.description }}</p>
+
+        <div class="flex items-center justify-between border-t border-neutral-200 pt-4">
+          <div class="text-sm">
+            <span class="font-bold text-esprit-red">{{ service.price }} TND{{ service.pricingType === 'HOURLY' ? '/h' : '' }}</span>
+          </div>
+          <button
+            class="btn btn-danger btn-sm"
+            (click)="removeFavorite(service.id, $event)"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

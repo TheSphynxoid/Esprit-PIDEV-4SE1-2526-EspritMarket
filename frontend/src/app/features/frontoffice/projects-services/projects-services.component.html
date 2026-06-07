@@ -1,0 +1,235 @@
+<app-header></app-header>
+
+<div class="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex flex-col transition-colors duration-200">
+  <div class="flex-1 container-wide max-w-5xl mx-auto py-10 px-4">
+
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-primary dark:text-white">Projects</h1>
+        <p class="text-sm text-secondary mt-1">Plan milestones, assign services, and track execution.</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-secondary btn-sm" (click)="goToBookings()">Bookings</button>
+        <button class="btn btn-secondary btn-sm" (click)="goToServices()">Services</button>
+        <button *ngIf="canManageProjects()" class="btn btn-primary btn-sm" (click)="showCreateForm.set(!showCreateForm())">
+          {{ showCreateForm() ? 'Cancel' : '+ New Project' }}
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="error()" class="mb-4 p-3 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg text-sm">{{ error() }}</div>
+    <div *ngIf="success()" class="mb-4 p-3 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg text-sm">{{ success() }}</div>
+
+    <div *ngIf="showCreateForm() && canManageProjects()" class="card card-md mb-6 border-t-2 border-t-esprit-red">
+      <h2 class="text-lg font-semibold text-primary dark:text-white mb-1">{{ editingProjectId() ? 'Edit Project' : 'Create Project' }}</h2>
+      <p class="text-xs text-secondary mb-4">Choose how you want to set up your project.</p>
+
+      <div class="flex gap-3 mb-4">
+        <button (click)="wizardReset(); editingProjectId.set(null)" class="flex-1 p-4 rounded-xl border-2 text-left transition-all" [class]="wizardStep() === 'describe' && !editingProjectId() ? 'border-esprit-red bg-esprit-red/5' : 'border-neutral-200 dark:border-neutral-700 hover:border-esprit-red/40'">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-5 h-5 text-esprit-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-9m2 6l-1 1m-4-4h6m-4-4h6"/></svg>
+            <span class="text-sm font-bold text-primary dark:text-white">AI-Assisted</span>
+          </div>
+          <p class="text-xs text-secondary">Describe your project and AI generates milestones, dependencies & budget estimates</p>
+        </button>
+        <button (click)="wizardStep.set('manual')" class="flex-1 p-4 rounded-xl border-2 text-left transition-all" [class]="editingProjectId() ? 'border-esprit-red bg-esprit-red/5' : 'border-neutral-200 dark:border-neutral-700 hover:border-esprit-red/40'">
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-5 h-5 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+            <span class="text-sm font-bold text-primary dark:text-white">Manual Setup</span>
+          </div>
+          <p class="text-xs text-secondary">Fill in details manually, add services, set dates</p>
+        </button>
+      </div>
+
+      @if (wizardStep() === 'describe' && !editingProjectId()) {
+        <div class="space-y-3">
+          <textarea [value]="wizardDesc()" (input)="wizardDesc.set($any($event.target).value)" rows="4" placeholder="Describe your project in detail... e.g. Build an e-commerce website with payment integration, user accounts, product catalog, admin dashboard, and order tracking. Mobile responsive design with SEO optimization." class="form-input text-sm"></textarea>
+          <button class="btn btn-primary btn-sm" [disabled]="!wizardDesc().trim() || wizardDecomposing()" (click)="wizardAnalyze()">
+            {{ wizardDecomposing() ? 'Analyzing...' : 'Analyze & Generate Workflow' }}
+          </button>
+        </div>
+      } @else if (wizardStep() === 'review' && wizardDecomposition()) {
+        <div class="space-y-3">
+          <div class="grid grid-cols-3 gap-3 p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800">
+            <div class="text-center">
+              <p class="text-[10px] text-secondary uppercase tracking-wide">Est. Budget</p>
+              <p class="text-lg font-bold text-esprit-red">{{ wizardDecomposition().estimatedBudget }} TND</p>
+            </div>
+            <div class="text-center">
+              <p class="text-[10px] text-secondary uppercase tracking-wide">Timeline</p>
+              <p class="text-lg font-bold text-primary dark:text-white">{{ wizardDecomposition().estimatedDays }} days</p>
+            </div>
+            <div class="text-center">
+              <p class="text-[10px] text-secondary uppercase tracking-wide">With Buffer (+20%)</p>
+              <p class="text-lg font-bold text-amber-600 dark:text-amber-400">{{ wizardDecomposition().estimatedBudgetWithBuffer }} TND</p>
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <div *ngFor="let ms of wizardDecomposition().milestones; let i = index" class="flex items-center gap-3 p-2 rounded-lg bg-white dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800">
+              <span class="w-6 h-6 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 text-xs font-bold flex items-center justify-center shrink-0">{{ i + 1 }}</span>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-primary dark:text-white truncate">{{ ms.title }}</p>
+                <p class="text-[10px] text-secondary">{{ ms.services?.length || 0 }} services matched</p>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span *ngIf="ms.estimatedDays" class="text-[10px] text-secondary">{{ ms.estimatedDays }}d</span>
+                <span *ngIf="ms.estimatedCost" class="text-[10px] text-esprit-red font-semibold">{{ ms.estimatedCost }} TND</span>
+              </div>
+              @if (i < wizardDecomposition().milestones.length - 1) {
+                <svg class="w-4 h-4 text-neutral-300 dark:text-neutral-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+              }
+            </div>
+          </div>
+          <p class="text-[10px] text-secondary">Sequential dependencies will be auto-created between all {{ wizardDecomposition().suggestedMilestoneCount }} phases with planned dates.</p>
+          <div class="flex gap-2">
+            <button class="btn btn-secondary btn-sm" (click)="wizardBack()">Back</button>
+            <button class="btn btn-primary btn-sm" [disabled]="wizardCreating()" (click)="wizardCreate()">
+              {{ wizardCreating() ? 'Creating...' : 'Create Project & Workflow' }}
+            </button>
+          </div>
+        </div>
+      } @else if (wizardStep() === 'done') {
+        <div class="text-center py-6">
+          <svg class="w-10 h-10 text-green-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <p class="text-sm font-semibold text-primary dark:text-white mb-1">Project created successfully!</p>
+          <p class="text-xs text-secondary">Redirecting to your project workspace...</p>
+        </div>
+      } @else {
+        <form [formGroup]="projectForm" (ngSubmit)="saveProject()" class="space-y-3">
+          <div class="grid md:grid-cols-2 gap-3">
+            <input formControlName="title" placeholder="Project title" class="form-input" />
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[11px] text-secondary block mb-0.5">Priority</label>
+                <select formControlName="priority" class="form-input text-sm">
+                  <option *ngFor="let p of priorityOptions" [value]="p">{{ p }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-[11px] text-secondary block mb-0.5">Budget (TND)</label>
+                <input type="number" min="0" formControlName="budget" class="form-input text-sm" />
+              </div>
+            </div>
+          </div>
+          <textarea formControlName="details" rows="2" placeholder="Brief description (optional)" class="form-input text-sm"></textarea>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] text-secondary block mb-0.5">Start Date</label>
+              <input type="date" formControlName="startDate" class="form-input text-sm" />
+            </div>
+            <div>
+              <label class="text-[11px] text-secondary block mb-0.5">Estimated End</label>
+              <input type="date" formControlName="estimatedEndDate" class="form-input text-sm" />
+            </div>
+          </div>
+          <div>
+            <label class="text-[11px] text-secondary block mb-1">Services <span class="text-neutral-400">(optional)</span></label>
+            <div class="relative mb-2">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+              <input type="text" class="form-input pl-8 text-sm" placeholder="Search services..."
+                [value]="serviceSearchTerm()"
+                (input)="serviceSearchTerm.set($any($event.target).value)" />
+            </div>
+            <div class="max-h-40 overflow-auto border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900">
+              <div *ngIf="filteredEligibleServices().length === 0" class="p-3 text-xs text-secondary text-center">No services match.</div>
+              <label *ngFor="let service of filteredEligibleServices()"
+                     class="flex items-center gap-2 px-3 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 cursor-pointer border-b border-neutral-100 dark:border-neutral-800 last:border-0">
+                <input type="checkbox" [checked]="isServiceSelected(service.id)" (change)="toggleService(service.id)" class="rounded" />
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm text-primary dark:text-white truncate">{{ service.name }}</p>
+                  <p class="text-[11px] text-secondary truncate">{{ service.category || 'OTHER' }} &middot; {{ service.providerName || 'Provider' }}<span *ngIf="service.price != null"> &middot; {{ service.price }} TND</span></p>
+                </div>
+              </label>
+            </div>
+            <p class="text-[11px] text-neutral-400 mt-1">{{ selectedServiceIds().length }} selected</p>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="projectForm.invalid || isSaving()">
+              {{ isSaving() ? 'Saving...' : editingProjectId() ? 'Update' : 'Create Project' }}
+            </button>
+            <button *ngIf="editingProjectId()" type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()">Cancel</button>
+          </div>
+        </form>
+      }
+    </div>
+
+    <div *ngIf="loading()" class="grid md:grid-cols-2 gap-4">
+      @for (s of [1,2,3]; track s) {
+        <div class="card card-md p-6">
+          <div class="animate-pulse space-y-3">
+            <div class="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+            <div class="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+            <div class="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3"></div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div *ngIf="!loading() && projects().length === 0 && !showCreateForm()" class="text-center py-16">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-esprit-red/10 mb-4">
+        <svg class="w-7 h-7 text-esprit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"/>
+        </svg>
+      </div>
+      <h2 class="text-xl font-semibold text-primary dark:text-white mb-1">No projects yet</h2>
+      <p class="text-sm text-secondary mb-4">Create a project to start planning milestones and booking services.</p>
+      <button class="btn btn-primary btn-sm" (click)="showCreateForm.set(true)">Create your first project</button>
+    </div>
+
+    <div *ngIf="!loading() && projects().length > 0" class="grid md:grid-cols-2 gap-4">
+      <div *ngFor="let project of projects()"
+           class="card card-md p-5 hover:shadow-md transition-shadow group cursor-pointer"
+           (click)="openProject(project.id)">
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div class="flex-1 min-w-0">
+            <h3 class="text-base font-semibold text-primary dark:text-white truncate group-hover:text-esprit-red transition-colors">{{ project.title || 'Untitled Project' }}</h3>
+            <p *ngIf="project.details" class="text-sm text-secondary mt-0.5 line-clamp-2">{{ project.details }}</p>
+          </div>
+          <span class="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase"
+                [ngClass]="{
+                  'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400': project.status === 'COMPLETED',
+                  'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400': project.status === 'IN_PROGRESS',
+                  'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400': project.status === 'CANCELLED',
+                  'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300': !project.status || project.status === 'PLANNED'
+                }">
+            {{ project.status || 'PLANNED' }}
+          </span>
+        </div>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary mb-4">
+          <span *ngIf="project.budget" class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-esprit-red" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            {{ project.budget }} TND
+          </span>
+          <span *ngIf="project.startDate" class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+            {{ project.startDate | date:'shortDate' }}
+          </span>
+          <span *ngIf="project.estimatedEndDate">
+            &rarr; {{ project.estimatedEndDate | date:'shortDate' }}
+          </span>
+          <span *ngIf="(project.members?.length ?? 0) > 0" class="flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/></svg>
+            {{ project.members!.length }} member{{ project.members!.length !== 1 ? 's' : '' }}
+          </span>
+        </div>
+        <div class="flex items-center justify-between pt-3 border-t border-neutral-100 dark:border-neutral-800">
+          <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold"
+                [ngClass]="{
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': project.priority === 'HIGH' || project.priority === 'CRITICAL',
+                  'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': project.priority === 'MEDIUM',
+                  'bg-neutral-100 text-neutral-600 dark:bg-neutral-700 dark:text-neutral-300': project.priority === 'LOW'
+                }">
+            {{ project.priority || 'MEDIUM' }}
+          </span>
+          <div class="flex gap-1" (click)="$event.stopPropagation()">
+            <button *ngIf="isProjectOwner(project)" class="text-xs text-secondary hover:text-esprit-red transition-colors px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="editProject(project)">Edit</button>
+            <button *ngIf="isProjectOwner(project)" class="text-xs text-secondary hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800" (click)="deleteProject(project)">Delete</button>
+            <button class="btn btn-primary btn-sm text-xs" (click)="openProject(project.id)">Open</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-footer></app-footer>

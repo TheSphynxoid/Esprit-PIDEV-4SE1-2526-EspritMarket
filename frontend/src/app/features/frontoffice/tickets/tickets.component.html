@@ -1,0 +1,572 @@
+<app-header></app-header>
+
+<main class="min-h-screen bg-neutral-100 dark:bg-neutral-900 py-10 px-4 transition-colors duration-200">
+  <div *ngIf="hasLowStockAlert" class="ticket-toast-wrap">
+    <div class="ticket-toast-card">
+      <div class="flex items-start justify-between gap-3 mb-2">
+        <p class="text-sm font-bold text-orange-700">⚠ Ticket Alert (10 or less remaining)</p>
+        <button
+          type="button"
+          (click)="dismissLowStockAlert()"
+          class="ticket-toast-close"
+          aria-label="Close alert"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="space-y-2 max-h-52 overflow-auto pr-1">
+        <div *ngFor="let event of lowStockEvents" class="ticket-toast-item">
+          <p class="text-sm font-semibold text-primary dark:text-white">{{ event.name }}</p>
+          <p class="text-xs text-orange-700">{{ getEventRemainingTickets(event.id) }} ticket(s) remaining</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto">
+    <!-- Page Title -->
+    <div class="mb-10">
+      <h1 class="text-4xl font-bold text-primary dark:text-white mb-3">🎟️ Buy Your Tickets</h1>
+      <p class="text-lg text-secondary dark:text-neutral-300">Reserve your seats for in-person ESPRIT events</p>
+    </div>
+
+    <!-- Promo Section -->
+    <section id="promo" class="mb-10 overflow-hidden rounded-3xl border border-esprit-red/20 bg-gradient-to-br from-white via-esprit-50/50 to-esprit-red/10 dark:from-neutral-800 dark:via-neutral-800 dark:to-esprit-red/10 shadow-xl">
+      <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 items-center p-6 md:p-8">
+        <div class="space-y-5">
+          <span class="inline-flex items-center rounded-full bg-esprit-red text-white px-4 py-1.5 text-xs font-semibold tracking-wide uppercase">
+            Ticket Promo 2026 Tunisia
+          </span>
+          <div class="space-y-3">
+            <h2 class="text-3xl md:text-4xl font-bold text-primary dark:text-white leading-tight">
+              Plan your outings with Tunisia's 2026 holidays calendar
+            </h2>
+            <p class="text-base md:text-lg text-secondary dark:text-neutral-300 max-w-2xl leading-relaxed">
+              Tunisia's official calendar helps you identify good weekends and holidays to reserve your tickets at the best time.
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-3">
+            <a href="#events" class="btn btn-esprit-red text-white rounded-xl px-6 py-3 font-semibold transition-all duration-300 hover:shadow-lg">
+              View events
+            </a>
+            <a
+              [href]="promoCalendarUrl"
+              target="_blank"
+              rel="noreferrer"
+              class="btn btn-secondary border-2 border-esprit-red text-esprit-red rounded-xl px-6 py-3 font-semibold transition-all duration-300 hover:bg-esprit-red/5"
+            >
+              Open calendar
+            </a>
+          </div>
+
+          <div class="grid sm:grid-cols-3 gap-3 text-sm">
+            <div class="rounded-2xl bg-white/80 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-700 p-4">
+              <p class="font-semibold text-primary dark:text-white">2026 Holidays</p>
+              <p class="text-secondary dark:text-neutral-400 mt-1">Spot key dates at a glance.</p>
+            </div>
+            <div class="rounded-2xl bg-white/80 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-700 p-4">
+              <p class="font-semibold text-primary dark:text-white">In-person Tickets</p>
+              <p class="text-secondary dark:text-neutral-400 mt-1">Quick booking from this page.</p>
+            </div>
+            <div class="rounded-2xl bg-white/80 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-700 p-4">
+              <p class="font-semibold text-primary dark:text-white">Source Link</p>
+              <p class="text-secondary dark:text-neutral-400 mt-1 break-words">calculatorian.com/fr/time-and-date/year-calendar/tn/all/2026</p>
+            </div>
+          </div>
+        </div>
+
+        <a
+          [href]="promoCalendarUrl"
+          target="_blank"
+          rel="noreferrer"
+          class="group block"
+        >
+          <div class="overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-2xl">
+            <img
+              [src]="promoCalendarImageUrl"
+              alt="Calendrier 2026 de la Tunisie avec jours fériés"
+              class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+            />
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Search Bar -->
+    <div class="mb-8">
+      <div class="flex gap-3">
+        <input
+          type="text"
+          placeholder="Search by event, location or date..."
+          [(ngModel)]="searchQuery"
+          class="input flex-1 rounded-lg"
+        />
+        <button 
+          *ngIf="searchQuery" 
+          type="button" 
+          (click)="clearSearch()" 
+          class="btn btn-secondary rounded-lg px-4"
+        >
+          ✕ Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- Events Grid -->
+    <div id="events" class="mb-10">
+      <h2 class="text-2xl font-bold text-primary dark:text-white mb-6">Available Events</h2>
+      
+      <div *ngIf="filteredEvents.length === 0" class="card card-lg text-center py-12">
+        <p class="text-lg text-secondary">No events found</p>
+      </div>
+
+      <div 
+        *ngIf="filteredEvents.length > 0" 
+        class="space-y-6"
+      >
+        <div 
+          *ngFor="let event of filteredEvents" 
+          class="card card-lg ticket-event-card group transition-all duration-300 relative"
+        >
+          <div
+            *ngIf="getEventRemainingTickets(event.id) > 0 && getEventRemainingTickets(event.id) <= 10"
+            class="absolute top-3 right-3 inline-flex items-center rounded-full bg-orange-500 text-white px-3 py-1 text-xs font-bold shadow-sm"
+          >
+            ⚠ Only {{ getEventRemainingTickets(event.id) }} left
+          </div>
+
+          <div
+            *ngIf="getEventRemainingTickets(event.id) <= 0"
+            class="absolute top-3 right-3 inline-flex items-center rounded-full bg-red-600 text-white px-3 py-1 text-xs font-bold shadow-sm"
+          >
+            ⛔ Sold out
+          </div>
+
+          <div class="mb-4">
+            <div class="text-5xl mb-3">🎪</div>
+            <h3 class="text-xl font-bold text-primary dark:text-white mb-2">{{ event.name }}</h3>
+          </div>
+
+          <div class="space-y-2 mb-6 text-sm text-secondary dark:text-neutral-400">
+            <div class="flex items-center gap-2">
+              <span>📅</span>
+              <span>{{ event.date | date:'mediumDate' }}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span>📍</span>
+              <span>{{ event.location }}</span>
+            </div>
+            <div
+              class="flex items-center gap-2"
+              [class.text-orange-600]="getEventRemainingTickets(event.id) > 0 && getEventRemainingTickets(event.id) <= 10"
+              [class.text-red-600]="getEventRemainingTickets(event.id) <= 0"
+            >
+              <span>🎟️</span>
+              <span>{{ getEventRemainingTickets(event.id) }} / {{ event.nbTickets }} available</span>
+            </div>
+            <div class="ticket-stock-track mt-2">
+              <div
+                class="ticket-stock-fill transition-all duration-300"
+                [class.bg-green-500]="getEventRemainingTickets(event.id) > 10"
+                [class.bg-orange-500]="getEventRemainingTickets(event.id) > 0 && getEventRemainingTickets(event.id) <= 10"
+                [class.bg-red-500]="getEventRemainingTickets(event.id) <= 0"
+                [style.width.%]="getEventSoldPercentage(event.id)">
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3">
+            <button
+              type="button"
+              [class.btn-esprit-red]="ticketSelectedEventId === event.id"
+              [class.ticket-outline-button]="ticketSelectedEventId !== event.id"
+              [class.text-white]="ticketSelectedEventId === event.id"
+              [disabled]="getEventRemainingTickets(event.id) <= 0"
+              [class.opacity-50]="getEventRemainingTickets(event.id) <= 0"
+              [class.cursor-not-allowed]="getEventRemainingTickets(event.id) <= 0"
+              class="w-full btn rounded-2xl font-semibold transition-all duration-300"
+              (click)="selectEventForTicket(event.id)"
+            >
+              {{ getEventRemainingTickets(event.id) <= 0 ? '❌ Tickets sold out' : (ticketSelectedEventId === event.id ? '✓ Selected' : 'Select') }}
+            </button>
+
+            <div *ngIf="isPromoEvent(event)" class="flex flex-col gap-2 rounded-2xl border border-[#FFC107]/35 bg-white/90 p-3 shadow-sm dark:border-[#FFC107]/20 dark:bg-neutral-800/90">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between gap-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-secondary dark:text-neutral-400">Promo</p>
+                  <span class="inline-flex items-center rounded-full bg-[#FFC107]/20 px-3 py-1 text-xs font-bold text-[#8A5B00]">
+                    -{{ getPromoPercent(event) }}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  step="5"
+                  [(ngModel)]="promoDiscountPercentByEventId[event.id]"
+                  (ngModelChange)="setPromoPercent(event.id, $event)"
+                  class="promo-slider w-full"
+                />
+                <div class="flex items-center justify-between text-[11px] text-secondary dark:text-neutral-400">
+                  <span>0%</span>
+                  <span>100%</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                [disabled]="promoSelectionSubmittingEventId === event.id"
+                class="promo-action-button w-full rounded-2xl px-4 py-2 text-sm transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-60"
+                (click)="applyPromoForEvent(event)"
+              >
+                {{ promoSelectionSubmittingEventId === event.id ? 'Sending...' : getPromoButtonLabel(event) }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purchase Section -->
+    <div *ngIf="ticketSelectedEventId !== null" class="card card-lg bg-gradient-to-r from-esprit-red/10 to-esprit-700/10 dark:from-esprit-red/20 dark:to-esprit-700/20 mb-10 border-2 border-esprit-red/30">
+      <h3 class="text-2xl font-bold text-primary dark:text-white mb-6">💳 Complete your purchase</h3>
+      
+      <div class="bg-white dark:bg-neutral-800 rounded-lg p-6 mb-6">
+        <div class="mb-4">
+          <p class="text-sm text-secondary dark:text-neutral-400 mb-1">Selected event</p>
+          <p class="text-xl font-bold text-primary dark:text-white">
+            {{ selectedEventName }}
+          </p>
+          <p *ngIf="activePromoOffer" class="text-sm font-semibold text-emerald-600 mt-2">
+            Active promo: {{ activePromoOffer.label }} -{{ activePromoOffer.discountRate * 100 }}%
+          </p>
+          <p class="text-sm mt-2" [class.text-red-600]="isSelectedEventSoldOut" [class.text-green-600]="!isSelectedEventSoldOut">
+            Max tickets: {{ selectedEventMaxTickets }} | Sold: {{ selectedEventSoldTickets }} | Remaining: {{ selectedEventRemainingTickets }}
+          </p>
+          <p *ngIf="isSelectedEventSoldOut" class="text-sm text-red-600 font-semibold mt-2">
+            All tickets for this event are sold out.
+          </p>
+        </div>
+      </div>
+
+      <!-- Seat map -->
+      <div class="seat-booking-panel mb-6">
+        <div class="seat-booking-main">
+          <div class="seat-booking-header">
+            <div>
+              <p class="seat-kicker">SEATING PLAN</p>
+              <h4 class="text-2xl font-bold text-white">Select your seats</h4>
+            </div>
+            <div class="seat-legend">
+              <span class="legend-item"><span class="legend-box seat-free"></span> Available</span>
+              <span class="legend-item"><span class="legend-box seat-reserved"></span> Reserved</span>
+              <span class="legend-item"><span class="legend-box seat-sold"></span> Sold</span>
+              <span class="legend-item"><span class="legend-box seat-selected"></span> Your selection</span>
+            </div>
+          </div>
+
+          <div class="screen-wrap">
+            <div class="screen-arc"></div>
+            <div class="screen-label">ÉCRAN</div>
+          </div>
+
+          <p class="seat-row-help">
+            Rows: <strong>A</strong> = closest seats to the screen, <strong>J</strong> = furthest from the screen.
+          </p>
+
+          <div class="seat-grid theatre-grid">
+            <div class="seat-row theatre-row" *ngFor="let row of seatRows">
+              <span class="row-label">Row {{ row }}</span>
+              <button
+                type="button"
+                class="seat-button"
+                *ngFor="let c of seatColumns"
+                [ngClass]="getSeatClass(getSeatByPosition(row, c))"
+                (click)="selectSeat(getSeatByPosition(row, c))"
+                [attr.aria-label]="'Seat ' + row + c"
+              >
+                {{ c }}
+              </button>
+            </div>
+          </div>
+
+          <div class="seat-booking-info">
+            <p class="seat-info-title">INFORMATION</p>
+            <ul>
+              <li>Please select your seats from the seating plan.</li>
+              <li>Your seats are reserved for 10 minutes.</li>
+              <li>Seats reserved by others are automatically released after the time limit expires.</li>
+            </ul>
+          </div>
+        </div>
+
+        <aside class="seat-booking-sidebar">
+          <div *ngIf="selectedEvent" class="event-summary-card">
+            <div class="event-summary-top">
+              <div class="event-poster">🎬</div>
+              <div>
+                <h5 class="event-title">{{ selectedEvent.name }}</h5>
+                <p class="event-meta">Today - {{ selectedEvent.date | date:'HH:mm' }}</p>
+                <p class="event-meta">{{ selectedEvent.location }}</p>
+                <p class="event-meta">Room 5</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-block">
+            <p class="sidebar-heading">YOUR SEATS</p>
+            <div *ngIf="selectedSeats.length === 0" class="sidebar-empty">No seat selected</div>
+            <div class="seat-chip-list" *ngIf="selectedSeats.length > 0">
+              <span class="seat-chip" *ngFor="let s of selectedSeats">{{ s.row }}{{ s.col }}</span>
+            </div>
+            <div class="seat-mini-note" *ngIf="selectedSeats.length > 0">
+              Reservation active for {{ getReservationCountdownLabel() }}
+            </div>
+          </div>
+
+          <div class="sidebar-block">
+            <p class="sidebar-heading">SUMMARY</p>
+            <div class="recap-row">
+              <span>{{ bookingQuantity }} Seats</span>
+              <strong>{{ totalTicketPrice | number:'1.2-2' }} DT</strong>
+            </div>
+            <div class="recap-row subtle">
+              <span>Booking fee</span>
+              <strong>1,000 DT</strong>
+            </div>
+            <div class="recap-row total-row">
+              <span>TOTAL</span>
+              <strong>{{ (totalTicketPrice + 1) | number:'1.2-2' }} DT</strong>
+            </div>
+          </div>
+
+          <div class="sidebar-block countdown-block">
+            <p class="sidebar-heading">YOUR RESERVATION EXPIRES IN</p>
+            <div class="countdown-value">{{ getReservationCountdownLabel() }}</div>
+          </div>
+
+          <button 
+            type="button" 
+            class="continue-button"
+            [disabled]="isSelectedEventSoldOut || bookingQuantity <= 0"
+            [class.opacity-50]="isSelectedEventSoldOut || bookingQuantity <= 0"
+            [class.cursor-not-allowed]="isSelectedEventSoldOut || bookingQuantity <= 0"
+            (click)="selectedSeats.length > 0 ? confirmSelectedSeats() : buyTickets()"
+          >
+            {{ isSelectedEventSoldOut ? '❌ Full' : 'CONTINUE' }}
+          </button>
+
+          <button
+            type="button"
+            class="cancel-button"
+            (click)="clearSelectedSeats()"
+          >
+            CANCEL RESERVATION
+          </button>
+        </aside>
+      </div>
+
+      <div *ngIf="selectedSeats.length === 0" class="space-y-4">
+        <div class="flex flex-col md:flex-row gap-4 items-end">
+          <div class="form-group flex-1">
+            <label class="block text-sm font-medium text-primary dark:text-white mb-2">
+              Ticket type
+            </label>
+            <select
+              [(ngModel)]="ticketType"
+              (change)="onTicketTypeChange(ticketType)"
+              class="input w-full rounded-lg"
+            >
+              <option value="STUDENT">🎓 STUDENT - {{ ticketPrices['STUDENT'] }} DT</option>
+              <option value="REGULAR">🎟️ REGULAR - {{ ticketPrices['REGULAR'] }} DT</option>
+              <option value="VIP">⭐ VIP - {{ ticketPrices['VIP'] }} DT</option>
+            </select>
+          </div>
+
+          <div class="form-group flex-1">
+            <label class="block text-sm font-medium text-primary dark:text-white mb-2">
+              Number of tickets
+            </label>
+            <input
+              type="number"
+              min="1"
+              [max]="selectedEventRemainingTickets"
+              [(ngModel)]="ticketQuantity"
+              [disabled]="isSelectedEventSoldOut"
+              class="input w-full rounded-lg"
+            />
+            <p class="text-xs text-secondary dark:text-neutral-400 mt-1">Maximum allowed now: {{ selectedEventRemainingTickets }}</p>
+          </div>
+
+          <div class="form-group">
+            <div class="text-right">
+              <p class="text-sm text-secondary dark:text-neutral-400 mb-2">Total price</p>
+              <p *ngIf="activePromoOffer" class="text-xs text-secondary dark:text-neutral-400 line-through">
+                {{ currentBasePrice * ticketQuantity | number:'1.2-2' }} DT
+              </p>
+              <p class="text-2xl font-bold text-esprit-red">{{ totalTicketPrice | number:'1.2-2' }} DT</p>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          type="button" 
+          class="btn btn-esprit-red text-white text-lg w-full md:w-auto px-8 py-3 rounded-lg font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+          [disabled]="isSelectedEventSoldOut || ticketQuantity <= 0"
+          [class.opacity-50]="isSelectedEventSoldOut || ticketQuantity <= 0"
+          [class.cursor-not-allowed]="isSelectedEventSoldOut || ticketQuantity <= 0"
+          (click)="selectedSeats.length > 0 ? confirmSelectedSeats() : buyTickets()"
+          >
+            {{ isSelectedEventSoldOut ? '❌ Full' : (selectedSeats.length > 0 ? '➡ Continue (reserve ' + selectedSeats.length + ')' : ('🎟️ Buy ' + ticketQuantity + ' ticket(s)')) }}
+        </button>
+      </div>
+
+      <div *ngIf="selectedSeats.length > 0" class="mt-4 rounded-2xl border border-dashed border-esprit-red/30 bg-esprit-red/5 px-4 py-3 text-sm text-secondary dark:text-neutral-300">
+        You are in seat selection mode. The number of tickets is now calculated from selected seats, not from the quantity field.
+      </div>
+    </div>
+
+    <!-- Ticket Stats By Type -->
+    <div *ngIf="ticketSelectedEventId !== null" class="card card-lg mb-10">
+      <h3 class="text-2xl font-bold text-primary dark:text-white mb-6">📊 Ticket statistics by type</h3>
+
+      <div *ngIf="selectedEventTypeStatsTotal === 0" class="text-sm text-secondary dark:text-neutral-400">
+        No tickets sold for this event.
+      </div>
+
+      <div *ngIf="selectedEventTypeStatsTotal > 0" class="grid lg:grid-cols-2 gap-8 items-center">
+        <div class="flex flex-col items-center justify-center">
+          <div class="ticket-pie-chart-wrap">
+            <div class="ticket-pie-chart" [style.background]="selectedEventPieBackground"></div>
+          </div>
+          <p class="text-sm text-secondary dark:text-neutral-400 mt-4">
+            Total sold: <span class="font-semibold text-primary dark:text-white">{{ selectedEventTypeStatsTotal }}</span>
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <div *ngFor="let stat of selectedEventTypeStats" class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <div class="flex items-center gap-2">
+                <span
+                  class="legend-color"
+                  [class.legend-vip]="stat.type === 'VIP'"
+                  [class.legend-regular]="stat.type === 'REGULAR'"
+                  [class.legend-student]="stat.type === 'STUDENT'"
+                ></span>
+                <p class="text-lg font-bold text-primary dark:text-white">{{ stat.type }}</p>
+              </div>
+            </div>
+            <p class="text-sm">Quantité: <span class="font-semibold">{{ stat.quantity }}</span></p>
+            <p class="text-sm">Revenu: <span class="font-semibold">{{ stat.revenue | number:'1.2-2' }} DT</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Purchased Tickets Section -->
+    <div class="card card-lg">
+      <h2 class="text-2xl font-bold text-primary dark:text-white mb-6">📋 Your purchased tickets</h2>
+
+      <div *ngIf="purchasedTickets.length > 0" class="mb-8 grid lg:grid-cols-2 gap-8 items-center rounded-lg border border-neutral-200 dark:border-neutral-700 p-6">
+        <div class="flex flex-col items-center justify-center">
+          <div class="ticket-pie-chart-wrap">
+            <div class="ticket-pie-chart" [style.background]="purchasedPieBackground"></div>
+          </div>
+          <p class="text-sm text-secondary dark:text-neutral-400 mt-4">
+            Total tickets sold: <span class="font-semibold text-primary dark:text-white">{{ purchasedTypeStatsTotal }}</span>
+          </p>
+        </div>
+
+        <div class="space-y-3">
+          <h3 class="text-lg font-bold text-primary dark:text-white">Distribution by type</h3>
+          <div *ngFor="let stat of purchasedTypeStats" class="rounded-lg border border-neutral-200 dark:border-neutral-700 p-4">
+            <div class="flex items-center justify-between gap-3 mb-2">
+              <div class="flex items-center gap-2">
+                <span
+                  class="legend-color"
+                  [class.legend-vip]="stat.type === 'VIP'"
+                  [class.legend-regular]="stat.type === 'REGULAR'"
+                  [class.legend-student]="stat.type === 'STUDENT'"
+                ></span>
+                <p class="text-base font-bold text-primary dark:text-white">{{ stat.type }}</p>
+              </div>
+            </div>
+            <p class="text-sm">Quantity: <span class="font-semibold">{{ stat.quantity }}</span></p>
+            <p class="text-sm">Revenue: <span class="font-semibold">{{ stat.revenue | number:'1.2-2' }} DT</span></p>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="purchasedTickets.length === 0" class="text-center py-12">
+        <p class="text-lg text-secondary dark:text-neutral-400">No tickets purchased yet.</p>
+        <p class="text-sm text-secondary dark:text-neutral-400 mt-2">Select an event above to buy your tickets.</p>
+      </div>
+
+      <div *ngIf="purchasedTickets.length > 0" class="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-700">
+        <table class="w-full text-sm">
+          <thead class="bg-neutral-100 dark:bg-neutral-800">
+            <tr>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Purchase date</th>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Event</th>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Type</th>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Quantity</th>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Unit price</th>
+              <th class="text-left px-4 py-4 font-semibold text-primary dark:text-white">Total</th>
+              <th class="text-center px-4 py-4 font-semibold text-primary dark:text-white">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ticket of purchasedTickets" class="border-t border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+              <td class="px-4 py-4 text-secondary dark:text-neutral-400">
+                {{ ticket.purchasedAt | date:'short' }}
+              </td>
+              <td class="px-4 py-4 font-medium text-primary dark:text-white">
+                {{ ticket.eventName }}
+              </td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold"
+                  [class.bg-blue-50]="ticket.type === 'STUDENT'"
+                  [class.dark:bg-blue-900/30]="ticket.type === 'STUDENT'"
+                  [class.text-blue-700]="ticket.type === 'STUDENT'"
+                  [class.dark:text-blue-400]="ticket.type === 'STUDENT'"
+                  [class.bg-orange-50]="ticket.type === 'REGULAR'"
+                  [class.dark:bg-orange-900/30]="ticket.type === 'REGULAR'"
+                  [class.text-orange-700]="ticket.type === 'REGULAR'"
+                  [class.dark:text-orange-400]="ticket.type === 'REGULAR'"
+                  [class.bg-purple-50]="ticket.type === 'VIP'"
+                  [class.dark:bg-purple-900/30]="ticket.type === 'VIP'"
+                  [class.text-purple-700]="ticket.type === 'VIP'"
+                  [class.dark:text-purple-400]="ticket.type === 'VIP'">
+                  <span *ngIf="ticket.type === 'STUDENT'">🎓 STUDENT</span>
+                  <span *ngIf="ticket.type === 'REGULAR'">🎟️ REGULAR</span>
+                  <span *ngIf="ticket.type === 'VIP'">⭐ VIP</span>
+                </span>
+              </td>
+              <td class="px-4 py-4 font-medium text-primary dark:text-white">
+                {{ ticket.quantity }}
+              </td>
+              <td class="px-4 py-4 text-primary dark:text-white font-semibold">
+                {{ ticket.price | number:'1.2-2' }} DT
+              </td>
+              <td class="px-4 py-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-esprit-red/10 text-esprit-red dark:bg-esprit-red/20 dark:text-esprit-400 font-semibold">
+                  {{ ticket.totalPrice | number:'1.2-2' }} DT
+                </span>
+              </td>
+              <td class="px-4 py-4 text-center">
+                <span class="inline-flex items-center px-3 py-1 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-semibold">
+                  ✓ Confirmed
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<app-footer></app-footer>

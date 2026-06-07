@@ -1,0 +1,59 @@
+<div class="schedule-editor">
+  <div class="grid-header">
+    <span class="col-day">Day</span>
+    <span class="col-active" brnTooltip="Enable or disable this day">Active</span>
+    <span class="col-time">Start</span>
+    <span class="col-time">End</span>
+    <span class="col-action"></span>
+  </div>
+
+  @for (row of rows(); track row.dayOfWeek) {
+    <div class="grid-row" [class.inactive]="!row.active">
+      <span class="col-day">
+        <span class="day-label" [class.active-label]="row.active">{{ row.label }}</span>
+      </span>
+      <span class="col-active">
+        <label class="toggle">
+          <input type="checkbox" [checked]="row.active" (change)="toggleDay($index)" />
+          <span class="toggle-slider"></span>
+        </label>
+      </span>
+      <span class="col-time">
+        <input type="time" class="time-input"
+          [value]="row.startHour"
+          (input)="updateRow($index, 'startHour', $any($event.target).value)"
+          [disabled]="!row.active" />
+      </span>
+      <span class="col-time">
+        <input type="time" class="time-input"
+          [value]="row.endHour"
+          (input)="updateRow($index, 'endHour', $any($event.target).value)"
+          [disabled]="!row.active" />
+      </span>
+      <span class="col-action">
+        <button *ngIf="row.active" class="btn-copy"
+          brnTooltip="Apply this time to all active days"
+          (click)="applyToAllActive($index)">&#x2398;</button>
+      </span>
+    </div>
+  }
+
+  <div class="settings-row">
+    <div class="setting" brnTooltip="Length of each bookable time slot">
+      <label class="setting-label">Slot Duration</label>
+      <div class="setting-input-group">
+        <input type="number" class="setting-input" min="15" step="15"
+          [value]="slotDuration()" (input)="slotDuration.set(+$any($event.target).value)" />
+        <span class="setting-unit">min</span>
+      </div>
+    </div>
+    <div class="setting" brnTooltip="How many bookings can overlap in the same slot">
+      <label class="setting-label">Max Concurrent</label>
+      <input type="number" class="setting-input" min="1" max="100"
+        [value]="maxConcurrent()" (input)="maxConcurrent.set(+$any($event.target).value)" />
+    </div>
+    <button class="btn btn-save" (click)="save()" [disabled]="!hasActiveDays() || saving()">
+      {{ saving() ? 'Saving...' : 'Save Schedule' }}
+    </button>
+  </div>
+</div>

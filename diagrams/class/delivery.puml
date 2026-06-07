@@ -1,0 +1,115 @@
+@startuml delivery-class
+
+class User {
+    - id: Long
+    - email: String
+    - firstName: String
+    - lastName: String
+    - role: UserRole
+}
+
+class CourierProfile {
+    - id: Long
+    - driverLicense: String
+    - phone: String
+    - quizScore: double
+    - interviewStatus: InterviewStatus
+    - isApproved: boolean
+    + activate(): void
+}
+
+class Vehicle {
+    - id: Long
+    - type: VehicleType
+    - licensePlate: String
+    - capacity: double
+    - isAvailable: boolean
+    + markUnavailable(): void
+}
+
+class DeliveryRequest {
+    - id: Long
+    - pickupAddress: String
+    - deliveryAddress: String
+    - packageWeight: double
+    - packageDimensions: String
+    - deliveryMethod: DeliveryMethod
+    - status: DeliveryStatus
+    - createdAt: LocalDateTime
+    + calculateDistance(): double
+}
+
+class DeliveryOrder {
+    - id: Long
+    - deliveryFee: double
+    - estimatedTime: int
+    - distance: double
+    - status: DeliveryStatus
+    - assignedAt: LocalDateTime
+    - deliveredAt: LocalDateTime
+    + complete(): void
+}
+
+class DeliveryTracking {
+    - id: Long
+    - latitude: double
+    - longitude: double
+    - updatedAt: LocalDateTime
+    + updateLocation(lat: double, lng: double): void
+}
+
+class DeliveryReview {
+    - id: Long
+    - rating: int
+    - comment: String
+    - createdAt: LocalDateTime
+}
+
+class DeliveryPricing {
+    - baseFee: double
+    - pricePerKm: double
+    - weightMultiplier: double
+    - demandFactor: double
+    + calculate(distance: double, weight: double): double
+}
+
+enum VehicleType {
+    BICYCLE
+    MOTORCYCLE
+    CAR
+    VAN
+}
+
+enum DeliveryStatus {
+    PENDING
+    ASSIGNED
+    IN_TRANSIT
+    DELIVERED
+    CANCELLED
+}
+
+enum InterviewStatus {
+    PENDING
+    PASSED
+    FAILED
+}
+
+enum DeliveryMethod {
+    STANDARD
+    EXPRESS
+}
+
+User "1" -- "0..1" CourierProfile : has >
+CourierProfile "1" -- "0..*" Vehicle : owns >
+User "1" -- "0..*" DeliveryRequest : creates >
+User "1" -- "0..*" DeliveryOrder : receives >
+User "1" -- "0..*" DeliveryReview : writes >
+
+DeliveryRequest "1" -- "0..1" DeliveryOrder : becomes >
+DeliveryRequest "1" --> DeliveryPricing : uses >
+
+DeliveryOrder "1" -- "1" CourierProfile : assigned to >
+DeliveryOrder "1" -- "1" Vehicle : uses >
+DeliveryOrder "1" -- "0..*" DeliveryTracking : tracked by >
+
+@enduml

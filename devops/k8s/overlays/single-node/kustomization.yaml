@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: esprit-market
+
+resources:
+  - ../../namespace.yaml
+  - ../../cert-issuer.yaml
+  - ../../backend/backend-configmap.yaml
+  - ../../backend/backend-secret.yaml
+  - ../../backend/postgres.yaml
+  - ../../backend/backend-deployment.yaml
+  - ../../backend/backend-service.yaml
+  - ../../frontend/frontend-configmap.yaml
+  - ../../frontend/frontend-deployment.yaml
+  - ../../frontend/frontend-service.yaml
+  - ../../monitoring/prometheus-config.yaml
+  - ../../monitoring/prometheus.yaml
+  - ../../network-policy.yaml
+  - ../../ingress.yaml
+
+images:
+  - name: thesphynx2000/espritmarket-backend
+    newTag: latest
+  - name: thesphynx2000/espritmarket-frontend
+    newTag: latest
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: esprit-market-backend
+      spec:
+        replicas: 1
+        template:
+          spec:
+            affinity: null
+
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: esprit-market-frontend
+      spec:
+        replicas: 1
+        template:
+          spec:
+            affinity: null

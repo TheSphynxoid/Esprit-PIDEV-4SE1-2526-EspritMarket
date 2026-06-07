@@ -1,0 +1,48 @@
+@startuml delivery-sequence-create-delivery
+title Delivery: Create a Delivery Request
+
+actor User
+participant "Frontend\n(Angular)" as FE
+participant "Backend API\n(Spring Boot)" as API
+participant "Pricing Engine" as PRICING
+participant "Vehicle Service" as VEHICLE
+participant "Assignment Service" as ASSIGN
+database "PostgreSQL" as DB
+
+User -> FE: Navigate to "Create Delivery"
+FE -> API: GET /api/orders (user's orders)
+API -> DB: SELECT orders WHERE userId = ?
+DB --> API: Order list
+API --> FE: 200 OK (orders)
+FE --> User: Display order selection
+
+User -> FE: Select order and\ndelivery address
+FE -> API: POST /api/deliveries/initiate\n{orderId, addressId}
+API -> DB: SELECT order, address
+DB --> API: Order + address data
+
+API -> PRICING: calculate(order, address)
+PRICING -> PRICING: compute distance\nweight, dimensions
+PRICING --> API: price = 12.50 TND
+
+API -> VEHICLE: findBestVehicle(weight, dimensions, distance)
+VEHICLE -> DB: SELECT vehicles\nWHERE capacity >= ? AND available
+DB --> VEHICLE: Matching vehicles
+VEHICLE --> API: vehicleId = 42 (motorcycle)
+
+API --> FE: 200 OK\n{price: 12.50, vehicle: motorcycle, estimatedTime: 45min}
+FE --> User: Display delivery summary\nwith cost and vehicle type
+
+User -> FE: Select payment method\nand confirm
+FE -> API: POST /api/deliveries/confirm\n{deliveryRequestId, paymentMethod}
+API -> DB: INSERT delivery_request\nSET status = PENDING
+
+API -> ASSIGN: assignCourier(vehicleId, zone)
+ASSIGN -> DB: SELECT courier_profiles\nWHERE approved = true AND zone = ?
+DB --> ASSIGN: Available couriers
+ASSIGN -> DB: UPDATE delivery_request\nSET courierId = ?, status = ASSIGNED
+ASSIGN --> API: Courier assigned (courierId = 7)
+
+API --> FE: 201 Created (deliveryReference)
+FE --> User: Delivery confirmation\ndisplayed with tracking reference
+@enduml

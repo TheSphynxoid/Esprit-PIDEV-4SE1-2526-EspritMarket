@@ -1,0 +1,122 @@
+.vs-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+  width: 100%;
+}
+
+
+.vs-head h1 {
+  margin: 0 0 0.5rem;
+}
+
+.vs-head p {
+  margin: 0 0 1.25rem;
+  color: #475569;
+}
+
+.vs-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+.vs-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vs-btn {
+  border: none;
+  background: #0f766e;
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.vs-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vs-error {
+  color: #b91c1c;
+}
+
+.vs-preview {
+  border: 1px dashed #94a3b8;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  background: #fff;
+}
+
+.vs-preview img {
+  max-width: 100%;
+  max-height: 260px;
+  object-fit: contain;
+}
+
+.vs-analysis,
+.vs-results {
+  margin-top: 1.5rem;
+}
+
+.vs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.vs-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.vs-item img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.vs-item-body {
+  padding: 0.75rem;
+}
+
+.vs-item-body h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+}
+
+.vs-desc {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+
+@media (max-width: 900px) {
+  .vs-card {
+    grid-template-columns: 1fr;
+  }
+
+  .vs-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .vs-grid {
+    grid-template-columns: 1fr;
+  }
+}

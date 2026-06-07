@@ -1,0 +1,99 @@
+@startuml delivery-sprint2-sequence-tracking
+skinparam style strictuml
+
+actor Buyer
+participant "DeliveryTrackingController" as DTC
+participant "WebSocketHandler" as WS
+participant "TrackingService" as TS
+participant "DynamicPricingService" as DPS
+participant "DeliveryOrderRepository" as DOR
+database "Database" as DB
+
+== Real-Time Tracking via WebSocket ==
+
+Buyer -> DTC : GET /ws/tracking\nWebSocket handshake
+activate DTC
+
+DTC -> WS : openSession(deliveryOrderId, buyerId)
+activate WS
+
+WS -> DOR : findById(deliveryOrderId)
+activate DOR
+DOR -> DB : SELECT FROM delivery_orders
+activate DB
+DB --> DOR : DeliveryOrder
+deactivate DB
+DOR --> WS : deliveryOrder
+deactivate DOR
+
+WS --> Buyer : WS: {status: "CONNECTED",\ndeliveryOrderId, currentLocation}
+deactivate WS
+
+== Courier Sends Location Update ==
+
+actor Courier
+participant "CourierApp" as CA
+
+CA -> DTC : POST /api/delivery/{id}/location\n{lat, lng, timestamp}
+activate DTC
+
+DTC -> TS : updateLocation(deliveryOrderId, lat, lng)
+activate TS
+
+TS -> DOR : findById(deliveryOrderId)
+activate DOR
+DOR -> DB : SELECT FROM delivery_orders
+activate DB
+DB --> DOR : DeliveryOrder
+deactivate DB
+DOR --> TS : deliveryOrder
+deactivate DOR
+
+TS -> TS : calculateETA(currentLocation, destination)
+
+TS -> DOR : save(deliveryOrder.updatedLocation)
+activate DOR
+DOR -> DB : UPDATE delivery_orders SET location
+activate DB
+DB --> DOR : ok
+deactivate DB
+DOR --> TS : saved
+deactivate DOR
+
+TS -> WS : pushLocation(lat, lng)
+activate WS
+WS --> Buyer : WS: {type: "LOCATION_UPDATE",\nlat, lng, eta, timestamp}
+deactivate WS
+
+TS --> DTC : locationUpdated
+deactivate TS
+
+DTC --> CA : 200 OK
+deactivate DTC
+
+== Dynamic Pricing on Order Creation ==
+
+Buyer -> DTC : POST /api/delivery/calculate-price\n{pickup, dropoff, weight}
+activate DTC
+
+DTC -> DPS : calculateDynamicPrice(pickup, dropoff, weight)
+activate DPS
+
+DPS -> DPS : getBasePrice(distance, weight)
+
+DPS -> DB : SELECT FROM demand_pricing_factors\nWHERE zone = ? AND hour = ?
+activate DB
+DB --> DPS : DemandPricingFactor
+deactivate DB
+
+DPS -> DPS : applyMultiplier(basePrice, demandLevel)
+
+DPS -> DPS : adjustForTimeOfDay()
+
+DPS --> DTC : DeliveryPriceDTO\n{basePrice, multiplier, finalPrice}
+deactivate DPS
+
+DTC --> Buyer : 200 OK\n{finalPrice, estimatedTime}
+deactivate DTC
+
+@enduml
