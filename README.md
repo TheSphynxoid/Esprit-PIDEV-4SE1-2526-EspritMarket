@@ -124,4 +124,10 @@ The project follows a layered architecture per domain module (Marketplace, Deliv
 
 ## Auteurs
 
-Nom -- Classe -- Annee 2025-2026 -- Tuteur : ...
+- Hamza Jamil Saied -- Classe : 4SE1 -- Année 2526
+- Hazem Omri -- Classe : 4SE1 -- Année 2526
+- Badis Ghaoui -- Classe : 4SE1 -- Année 2526
+- Wajdi Majbri -- Classe : 4SE1 -- Année 2526
+- Baha eddine Jouil -- Classe : 4SE1 -- Année 2526
+
+**Tuteurs :** Chahnez Sardouk, Sirine Naifar
