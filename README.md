@@ -88,13 +88,13 @@ See [`.env.example`](.env.example) for the complete list.
 
 ## Infrastructure (Cloud / Kubernetes)
 
-This project can be deployed on Kubernetes. See [devops/K8S_DEPLOYMENT.md](devops/K8S_DEPLOYMENT.md).
+This project can be deployed on Kubernetes. See [documentation/guides/K8S_DEPLOYMENT.md](documentation/guides/K8S_DEPLOYMENT.md).
 
 The infrastructure manifests are in `devops/k8s/` and a production `docker-compose.yml` is in `devops/`.
 
 ### Architecture
 
-Architecture diagrams (PlantUML source) are available in the `diagrams/` directory and documented in [docs/README.md](docs/README.md).
+Architecture diagrams (PlantUML source) are available in the `documentation/architecture/diagrams/` directory and documented in [documentation/README.md](documentation/README.md).
 
 ## ML Service (IA)
 
