@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: esprit-srv
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/esprit_market}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:8MB}
+      max-request-size: ${MAX_REQUEST_SIZE:8MB}
+
+server:
+  port: 8083
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201
+  upload:
+    dir: ${APP_UPLOAD_DIR:/app/uploads}
+  email:
+    mock-mode: false
+
+srv:
+  upload-dir: ${SRV_UPLOAD_DIR:/app/uploads/srv-images}
+  deliverable:
+    upload-dir: ${SRV_DELIVERABLE_UPLOAD_DIR:/app/uploads/deliverables}
+    version-retention-days: ${SRV_DELIVERABLE_VERSION_RETENTION_DAYS:30}
+  booking:
+    upload-dir: ${SRV_BOOKING_UPLOAD_DIR:/app/uploads/bookings}
+  pg-notify:
+    enabled: ${SRV_PG_NOTIFY_ENABLED:true}
+
+ml:
+  service:
+    url: ${ML_SERVICE_URL:http://ml-service:8000}
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 28800000
+  refresh-expiration: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
