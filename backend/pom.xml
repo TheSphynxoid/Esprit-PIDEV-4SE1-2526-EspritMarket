@@ -31,6 +31,7 @@
         <module>esprit-srv</module>
         <module>esprit-eventplanning</module>
         <module>esprit-partnership</module>
+        <module>eureka-server</module>
     </modules>
 
     <dependencyManagement>
