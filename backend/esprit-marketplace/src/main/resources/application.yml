@@ -1,0 +1,87 @@
+spring:
+  application:
+    name: esprit-marketplace
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/esprit_market}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE:8MB}
+      max-request-size: ${MAX_REQUEST_SIZE:8MB}
+
+server:
+  port: 8082
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201
+  upload:
+    dir: ${APP_UPLOAD_DIR:/app/uploads}
+  email:
+    mock-mode: false
+  ai:
+    fastapi:
+      url: ${FASTAPI_URL:http://127.0.0.1:8000/analyze}
+  marketplace:
+    scheduler:
+      nightly-cron: 0 0 0 * * *
+      store-inactive-days: 30
+
+courier:
+  scheduler:
+    pending-to-refused-cron: 0 0 0 * * *
+    pending-to-refused-threshold: P5D
+
+quiz:
+  scheduler:
+    interview-reminder-cron: 0 * * * * *
+
+flask:
+  url: http://localhost:5000
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    base-url: https://maps.googleapis.com/maps/api
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 28800000
+  refresh-expiration: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
