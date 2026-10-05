@@ -7,6 +7,8 @@ import java.util.Set;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -134,7 +136,10 @@ public class SellerRequestController {
     })
     public ResponseEntity<Map<String, Object>> verifyCode(
             @PathVariable Long userId,
-            @RequestBody Map<String, String> body) {
+            @RequestBody Map<String, String> body,
+            Authentication authentication) {
+        // Securite (A5a): le chemin fournit encore {userId} pour compatibilite
+        // frontend, mais il est ignore. L'identite vient du principal (email JWT).
         String email = body.get("email");
         String code = body.get("code");
 
@@ -143,8 +148,16 @@ public class SellerRequestController {
                     .body(Map.of("success", false, "message", "Email and code are required"));
         }
 
+        Long callerId;
         try {
-            Map<String, Object> result = sellerRequestService.verifyCode(email, code, userId);
+            callerId = resolveCallerId(authentication);
+        } catch (BadRequestException ex) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "message", ex.getMessage()));
+        }
+
+        try {
+            Map<String, Object> result = sellerRequestService.verifyCode(email, code, callerId);
             return ResponseEntity.ok(result);
         } catch (BadRequestException ex) {
             return ResponseEntity.badRequest()
@@ -154,39 +167,88 @@ public class SellerRequestController {
 
     @PostMapping("/activate-seller/{userId}")
     @Operation(summary = "Promote current user to SELLER and allow step 2")
-    public ResponseEntity<Map<String, Object>> activateSeller(@PathVariable Long userId) {
-        return ResponseEntity.ok(sellerRequestService.activateSeller(userId));
+    public ResponseEntity<Map<String, Object>> activateSeller(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        // Securite (A2): {userId} du chemin ignore pour compatibilite URL ; le
+        // compte elu est celui du principal. Pas de @PreAuthorize SELLER ici :
+        // c'est precisement le passage au role SELLER apres verification.
+        return ResponseEntity.ok(
+                sellerRequestService.activateSeller(resolveCallerId(authentication)));
     }
 
     @GetMapping("/status/{userId}")
     @Operation(summary = "Get seller request status by user ID")
-    public ResponseEntity<SellerRequestResponse> getStatus(@PathVariable Long userId) {
-        return ResponseEntity.ok(sellerRequestService.getRequestByUserId(userId));
+    public ResponseEntity<SellerRequestResponse> getStatus(
+            @PathVariable Long userId,
+            Authentication authentication) {
+        // Securite (A3b): {userId} du chemin ignore ; la sonde du frontend ne peut
+        // consulter que sa propre demande (ResourceNotFoundException 404 conservee
+        // si elle n'en a pas).
+        return ResponseEntity.ok(
+                sellerRequestService.getRequestByUserId(resolveCallerId(authentication)));
     }
 
     @GetMapping("/status")
     @Operation(summary = "Get seller request status by user ID query param")
-    public ResponseEntity<SellerRequestResponse> getStatusByQuery(@RequestParam("userId") Long userId) {
-        return ResponseEntity.ok(sellerRequestService.getRequestByUserId(userId));
+    public ResponseEntity<SellerRequestResponse> getStatusByQuery(
+            @RequestParam(value = "userId", required = false) Long userId,
+            Authentication authentication) {
+        // Securite (A3b): userId de la query ignore, meme traitement que /status/{id}.
+        return ResponseEntity.ok(
+                sellerRequestService.getRequestByUserId(resolveCallerId(authentication)));
     }
 
     @PostMapping("/{requestId}/approve/{adminId}")
     @Operation(summary = "Approve a seller request (Admin)")
+    // Securite (A3): reserve aux roles admin. ADMIN_MARKET est inclus car le
+    // dashboard d'approbation est aussi servi aux comptes portant ce role
+    // (voir AuthController.ADMIN_ROLES).
+    @PreAuthorize("hasAnyRole('ADMIN','ADMIN_MARKET')")
     public ResponseEntity<SellerRequestResponse> approveRequest(
             @PathVariable Long requestId,
-            @PathVariable Long adminId) {
-        return ResponseEntity.ok(sellerRequestService.approveRequest(requestId, adminId));
+            @PathVariable Long adminId,
+            Authentication authentication) {
+        // Securite (A3): {adminId} du chemin ignore — le validateur enregistre
+        // (validatedBy) est l'administrateur authentifie, pas un id forgeable.
+        return ResponseEntity.ok(
+                sellerRequestService.approveRequest(requestId, resolvedAdminEmail(authentication)));
     }
 
     @PostMapping("/{requestId}/refuse/{adminId}")
     @Operation(summary = "Refuse a seller request (Admin)")
+    @PreAuthorize("hasAnyRole('ADMIN','ADMIN_MARKET')")
     public ResponseEntity<SellerRequestResponse> refuseRequest(
             @PathVariable Long requestId,
-            @PathVariable Long adminId) {
-        return ResponseEntity.ok(sellerRequestService.refuseRequest(requestId, adminId));
+            @PathVariable Long adminId,
+            Authentication authentication) {
+        // Securite (A3): identique a approveRequest.
+        return ResponseEntity.ok(
+                sellerRequestService.refuseRequest(requestId, resolvedAdminEmail(authentication)));
     }
 
     // ─── Helpers privés ───────────────────────────────────────────────
+
+    /**
+     * Resout l'id de l'appelant depuis le principal. Authentication.getName()
+     * est l'email de l'utilisateur (voir CustomUserDetailsService).
+     */
+    private Long resolveCallerId(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null
+                || authentication.getName().isBlank()) {
+            throw new BadRequestException("Authentication is required");
+        }
+        return sellerRequestService.resolveUserIdFromAuthentication(authentication.getName());
+    }
+
+    /** Email du principal, pour l'enregistrement de la validation admin. */
+    private String resolvedAdminEmail(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null
+                || authentication.getName().isBlank()) {
+            throw new BadRequestException("Authentication is required");
+        }
+        return authentication.getName();
+    }
 
     private static final org.slf4j.Logger logger =
             org.slf4j.LoggerFactory.getLogger(SellerRequestController.class);

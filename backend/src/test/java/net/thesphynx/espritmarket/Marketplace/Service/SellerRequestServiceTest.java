@@ -24,8 +24,11 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -161,14 +164,15 @@ class SellerRequestServiceTest {
     @Test
     void approveRequest_shouldSetStatusAndReturn() {
         var requestId = 1L;
-        var adminId = 10L;
+        var adminEmail = "admin@esprit.tn";
         var user = new User();
         user.setId(2L);
         user.setEmail("test@esprit.tn");
         user.setName("Test User");
         user.setRole(Role.USER);
         var admin = new User();
-        admin.setId(adminId);
+        admin.setId(10L);
+        admin.setEmail(adminEmail);
         var sellerRequest = new SellerRequest();
         sellerRequest.setStatut(RequestStatus.EN_ATTENTE);
         sellerRequest.setUser(user);
@@ -179,48 +183,62 @@ class SellerRequestServiceTest {
         var response = new SellerRequestResponse();
 
         when(sellerRequestRepository.findById(requestId)).thenReturn(Optional.of(sellerRequest));
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.of(admin));
         when(sellerRequestRepository.save(sellerRequest)).thenReturn(sellerRequest);
         when(sellerRequestMapper.toResponse(sellerRequest)).thenReturn(response);
 
-        var result = service.approveRequest(requestId, adminId);
+        var result = service.approveRequest(requestId, adminEmail);
 
         assertEquals(response, result);
         assertEquals(RequestStatus.APPROUVE, sellerRequest.getStatut());
+        assertEquals(admin, sellerRequest.getValidatedBy());
         verify(emailService).sendApprovalEmail(any(), any(), any());
     }
 
     @Test
     void approveRequest_whenNotPending_shouldThrow() {
         var requestId = 1L;
-        var adminId = 10L;
+        var adminEmail = "admin@esprit.tn";
         var admin = new User();
-        admin.setId(adminId);
+        admin.setId(10L);
+        admin.setEmail(adminEmail);
         var sellerRequest = new SellerRequest();
         sellerRequest.setStatut(RequestStatus.APPROUVE);
-        sellerRequest.setUser(new User());
 
         when(sellerRequestRepository.findById(requestId)).thenReturn(Optional.of(sellerRequest));
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.of(admin));
 
-        assertThrows(ConflictException.class, () -> service.approveRequest(requestId, adminId));
+        assertThrows(ConflictException.class, () -> service.approveRequest(requestId, adminEmail));
     }
 
     @Test
     void approveRequest_whenRequestNotFound_shouldThrow() {
         when(sellerRequestRepository.findById(99L)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> service.approveRequest(99L, 1L));
+        assertThrows(ResourceNotFoundException.class, () -> service.approveRequest(99L, "admin@esprit.tn"));
+    }
+
+    @Test
+    void approveRequest_whenAdminEmailNotFound_shouldThrow() {
+        var adminEmail = "ghost-admin@esprit.tn";
+        var sellerRequest = new SellerRequest();
+        sellerRequest.setStatut(RequestStatus.EN_ATTENTE);
+
+        when(sellerRequestRepository.findById(1L)).thenReturn(Optional.of(sellerRequest));
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> service.approveRequest(1L, adminEmail));
     }
 
     @Test
     void refuseRequest_shouldSetStatusAndReturn() {
         var requestId = 1L;
-        var adminId = 10L;
+        var adminEmail = "admin@esprit.tn";
         var user = new User();
         user.setId(2L);
         user.setName("Test User");
         var admin = new User();
-        admin.setId(adminId);
+        admin.setId(10L);
+        admin.setEmail(adminEmail);
         var sellerRequest = new SellerRequest();
         sellerRequest.setStatut(RequestStatus.EN_ATTENTE);
         sellerRequest.setUser(user);
@@ -231,31 +249,128 @@ class SellerRequestServiceTest {
         var response = new SellerRequestResponse();
 
         when(sellerRequestRepository.findById(requestId)).thenReturn(Optional.of(sellerRequest));
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.of(admin));
         when(sellerRequestRepository.save(sellerRequest)).thenReturn(sellerRequest);
         when(sellerRequestMapper.toResponse(sellerRequest)).thenReturn(response);
 
-        var result = service.refuseRequest(requestId, adminId);
+        var result = service.refuseRequest(requestId, adminEmail);
 
         assertEquals(response, result);
         assertEquals(RequestStatus.REFUSE, sellerRequest.getStatut());
+        assertEquals(admin, sellerRequest.getValidatedBy());
         verify(emailService).sendRejectionEmail(any(), any());
     }
 
     @Test
     void refuseRequest_whenNotPending_shouldThrow() {
         var requestId = 1L;
-        var adminId = 10L;
+        var adminEmail = "admin@esprit.tn";
         var admin = new User();
-        admin.setId(adminId);
+        admin.setId(10L);
+        admin.setEmail(adminEmail);
         var sellerRequest = new SellerRequest();
         sellerRequest.setStatut(RequestStatus.REFUSE);
-        sellerRequest.setUser(new User());
 
         when(sellerRequestRepository.findById(requestId)).thenReturn(Optional.of(sellerRequest));
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.of(admin));
 
-        assertThrows(ConflictException.class, () -> service.refuseRequest(requestId, adminId));
+        assertThrows(ConflictException.class, () -> service.refuseRequest(requestId, adminEmail));
+    }
+
+    @Test
+    void activateSeller_withoutApprovedRequest_shouldThrowConflict() {
+        var callerId = 7L;
+        var user = new User();
+        user.setId(callerId);
+        user.setEmail("student@esprit.tn");
+        user.setRole(Role.USER);
+
+        when(userRepository.findById(callerId)).thenReturn(Optional.of(user));
+        when(sellerRequestRepository.existsByUserIdAndStatut(callerId, RequestStatus.APPROUVE)).thenReturn(false);
+        when(sellerRequestRepository.existsByEmailIgnoreCaseAndStatut("student@esprit.tn", RequestStatus.APPROUVE)).thenReturn(false);
+
+        assertThrows(ConflictException.class, () -> service.activateSeller(callerId));
+    }
+
+    @Test
+    void activateSeller_withApprovedRequestByUser_shouldPromoteToSeller() {
+        var callerId = 7L;
+        var user = new User();
+        user.setId(callerId);
+        user.setEmail("student@esprit.tn");
+        user.setRole(Role.USER);
+
+        when(userRepository.findById(callerId)).thenReturn(Optional.of(user));
+        when(sellerRequestRepository.existsByUserIdAndStatut(callerId, RequestStatus.APPROUVE)).thenReturn(true);
+
+        var result = service.activateSeller(callerId);
+
+        assertEquals(Boolean.TRUE, result.get("success"));
+        assertEquals("SELLER", result.get("role"));
+        assertEquals(Role.SELLER, user.getRole());
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void verifyCode_withValidCode_shouldCreateApprovedRequestBoundToCaller() {
+        var callerId = 7L;
+        var user = new User();
+        user.setId(callerId);
+        user.setEmail("student@esprit.tn");
+        user.setName("Student Name");
+
+        try {
+            java.lang.reflect.Field field = SellerRequestService.class
+                    .getDeclaredField("pendingVerifications");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry> store =
+                    (java.util.Map<String, net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry>) field.get(service);
+            store.put("student@esprit.tn",
+                    new net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry("12345", "student@esprit.tn"));
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        when(userRepository.findById(callerId)).thenReturn(Optional.of(user));
+
+        var result = service.verifyCode("student@esprit.tn", "12345", callerId);
+
+        assertEquals(Boolean.TRUE, result.get("success"));
+        verify(sellerRequestRepository).save(any(SellerRequest.class));
+    }
+
+    @Test
+    void verifyCode_withForeignEmail_shouldReject() {
+        var callerId = 7L;
+        var user = new User();
+        user.setId(callerId);
+        user.setEmail("student@esprit.tn");
+
+        try {
+            java.lang.reflect.Field field = SellerRequestService.class
+                    .getDeclaredField("pendingVerifications");
+            field.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry> store =
+                    (java.util.Map<String, net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry>) field.get(service);
+            store.put("other@esprit.tn",
+                    new net.thesphynx.espritmarket.Marketplace.Entity.VerificationEntry("12345", "other@esprit.tn"));
+        } catch (ReflectiveOperationException ex) {
+            throw new IllegalStateException(ex);
+        }
+
+        when(userRepository.findById(callerId)).thenReturn(Optional.of(user));
+
+        assertThrows(BadRequestException.class,
+                () -> service.verifyCode("other@esprit.tn", "12345", callerId));
+        verify(sellerRequestRepository, never()).save(any(SellerRequest.class));
+    }
+
+    @Test
+    void verifyCode_withoutCaller_shouldReject() {
+        assertThrows(BadRequestException.class,
+                () -> service.verifyCode("student@esprit.tn", "12345", null));
     }
 
     @Test
@@ -284,11 +399,12 @@ class SellerRequestServiceTest {
     }
 
     @Test
-    void approveRequest_withNoUser_shouldCreateUserAndSendEmail() {
+    void approveRequest_withNoUser_shouldFallBackToRequestNamesAndSendEmail() {
         var requestId = 1L;
-        var adminId = 10L;
+        var adminEmail = "admin@esprit.tn";
         var admin = new User();
-        admin.setId(adminId);
+        admin.setId(10L);
+        admin.setEmail(adminEmail);
         var sellerRequest = new SellerRequest();
         sellerRequest.setStatut(RequestStatus.EN_ATTENTE);
         sellerRequest.setUser(null);
@@ -299,20 +415,16 @@ class SellerRequestServiceTest {
         var response = new SellerRequestResponse();
 
         when(sellerRequestRepository.findById(requestId)).thenReturn(Optional.of(sellerRequest));
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(userRepository.save(any(User.class))).thenAnswer(inv -> {
-            User u = inv.getArgument(0);
-            u.setId(42L);
-            return u;
-        });
+        when(userRepository.findByEmail(adminEmail)).thenReturn(Optional.of(admin));
         when(sellerRequestRepository.save(sellerRequest)).thenReturn(sellerRequest);
         when(sellerRequestMapper.toResponse(sellerRequest)).thenReturn(response);
 
-        var result = service.approveRequest(requestId, adminId);
+        var result = service.approveRequest(requestId, adminEmail);
 
         assertNotNull(result);
-        assertNotNull(sellerRequest.getUser());
-        assertEquals(Role.USER, sellerRequest.getUser().getRole());
-        verify(emailService).sendApprovalEmail(any(), any(), any());
+        // Securite (A1): aucun compte fantome ne doit etre cree a l'approbation.
+        assertNull(sellerRequest.getUser());
+        verify(userRepository, never()).save(any(User.class));
+        verify(emailService).sendApprovalEmail(eq("new@esprit.tn"), eq("New User"), eq(0L));
     }
 }

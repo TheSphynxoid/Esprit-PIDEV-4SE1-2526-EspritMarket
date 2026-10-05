@@ -9,7 +9,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -18,7 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -50,7 +48,6 @@ public class SellerRequestService {
     private final UserRepository userRepository;
     private final SellerRequestMapper sellerRequestMapper;
     private final net.thesphynx.espritmarket.Common.Service.EmailService emailService;
-    private final PasswordEncoder passwordEncoder;
     private final String uploadDir;
 
     // Stockage temporaire des codes en mémoire (clé = email normalisé)
@@ -60,13 +57,11 @@ public class SellerRequestService {
             UserRepository userRepository,
             SellerRequestMapper sellerRequestMapper,
             net.thesphynx.espritmarket.Common.Service.EmailService emailService,
-            PasswordEncoder passwordEncoder,
             @Value("${app.upload.dir:uploads}") String uploadDir) {
         this.sellerRequestRepository = sellerRequestRepository;
         this.userRepository = userRepository;
         this.sellerRequestMapper = sellerRequestMapper;
         this.emailService = emailService;
-        this.passwordEncoder = passwordEncoder;
         this.uploadDir = uploadDir;
     }
 
@@ -112,7 +107,7 @@ public class SellerRequestService {
 
     // ─── Vérifie le code entré par l'étudiant ────────────────────────
     @Transactional
-    public Map<String, Object> verifyCode(String email, String code, Long userId) {
+    public Map<String, Object> verifyCode(String email, String code, Long callerId) {
         if (email == null || code == null) {
             throw new BadRequestException("Email and code are required");
         }
@@ -140,10 +135,25 @@ public class SellerRequestService {
         pendingVerifications.remove(normalizedEmail);
         logger.info("✅ [Service] Code verified for: {}", maskEmail(email));
 
-        // Récupère l'utilisateur connecté si userId fourni
-        User user = null;
-        if (userId != null && userId > 0) {
-            user = userRepository.findById(userId).orElse(null);
+        // Securite (A5a): lie la demande au compte du principal, JAMAIS au userId
+        // du chemin (spoofable). callerId est resolu par le controller depuis
+        // Authentication.getName() et ne peut donc designer que l'appelant. Sans
+        // principal (impossible via HTTP, endpoint authentifie), on refuse : plus
+        // de demande approuvee orpheline.
+        if (callerId == null || callerId <= 0) {
+            throw new BadRequestException("Authentication required to verify the code");
+        }
+        User user = userRepository.findById(callerId)
+                .orElseThrow(() -> new BadRequestException(
+                        "Authenticated account no longer exists"));
+
+        // Le code a ete envoye sur une boite @esprit.tn : s'il ne s'agit pas de
+        // celle du compte connecte, on refuse (empeche de rattacher le code
+        // verifie d'un tiers a son propre compte). Le frontend envoie toujours
+        // l'email du compte (champ pre-rempli et en lecture seule).
+        if (!normalizedEmail.equalsIgnoreCase(user.getEmail())) {
+            throw new BadRequestException(
+                    "Verification email does not match the logged-in account");
         }
 
         // Crée la demande avec statut APPROUVE automatiquement
@@ -154,14 +164,12 @@ public class SellerRequestService {
         sellerRequest.setDateValidation(new Date());
         sellerRequest.setCarteEtudiantUrl("verified-by-email");
 
-        if (user != null) {
-            String fullName = user.getName() != null ? user.getName() : "";
-            String[] parts = fullName.split(" ", 2);
-            sellerRequest.setPrenom(parts.length > 0 ? parts[0] : "");
-            sellerRequest.setNom(parts.length > 1 ? parts[1] : "");
-            sellerRequest.setUser(user);
-            sellerRequest.setNumeroEtudiant("EMAIL-VERIFIED");
-        }
+        String fullName = user.getName() != null ? user.getName() : "";
+        String[] parts = fullName.split(" ", 2);
+        sellerRequest.setPrenom(parts.length > 0 ? parts[0] : "");
+        sellerRequest.setNom(parts.length > 1 ? parts[1] : "");
+        sellerRequest.setUser(user);
+        sellerRequest.setNumeroEtudiant("EMAIL-VERIFIED");
 
         sellerRequestRepository.save(sellerRequest);
 
@@ -173,18 +181,35 @@ public class SellerRequestService {
     }
 
     @Transactional
-    public Map<String, Object> activateSeller(Long userId) {
-        if (userId == null || userId <= 0) {
+    public Map<String, Object> activateSeller(Long callerId) {
+        // Securite (A2): l'identite vient du principal, pas du chemin. Le userId
+        // fourni par l'UI est ignore : un utilisateur authentifie ne peut plus
+        // promouvoir un compte arbitraire. Le chemin /activate-seller/{userId}
+        // reste accepte pour compatibilite frontend.
+        if (callerId == null || callerId <= 0) {
             throw new BadRequestException("A valid userId is required");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        User user = userRepository.findById(callerId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + callerId));
+
+        // Une demande APPROUVE prouve l'eligibilite vendeur (email @esprit.tn
+        // verifie par code ou validation admin). Sans elle, pas de passage SELLER.
+        // Propriete etablie par user_id, ou a defaut par l'email du compte sur la
+        // demande (lignes historiques sans relation user).
+        boolean approved = sellerRequestRepository
+                .existsByUserIdAndStatut(callerId, RequestStatus.APPROUVE)
+                || sellerRequestRepository
+                        .existsByEmailIgnoreCaseAndStatut(user.getEmail(), RequestStatus.APPROUVE);
+        if (!approved) {
+            throw new ConflictException(
+                    "No approved seller request found for this account. Complete email verification first.");
+        }
 
         if (user.getRole() != Role.SELLER) {
             user.setRole(Role.SELLER);
             userRepository.save(user);
-            logger.info("✅ [Service] Role updated to SELLER for userId: {}", userId);
+            logger.info("✅ [Service] Role updated to SELLER for principal-derived userId: {}", callerId);
         }
 
         return Map.of(
@@ -258,12 +283,11 @@ public class SellerRequestService {
     }
 
     @Transactional
-    public SellerRequestResponse approveRequest(Long requestId, Long adminId) {
+    public SellerRequestResponse approveRequest(Long requestId, String adminEmail) {
         SellerRequest sellerRequest = sellerRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + requestId));
 
-        User validatedBy = userRepository.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
+        User validatedBy = getUserByEmailOrThrow(adminEmail);
 
         if (sellerRequest.getStatut() != RequestStatus.EN_ATTENTE) {
             throw new ConflictException("Only pending requests can be approved");
@@ -273,20 +297,19 @@ public class SellerRequestService {
         sellerRequest.setValidatedBy(validatedBy);
         sellerRequest.setDateValidation(new Date());
 
+        // Securite (Track A): plus de creation de compte fantome avec mot de passe
+        // aléatoire a l'approbation. Le demandeur est toujours un utilisateur reel
+        // (la creation d'une demande est bloquee sans session). Si aucune relation
+        // n'existe (donnees historiques), on retombe sur les noms de la demande,
+        // comme dans refuseRequest.
         User user = sellerRequest.getUser();
-        if (user == null) {
-            user = new User();
-            user.setEmail(sellerRequest.getEmail());
-            user.setName(sellerRequest.getPrenom() + " " + sellerRequest.getNom());
-            user.setRole(Role.USER);
-            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-            user = userRepository.save(user);
-            sellerRequest.setUser(user);
-        }
+        String recipientName = (user != null && user.getName() != null)
+                ? user.getName()
+                : (sellerRequest.getPrenom() + " " + sellerRequest.getNom());
 
         try {
             emailService.sendApprovalEmail(sellerRequest.getEmail(),
-                    user.getName(), user.getId());
+                    recipientName, user != null ? user.getId() : 0L);
         } catch (RuntimeException ex) {
             logger.warn("Approval email failed for requestId={}", requestId, ex);
         }
@@ -295,12 +318,11 @@ public class SellerRequestService {
     }
 
     @Transactional
-    public SellerRequestResponse refuseRequest(Long requestId, Long adminId) {
+    public SellerRequestResponse refuseRequest(Long requestId, String adminEmail) {
         SellerRequest sellerRequest = sellerRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found with id: " + requestId));
 
-        User validatedBy = userRepository.findById(adminId)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with id: " + adminId));
+        User validatedBy = getUserByEmailOrThrow(adminEmail);
 
         if (sellerRequest.getStatut() != RequestStatus.EN_ATTENTE) {
             throw new ConflictException("Only pending requests can be refused");
@@ -332,6 +354,27 @@ public class SellerRequestService {
         return sellerRequestRepository.findTopByUserIdOrderByDateDemandeDesc(userId)
                 .map(sellerRequestMapper::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Request not found for user ID: " + userId));
+    }
+
+    /**
+     * Resout l'id utilisateur depuis l'email du principal (Authentication.getName()),
+     * meme contrat que la resolution par email utilisee dans OrderService : le
+     * compte doit exister. Expose ici pour eviter une dependance croisee.
+     */
+    public Long resolveUserIdFromAuthentication(String email) {
+        return userRepository.findByEmail(email)
+                .map(User::getId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + maskEmail(email)));
+    }
+
+    /**
+     * Resout un utilisateur a partir de son email. L'email provient toujours du
+     * principal (Authentication.getName()) : le record d'approbation
+     * (sellerRequest.validatedBy) ne peut plus etre forge via un adminId arbitraire.
+     */
+    private User getUserByEmailOrThrow(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found with email: " + maskEmail(email)));
     }
 
     // ─── Helpers privés ───────────────────────────────────────────────
