@@ -42,7 +42,6 @@
     "@tailwindcss/postcss": "^4.2.2",
     "@types/three": "^0.183.1",
     "@zxing/ngx-scanner": "^21.0.0",
-    "lightningcss-linux-x64-musl": "^1.32.0",
     "rxjs": "~7.8.0",
     "sockjs-client": "^1.6.1",
     "tailwindcss-animate": "^1.0.7",
@@ -65,5 +64,8 @@
     "tailwindcss": "^4.2.2",
     "typescript": "~5.9.2",
     "vitest": "^4.0.8"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-musl": "^1.32.0"
   }
 }
