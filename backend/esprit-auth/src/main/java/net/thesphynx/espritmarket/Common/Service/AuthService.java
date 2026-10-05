@@ -6,7 +6,6 @@ import net.thesphynx.espritmarket.Common.Entity.PasswordResetCode;
 import net.thesphynx.espritmarket.Common.Entity.User;
 import net.thesphynx.espritmarket.Common.Repository.PasswordResetCodeRepository;
 import net.thesphynx.espritmarket.Common.Repository.UserRepository;
-import net.thesphynx.espritmarket.Delivery.Service.CourierService;
 import net.thesphynx.espritmarket.Common.Security.JwtService;
 import net.thesphynx.espritmarket.Common.Security.TokenBlacklistService;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +32,7 @@ public class AuthService {
     private final UserService userService;
     private final TokenBlacklistService tokenBlacklistService;
     private final UserRepository userRepository;
-    private final CourierService courierService;
+    private final CourierProfileWriter courierProfileWriter;
     private final PasswordResetCodeRepository passwordResetCodeRepository;
     private final JavaMailSender javaMailSender;
     private final PasswordEncoder passwordEncoder;
@@ -50,7 +49,7 @@ public class AuthService {
                        JwtService jwtService,
                        UserService userService,
                        UserRepository userRepository,
-                       CourierService courierService,
+                       CourierProfileWriter courierProfileWriter,
                        PasswordResetCodeRepository passwordResetCodeRepository,
                        JavaMailSender javaMailSender,
                        PasswordEncoder passwordEncoder) {
@@ -59,7 +58,7 @@ public class AuthService {
         this.userService = userService;
         this.tokenBlacklistService = tokenBlacklistService;
         this.userRepository = userRepository;
-        this.courierService = courierService;
+        this.courierProfileWriter = courierProfileWriter;
         this.passwordResetCodeRepository = passwordResetCodeRepository;
         this.javaMailSender = javaMailSender;
         this.passwordEncoder = passwordEncoder;
@@ -94,7 +93,7 @@ public class AuthService {
         }
 
         User createdUser = userService.create(user);
-        courierService.createCourierProfileIfNeeded(createdUser);
+        courierProfileWriter.createCourierProfileIfNeeded(createdUser);
 
         UserDetails userDetails = org.springframework.security.core.userdetails.User.builder()
                 .username(createdUser.getEmail())

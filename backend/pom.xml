@@ -26,6 +26,7 @@
 
     <modules>
         <module>esprit-common</module>
+        <module>esprit-auth</module>
         <module>app</module>
     </modules>
 

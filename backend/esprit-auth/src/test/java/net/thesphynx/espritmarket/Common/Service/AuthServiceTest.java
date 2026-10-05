@@ -4,7 +4,6 @@ import net.thesphynx.espritmarket.Common.DTO.AuthRequest;
 import net.thesphynx.espritmarket.Common.Entity.Role;
 import net.thesphynx.espritmarket.Common.Entity.User;
 import net.thesphynx.espritmarket.Common.Security.JwtService;
-import net.thesphynx.espritmarket.Delivery.Service.CourierService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,7 +36,7 @@ class AuthServiceTest {
     private UserService userService;
 
     @Mock
-    private CourierService courierService;
+    private CourierProfileWriter courierProfileWriter;
 
     @Mock
     private Authentication authentication;
