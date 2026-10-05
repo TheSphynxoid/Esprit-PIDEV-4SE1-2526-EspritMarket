@@ -3,7 +3,6 @@ package net.thesphynx.espritmarket.Common.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import net.thesphynx.espritmarket.EventPlanning.Entity.Event;
 
 import java.util.ArrayList;
 import java.util.List;

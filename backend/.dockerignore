@@ -1,6 +1,7 @@
 .*
 !.mvn/
 !pom.xml
-!src/
+!app/
+!esprit-common/
 !mvnw
 !*.jar
