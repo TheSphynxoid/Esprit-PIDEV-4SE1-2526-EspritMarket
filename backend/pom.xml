@@ -30,7 +30,7 @@
         <module>esprit-marketplace</module>
         <module>esprit-srv</module>
         <module>esprit-eventplanning</module>
-        <module>app</module>
+        <module>esprit-partnership</module>
     </modules>
 
     <dependencyManagement>

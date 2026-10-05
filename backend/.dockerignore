@@ -1,7 +1,0 @@
-.*
-!.mvn/
-!pom.xml
-!app/
-!esprit-common/
-!mvnw
-!*.jar

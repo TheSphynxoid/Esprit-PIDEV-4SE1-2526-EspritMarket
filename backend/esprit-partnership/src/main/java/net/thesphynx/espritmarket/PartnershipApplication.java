@@ -8,10 +8,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableScheduling
 @EnableAsync
-public class EspritMarketApplication {
+public class PartnershipApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(EspritMarketApplication.class, args);
+        SpringApplication.run(PartnershipApplication.class, args);
     }
 
 }

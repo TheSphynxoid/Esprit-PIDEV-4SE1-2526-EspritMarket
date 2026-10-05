@@ -57,33 +57,10 @@ public class SecurityConfig {
                                 "/actuator/prometheus",
                                 "/actuator/info")
                         .permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/delivery/maps/config").permitAll()
-                        .requestMatchers("/ws-marketplace/**").permitAll()
+
+
+
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers(
-                                "/ws-marketplace",
-                                "/ws-marketplace/**",
-                                "/ws-marketplace-native",
-                                "/ws-marketplace-native/**")
-                        .permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/market/products").permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/api/visual-search", "/api/marketplace/semantic-search").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/visual-search", "/api/marketplace/semantic-search").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/srv/services/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/srv/service-reviews/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/srv/services/images/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/eventplanning/events").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/eventplanning/events/with-participants").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/eventplanning/events/*/with-participants").permitAll()
-                        .requestMatchers("/api/eventplanning/tickets/promo-dates").permitAll()
-                        .requestMatchers("/api/eventplanning/tickets/promo-offers").permitAll()
-                        .requestMatchers("/api/eventplanning/tickets/promo-selection").permitAll()
-
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
