@@ -1,0 +1,32 @@
+ARG MODULE
+FROM eclipse-temurin:21-jdk-alpine AS builder
+ARG MODULE
+WORKDIR /app
+
+COPY pom.xml .
+COPY .mvn/ .mvn/
+COPY mvnw .
+COPY esprit-common/ esprit-common/
+COPY ${MODULE}/ ./${MODULE}/
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B clean package -DskipTests -pl ${MODULE} -am
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+ARG MODULE
+
+RUN apk update && apk upgrade --no-cache \
+ && addgroup -S appgroup && adduser -S appuser -G appgroup
+
+COPY --from=builder /app/${MODULE}/target/*.jar app.jar
+
+RUN mkdir -p /app/uploads
+USER appuser
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=5 \
+    CMD wget -q --spider http://localhost:${SERVER_PORT}/actuator/health || exit 1
+
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-jar", "/app/app.jar"]

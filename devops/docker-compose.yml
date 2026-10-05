@@ -8,6 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d esprit_market"]
@@ -18,29 +19,258 @@ services:
     networks:
       - backend-network
 
-  backend:
+  eureka:
     build:
       context: ../backend
-      dockerfile: Dockerfile
-    container_name: esprit-market-backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: eureka-server
+    image: espritmarket/eureka-server:${IMAGE_TAG:-latest}
+    container_name: esprit-market-eureka
+    restart: unless-stopped
+    environment:
+      SPRING_APPLICATION_NAME: eureka-server
+      SERVER_PORT: "8761"
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    networks:
+      - backend-network
+
+  auth:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-auth
+    image: espritmarket/esprit-auth:${IMAGE_TAG:-latest}
+    container_name: esprit-market-auth
     restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+      eureka:
+        condition: service_healthy
     environment:
+      SPRING_APPLICATION_NAME: esprit-auth
+      SERVER_PORT: "8081"
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_FLYWAY_ENABLED: "true"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend-network
+
+  marketplace:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-marketplace
+    image: espritmarket/esprit-marketplace:${IMAGE_TAG:-latest}
+    container_name: esprit-market-marketplace
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    environment:
+      SPRING_APPLICATION_NAME: esprit-marketplace
+      SERVER_PORT: "8082"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
       JWT_SECRET: ${JWT_SECRET:-}
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
-      SPRING_PROFILES_ACTIVE: prod
+      APP_UPLOAD_DIR: /app/uploads
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend-network
+
+  srv:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-srv
+    image: espritmarket/esprit-srv:${IMAGE_TAG:-latest}
+    container_name: esprit-market-srv
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    environment:
+      SPRING_APPLICATION_NAME: esprit-srv
+      SERVER_PORT: "8083"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-}
+      APP_UPLOAD_DIR: /app/uploads
+      SRV_UPLOAD_DIR: /app/uploads/srv-images
+      SRV_DELIVERABLE_UPLOAD_DIR: /app/uploads/deliverables
+      SRV_BOOKING_UPLOAD_DIR: /app/uploads/bookings
+      ML_SERVICE_URL: http://ml-service:8000
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend-network
+
+  eventplanning:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-eventplanning
+    image: espritmarket/esprit-eventplanning:${IMAGE_TAG:-latest}
+    container_name: esprit-market-eventplanning
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: esprit-eventplanning
+      SERVER_PORT: "8084"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-}
+      STRIPE_API_KEY: ${STRIPE_API_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      EVENT_NOTIFICATION_EMAILS: ${EVENT_NOTIFICATION_EMAILS:-}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend-network
+
+  partnership:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-partnership
+    image: espritmarket/esprit-partnership:${IMAGE_TAG:-latest}
+    container_name: esprit-market-partnership
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: esprit-partnership
+      SERVER_PORT: "8085"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/esprit_market
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - backend-network
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile.service
+      args:
+        MODULE: esprit-gateway
+    image: espritmarket/esprit-gateway:${IMAGE_TAG:-latest}
+    container_name: esprit-market-gateway
+    restart: unless-stopped
+    depends_on:
+      eureka:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      marketplace:
+        condition: service_healthy
+      srv:
+        condition: service_healthy
+      eventplanning:
+        condition: service_healthy
+      partnership:
+        condition: service_healthy
+    environment:
+      SPRING_APPLICATION_NAME: esprit-gateway
+      SERVER_PORT: "8088"
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      GATEWAY_SHARED_TOKEN: ${GATEWAY_SHARED_TOKEN:-esprit-internal-token-change-me}
+      JWT_SECRET: ${JWT_SECRET:-}
     ports:
       - "8088:8088"
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8088/actuator/health"]
-      interval: 30s
+      interval: 15s
       timeout: 5s
-      retries: 3
+      retries: 5
       start_period: 40s
     networks:
       - backend-network
@@ -114,6 +344,8 @@ services:
 
 volumes:
   postgres_data:
+    driver: local
+  uploads_data:
     driver: local
   prometheus_data:
     driver: local
