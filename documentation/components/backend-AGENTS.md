@@ -4,57 +4,84 @@ This document provides coding guidelines and build commands for AI agents workin
 
 ## Project Overview
 
-Spring Boot 4.0.2 backend application with Java 21, PostgreSQL, JWT authentication, gRPC support, and Prometheus metrics. The application serves multiple domains: Marketplace, Delivery, EventPlanning, Partnership, and Services (Srv).
+Maven multi-module reactor (`backend/pom.xml`, parent `esprit-market-backend` 0.2.0): a shared library (`esprit-common`), five Spring Boot 4.0.4 services (Java 21) behind a Eureka registry (`eureka-server`) and a Spring Cloud Gateway (`esprit-gateway`), all against ONE shared PostgreSQL database in Phase 1. Domains: auth (Common), Marketplace+Delivery, EventPlanning, Partnership, Srv. No gRPC (removed in `d2ab59f`).
 
 ## Build/Lint/Test Commands
 
-### Build
+### Build (from backend/, the reactor root)
 ```powershell
-# Full build (skip tests)
+# Full reactor build (skip tests)
 ./mvnw -B clean package -DskipTests
+
+# One module (+ its dependencies: parent + esprit-common)
+./mvnw -B clean package -DskipTests -pl esprit-auth -am
 
 # On Windows CMD
 mvnw.cmd -B clean package -DskipTests
 ```
 
-### Run Application
+### Run a service
 ```powershell
-./mvnw spring-boot:run
-# Server runs on http://localhost:8088
+# Each module is its own boot app (own application.yml + port):
+./mvnw spring-boot:run -pl esprit-auth          # :8081
+./mvnw spring-boot:run -pl esprit-marketplace   # :8082
+./mvnw spring-boot:run -pl esprit-srv           # :8083
+./mvnw spring-boot:run -pl esprit-eventplanning # :8084
+./mvnw spring-boot:run -pl esprit-partnership   # :8085
+
+# Or the whole stack: powershell devops/local-stack.ps1 start
 ```
 
 ### Docker
 ```powershell
-docker compose up --build
+cd devops
+docker compose up --build        # builds each module via backend/Dockerfile.service (ARG MODULE)
 docker compose down
 ```
 
 ### Test Commands
 ```powershell
-# Run all unit tests
+# All modules (reactor)
 ./mvnw -B clean test
 
-# Run single test class
-./mvnw test -Dtest=ProductServiceTest
+# Single module
+./mvnw test -pl esprit-marketplace
 
-# Run single test method
-./mvnw test -Dtest=ProductServiceTest#create_shouldMapPersistAndReturnResponse
+# Single test class
+./mvnw test -pl esprit-marketplace -Dtest=ProductServiceTest
 
-# Run tests for specific module (by package pattern)
-./mvnw test -Dtest="net.thesphynx.espritmarket.Marketplace.**"
+# Single test method
+./mvnw test -pl esprit-marketplace -Dtest=ProductServiceTest#create_shouldMapPersistAndReturnResponse
+
+# By package pattern
+./mvnw test -pl esprit-marketplace -Dtest="net.thesphynx.espritmarket.Marketplace.**"
 ```
+
+Baseline: 259 tests, 0 failures (esprit-common 3, esprit-auth 11, esprit-marketplace 129, esprit-srv 42, esprit-eventplanning 42, esprit-partnership 32). Keep this true.
 
 ## Project Structure
 
 ```
-src/main/java/net/thesphynx/espritmarket/
-├── Common/           # Shared: Config, Security, DTO, Entity (User), Exception, Repository
-├── Marketplace/      # Products, Orders, Reviews, Stores, Categories
-├── Delivery/         # Delivery tracking, Vehicles, Map integration
-├── EventPlanning/    # Events, Tickets, Stalls, Reservations, Equipment
-├── Partnership/      # Partner companies, Job offers, Applications, Interviews
-└── Srv/              # Services, Projects, Partners, ServiceRequests
+backend/
+├── pom.xml                 # parent aggregator (packaging=pom, Boot 4.0.4 parent)
+├── Dockerfile.service      # parameterized multi-stage build (ARG MODULE)
+├── esprit-common/          # shared library JAR (plain; no scanning, no datasource):
+│                           #   JwtService, exceptions + GlobalExceptionHandler,
+│                           #   ErrorResponse, PageResponse, User/Role entities,
+│                           #   NotificationEvent/StatusTransitionEvent, XUserAuthFilter
+├── esprit-auth/            # :8081  login/register/refresh/logout, /api/common/users,
+│                           #        password reset, EmailService; OWNS Flyway migrations
+├── esprit-marketplace/     # :8082  Marketplace + Delivery packages (shipped together:
+│                           #        Order<->Delivery bidirectional cascades, shared raw SQL)
+├── esprit-srv/             # :8083  services, bookings, projects, deliverables, escrow,
+│                           #        wallets, notifications, PgNotify bridge
+├── esprit-eventplanning/   # :8084  events, tickets, stalls, equipment, Stripe payments
+├── esprit-partnership/     # :8085  job offers, applications, interviews, companies, profiles
+├── eureka-server/          # :8761  Eureka registry
+└── esprit-gateway/         # :8088  routes, JwtValidationFilter, X-User-* header injection
 ```
+
+Inside each service, packages keep their monolith-era names (`net.thesphynx.espritmarket.<Module>`): business imports are unchanged. Each service carries Phase-1 copies of small shared infra under `Common/` (UserRepository, the security filter stack, EmailService/NotificationEventListener where needed) — this is deliberate transitional duplication, not an accident.
 
 Each domain module follows layered architecture:
 - `Config/` - OpenAPI configuration per module
@@ -314,24 +341,32 @@ class ProductServiceTest {
 
 ## Security
 
-- JWT-based authentication via `JwtAuthFilter`
-- Public endpoints: `/swagger-ui/**`, `/v3/api-docs/**`, `/actuator/health/**`, `/api/auth/**`
-- All other endpoints require authentication
-- Use `@PreAuthorize` for role-based access if needed
+- The **gateway** (`esprit-gateway`, :8088) validates JWTs (signature, expiry, `type=access` via `esprit-common` `JwtService`), strips `Authorization` and client-supplied `X-User-*`, then injects `X-User-Email` / `X-User-Id` / `X-User-Roles` (+ `X-Gateway-Token`).
+- Each service uses `XUserAuthFilter` (from esprit-common) which rebuilds the SecurityContext from those headers — the principal's username is the user email, so `@AuthenticationPrincipal` and `@PreAuthorize` keep working. Services do NOT parse `Authorization` and must NOT read a local user table for authorization.
+- Per-service `SecurityConfig` files declare that module's public paths (`permitAll`) plus OPTIONS/swagger/actuator; everything else is `authenticated()`.
+- Authorization MUST read the JWT role claim (carried in `X-User-Roles`), never a local user table.
+- Logout blacklisting (`TokenBlacklistService`) lives only in esprit-auth and is per-instance/in-memory — a known Phase 1 limitation (a logged-out access token stays valid until expiry; the gateway does not consult the blacklist).
 
 ## Environment Variables
 
+Identical `JWT_SECRET` must be supplied to the gateway AND all services (JwtService Base64-decodes it; empty fails on first token use).
+
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SPRING_DATASOURCE_URL` | PostgreSQL connection URL | `jdbc:postgresql://localhost:5432/esprit_market` |
+| `SPRING_DATASOURCE_URL` | PostgreSQL connection URL (SHARED DB in Phase 1) | `jdbc:postgresql://localhost:5432/esprit_market` |
 | `SPRING_DATASOURCE_USERNAME` | Database username | `postgres` |
-| `SPRING_DATASOURCE_PASSWORD` | Database password | `badis` |
-| `JWT_SECRET` | JWT signing key (Base64) | (see application.properties) |
-| `GOOGLE_MAPS_API_KEY` | Google Maps API key | (empty) |
+| `SPRING_DATASOURCE_PASSWORD` | Database password | `postgres` |
+| `JWT_SECRET` | JWT signing key (Base64) | (empty — must be provided) |
+| `GATEWAY_SHARED_TOKEN` | Shared secret the gateway injects; services require it in `X-User-*` trust checks | (empty = trust mode) |
+| `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` | Eureka registry URL | `http://localhost:8761/eureka/` |
+| `GOOGLE_MAPS_API_KEY` | Google Maps API key (esprit-marketplace) | (empty) |
 
 ## Important Files
 
-- `pom.xml` - Maven dependencies, Java 21, Spring Boot 4.0.2
-- `application.properties` - Configuration (port 8088, JWT, CORS)
-- `docker-compose.yml` - Docker setup for app + PostgreSQL
-- `Jenkinsfile` - CI/CD pipeline (test -> build -> docker push)
+- `backend/pom.xml` - parent aggregator (Boot 4.0.4, Spring Cloud 2025.1.0 BOM)
+- `<module>/application.yml` - per-service configuration (port, datasource, flyway off except auth)
+- `esprit-auth/src/main/resources/db/migration/` - THE shared-DB migration set (only auth runs Flyway)
+- `devops/db/init/01-espritmarket-base-schema.sql` - base schema for fresh databases (pre-baseline legacy tables are not in any migration)
+- `devops/docker-compose.yml` - microservices stack (db, eureka, 5 services, gateway, frontend, ml, monitoring)
+- `devops/local-stack.ps1` - run the whole stack locally without compose
+- `backend/Dockerfile.service` - parameterized per-module image build

@@ -1,3 +1,7 @@
+
+> **STATUS: MONOLITH-ERA DOCUMENTATION (pre Phase 1 microservices split).**
+> The manifests described here deploy the single pre-split backend image. Since the Phase 1 split, the backend is a set of 5 services + eureka + gateway (see `documentation/components/backend-README.md` and `devops/docker-compose.yml`). A K8s rewrite for the microservices topology is planned with Phase 2. Read with that in mind.
+
 # Kubernetes Deployment Guide (kubeadm)
 
 This guide covers deploying Esprit Market to a VPS using kubeadm.

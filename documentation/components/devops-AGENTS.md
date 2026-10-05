@@ -6,12 +6,12 @@ This document provides coding guidelines for the monorepo workspace containing B
 
 ```
 esprit-market/
-├── backend/           # Spring Boot API (Java 21)
+├── backend/           # Maven reactor: esprit-common lib + 5 services + eureka + gateway (Java 21)
 ├── frontend/          # Angular Web App (TypeScript)
-└── devops/            # Infrastructure, Scripts, Shared Types
+└── devops/            # docker compose, local-stack.ps1, db init SQL, scripts, shared types, k8s
     ├── scripts/       # Setup and utility scripts
     ├── shared/        # Auto-generated API types
-    └── k8s/           # Kubernetes manifests
+    └── k8s/           # Kubernetes manifests (monolith-era, pending Phase 2 rewrite)
 ```
 
 ---
@@ -21,8 +21,13 @@ esprit-market/
 ```bash
 # From devops/ folder
 ./scripts/setup.sh           # Install dependencies
-./scripts/start-dev.sh       # Start full development environment
+./scripts/start-dev.sh       # Start dev environment (monolith-era script)
 ./scripts/generate-types.sh  # Regenerate TypeScript types from API
+
+# Phase 1 microservices:
+cd backend && ./mvnw package -DskipTests                                  # build all jars
+powershell -ExecutionPolicy Bypass -File ../devops/local-stack.ps1 start  # local stack (no compose)
+# or: cd devops && docker compose up --build
 ```
 
 ---
@@ -30,25 +35,29 @@ esprit-market/
 ## Backend (`backend/`)
 
 ### Tech Stack
-- Java 21, Spring Boot 4.0.2, PostgreSQL, JWT Auth, gRPC, Prometheus
+- Java 21, Spring Boot 4.0.4, Spring Cloud 2025.1.0 (Eureka + Gateway), PostgreSQL, JWT Auth, Prometheus. No gRPC (removed).
 
-### Build Commands
+### Build Commands (from backend/, the reactor root)
 ```bash
-./mvnw clean package -DskipTests    # Build
-./mvnw clean test                    # Run tests
-./mvnw spring-boot:run              # Run locally (port 8088)
+./mvnw clean package -DskipTests            # build all modules
+./mvnw clean test                            # run all tests (259)
+./mvnw test -pl esprit-marketplace           # one module's tests
+./mvnw spring-boot:run -pl esprit-auth       # run one service (:8081)
 ```
 
-### Project Structure
-```
-src/main/java/net/thesphynx/espritmarket/
-├── Common/           # Config, Security, DTO, Entity, Exception
-├── Marketplace/      # Products, Orders, Reviews, Stores
-├── Delivery/         # Delivery tracking, Vehicles
-├── EventPlanning/    # Events, Tickets, Stalls
-├── Partnership/      # Partners, Job offers
-└── Srv/              # Services, Projects
-```
+### Modules and Ports
+| Module | Port | Routes |
+|--------|------|--------|
+| esprit-common | (library) | JwtService, exceptions, User/Role, events, XUserAuthFilter |
+| esprit-auth | 8081 | /api/auth/**, /api/common/** - owns Flyway migrations |
+| esprit-marketplace | 8082 | /api/marketplace/** + outliers (/api/market, /api/products, /api/stores, /api/search/products, /api/delivery/**, /api/admin/delivery/**, /api/admin/livreurs/**, /api/messages/**, /api/quiz/**, /uploads/**) |
+| esprit-srv | 8083 | /api/srv/**, /ws/** |
+| esprit-eventplanning | 8084 | /api/eventplanning/** |
+| esprit-partnership | 8085 | /api/partnership/** |
+| eureka-server | 8761 | registry |
+| esprit-gateway | 8088 | single entrypoint: JWT validation + X-User-* header injection |
+
+Phase 1 constraint: ONE shared PostgreSQL database for all services; esprit-auth is the only Flyway runner; fresh DBs are seeded from `devops/db/init/01-espritmarket-base-schema.sql`.
 
 ### Code Conventions
 - Lombok: `@Getter`, `@Setter`, `@AllArgsConstructor`, `@NoArgsConstructor`
@@ -57,24 +66,25 @@ src/main/java/net/thesphynx/espritmarket/
 - Repositories: Prefix with `I` (e.g., `IProductRepository`)
 - Services: Constructor injection, return `Optional<Dto>` for single lookups
 - Controllers: OpenAPI annotations (`@Tag`, `@Operation`, `@ApiResponses`)
+- Security: services trust gateway-injected `X-User-*` headers (via `XUserAuthFilter` in esprit-common); never parse `Authorization` in services; authorization reads the JWT role claim, never a local user table
 
 ### API Documentation
-- OpenAPI spec available at: `http://localhost:8088/v3/api-docs`
-- Swagger UI: `http://localhost:8088/swagger-ui.html`
+Each service has its own Swagger UI (not routed through the gateway):
+`http://localhost:8081|8082|8083|8084|8085/swagger-ui.html`
 
 ---
 
 ## Frontend (`frontend/`)
 
 ### Tech Stack
-- Angular 17+, TypeScript, SCSS
+- Angular 21, TypeScript, Tailwind CSS 4
 
 ### Build Commands
 ```bash
-npm install           # Install dependencies
-ng serve              # Dev server (port 4200)
-ng build              # Production build
-ng test               # Run unit tests
+npm install --legacy-peer-deps   # Install dependencies
+npm start                        # Dev server (port 4200, proxies to the gateway :8088)
+ng build                         # Production build
+ng test                          # Run unit tests
 ```
 
 ### Import API Types
@@ -94,7 +104,7 @@ import { ProductResponse, ProductRequest } from '@esprit-market/api-types';
 
 ### AUTO-GENERATED - Do Not Edit Manually
 
-Types are generated from backend OpenAPI spec.
+Types are generated from the backend OpenAPI spec.
 
 **Regenerate types:**
 ```bash
@@ -102,21 +112,14 @@ Types are generated from backend OpenAPI spec.
 ./scripts/generate-types.sh
 
 # Or manually:
-# 1. Start backend
-# 2. curl http://localhost:8088/v3/api-docs > shared/api-types/openapi.yaml
-# 3. npx openapi-generator-cli generate -i openapi.yaml -g typescript-angular -o src/generated
+# 1. Start a service (e.g. esprit-marketplace on :8082)
+# 2. curl http://localhost:8082/v3/api-docs > shared/api-types/openapi.json
+# 3. npx openapi-generator-cli generate -i openapi.json -g typescript-angular -o src/generated
 ```
 
-**Usage in frontend:**
-```typescript
-// tsconfig.json paths already configured
-import { ProductResponse } from '@esprit-market/api-types';
+Note: since the split, each service exposes its own OpenAPI spec - types must be merged per service.
 
-// In service
-getProducts(): Observable<ProductResponse[]> {
-  return this.http.get<ProductResponse[]>('/api/products');
-}
-```
+> **Known CI issue**: `frontend/Jenkinsfile` fetches `/v3/api-docs` from `http://10.100.202.174:8088` — that port is now the GATEWAY, which does not route `/v3/api-docs`. The generation step falls back to cached types today; a proper fix (gateway routes for swagger, or pointing the pipeline at a service port) is a Phase 2 item.
 
 ---
 
@@ -124,66 +127,39 @@ getProducts(): Observable<ProductResponse[]> {
 
 ### Development
 ```bash
-# From esprit-market/ root
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.dev.yml up
-
-# Or with rebuild
-docker compose -f devops/docker-compose.yml -f devops/docker-compose.dev.yml up --build
-```
-
-### Production
-```bash
-docker compose -f devops/docker-compose.yml up -d
+# From devops/ folder
+docker compose up --build          # db, eureka, 5 services, gateway (named 'backend'), frontend, ml, monitoring
+docker compose -f docker-compose.dev.yml up   # MONOLITH-ERA dev overrides (stale, pending Phase 2)
 ```
 
 ### Useful Commands
 ```bash
 docker compose logs -f              # View all logs
-docker compose logs -f backend      # Backend logs only
+docker compose logs -f backend      # Gateway logs
+docker compose ps                   # Container status
 docker compose down                 # Stop services
-docker compose down -v              # Stop and remove volumes
+docker compose down -v              # Stop and remove volumes (DB re-seeded from db/init on next up)
 ```
 
 ---
 
 ## Kubernetes Commands
 
-### Deploy All
-```bash
-kubectl apply -f devops/k8s/namespace.yaml
-kubectl apply -f devops/k8s/backend/
-kubectl apply -f devops/k8s/frontend/
-kubectl apply -f devops/k8s/monitoring/
-```
+> **Monolith-era manifests** - they deploy the pre-split backend image. Rewrite for microservices planned in Phase 2.
 
-### Verify
 ```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/
 kubectl get all -n esprit-market
 kubectl logs -f deployment/esprit-market-backend -n esprit-market
-```
-
-### Update
-```bash
-kubectl set image deployment/esprit-market-backend backend=thesphynx2000/espritmarket-backend:new-tag -n esprit-market
-kubectl rollout status deployment/esprit-market-backend -n esprit-market
 ```
 
 ---
 
 ## CI/CD Pipeline
 
-Jenkins pipeline stages:
-1. Checkout
-2. Dependency Check
-3. Unit Tests
-4. SonarQube Analysis
-5. Quality Gate
-6. Build Artifact
-7. Security Scan (Trivy)
-8. Build Docker Image
-9. Scan Docker Image
-10. Push Docker Image
-11. Deploy to Kubernetes
+- **Frontend**: `frontend/Jenkinsfile` — checkout, OpenAPI type generation, `npm install` + `npm test`, docker build & push of the frontend image (repo `thesphynx2000/espritmarket-frontend`).
+- **Backend**: no Jenkinsfile in the repo — CI relies on the Maven reactor (`./mvnw clean test` = 259 tests) and per-service images built with `backend/Dockerfile.service` (ARG MODULE).
 
 ---
 
@@ -193,25 +169,26 @@ Jenkins pipeline stages:
 |----------|-------------|---------|
 | `POSTGRES_USER` | Database username | `postgres` |
 | `POSTGRES_PASSWORD` | Database password | (required) |
-| `JWT_SECRET` | JWT signing key | (required) |
+| `JWT_SECRET` | JWT signing key - identical for gateway + all services | (required) |
+| `GATEWAY_SHARED_TOKEN` | Shared secret for gateway->service X-User-* trust | (optional; empty = trust mode) |
 | `GOOGLE_MAPS_API_KEY` | Google Maps API | (optional) |
 
 ---
 
 ## Troubleshooting
 
-### Backend won't start
-- Check PostgreSQL is running: `docker compose ps db`
-- Check logs: `docker compose logs backend`
-- Verify environment variables
+### A service won't start
+- Check PostgreSQL is running: `docker compose ps db` (or the local-stack DB)
+- Check logs: `docker compose logs auth` (auth runs the migrations - start it first)
+- Verify `JWT_SECRET` is set (empty secret fails on first token use)
 
 ### Frontend can't reach API
-- Check CORS configuration in backend
-- Verify API URL in frontend environment
-- Check network policies in Kubernetes
+- The gateway listens on :8088 (dev proxy: `frontend/proxy.conf.json`)
+- 401 from the gateway means the path is protected (valid JWT required)
+- Check CORS/network policies in Kubernetes
 
 ### Type generation fails
-- Ensure backend is running on port 8088
+- Ensure the target service is running on its port (8081-8085)
 - Check `/v3/api-docs` endpoint returns valid JSON
 - Verify openapi-generator-cli is installed
 
@@ -219,27 +196,11 @@ Jenkins pipeline stages:
 
 ## MCP Servers
 
-Configured in `opencode.json` at project root.
+Configured in `opencode.json` at project root:
 
 | MCP | Type | Purpose |
 |-----|------|---------|
-| `context7` | Remote | Search Spring Boot, Angular, K8s docs |
-| `postgres` | Local | Query PostgreSQL directly (via `POSTGRES_CONNECTION_STRING`) |
-
-Use `use context7` in prompts to search documentation.
-
----
-
-## Skills
-
-Located in `.opencode/skills/<name>/SKILL.md`. Load with the `skill` tool.
-
-| Skill | Purpose |
-|-------|---------|
-| `k8s-deploy` | Deploy/update app on Kubernetes |
-| `debug-k8s` | Diagnose K8s pod and deployment failures |
-| `generate-types` | Regenerate TypeScript types from OpenAPI spec |
-| `docker-ops` | Manage Docker Compose stacks |
+| `sweave` | Local | Agent orchestration/worktrees for this workspace |
 
 ---
 
@@ -247,4 +208,4 @@ Located in `.opencode/skills/<name>/SKILL.md`. Load with the `skill` tool.
 
 When referencing files, use format: `path/to/file.ts:42` for line numbers.
 
-Example: "The product service is defined in `frontend/src/app/services/product.service.ts:15`"
+Example: "The product service is defined in `backend/esprit-marketplace/src/main/java/net/thesphynx/espritmarket/Marketplace/Service/ProductService.java`"

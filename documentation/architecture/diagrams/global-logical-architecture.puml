@@ -2,35 +2,93 @@
 skinparam packageStyle rectangle
 skinparam shadowing false
 
-package "Presentation Layer (Angular UI)" {
-    component "Angular Application" as angular
-    component "Responsive Design" as responsive
+package "Frontend (Angular 21)" {
+    component "Angular Application\n(apiBaseUrl '' -> same-origin via gateway)" as angular
+    component "SockJS/STOMP clients\n(chat, notifications)" as wsclients
 }
 
-package "Application Layer (Spring Controllers)" {
-    component "REST API Controllers" as controllers
+package "Edge (esprit-gateway)" {
+    component "JwtValidationFilter\nsignature + expiry + type=access" as jwtfilter
+    component "Route Table\n4 clean prefixes + 8 marketplace\noutliers + /uploads + WS" as routes
+    component "Header Injection\nX-User-Email / X-User-Id /\nX-User-Roles (+ X-Gateway-Token)" as headers
 }
 
-package "Business Logic Layer (Spring Services)" {
-    component "Business Services" as services
+package "Shared Library (esprit-common, plain JAR)" {
+    component "JwtService" as jwtservice
+    component "Exceptions + GlobalExceptionHandler" as exceptions
+    component "User / Role entities" as userrole
+    component "PageResponse / ErrorResponse" as dtos
+    component "NotificationEvent / StatusTransitionEvent" as events
+    component "XUserAuthFilter\ntrusts gateway X-User-* headers" as xuserfilter
 }
 
-package "Data Access Layer (Spring Data JPA)" {
-    component "Data Repositories" as repositories
+package "esprit-auth" {
+    component "AuthController / UserController" as authc
+    component "AuthService / UserService / EmailService" as auths
+    component "CustomUserDetailsService\n(WS handshake only)" as uds
+    component "TokenBlacklistService\n(per-instance, Phase 1 limitation)" as blacklist
 }
 
-package "Integration Layer (External APIs)" {
-    component "External Integrations" as external
+package "esprit-marketplace (Marketplace + Delivery)" {
+    component "Products, Stores, Orders,\nReviews, SellerRequests" as mkt
+    component "Deliveries, Couriers, Vehicules,\nQuiz, Messages, Map tracking" as del
+    component "Order <-> Delivery\nbidirectional @OneToOne\ncascades (kept together)" as od
 }
 
-package "Cross-Cutting (JWT, RBAC, File Storage)" {
-    component "Cross-Cutting Services" as crosscutting
+package "esprit-srv" {
+    component "Bookings, Projects, Deliverables,\nEscrow, Wallets, Notifications" as srvsvc
+    component "PgNotifyEmitter/Listener\n(booking + notification channels)" as pgnotify
 }
 
-angular --> controllers : REST API
-controllers --> services
-services --> repositories
-services --> external : REST/gRPC
-controllers --> crosscutting
-services --> crosscutting
+package "esprit-eventplanning" {
+    component "Events, Tickets, Stalls,\nEquipment, Stripe payments" as ep
+}
+
+package "esprit-partnership" {
+    component "JobOffers, Applications,\nInterviews, Companies, Profils" as pt
+    component "PartnershipNotificationService\n(optional SimpMessagingTemplate)" as ptn
+}
+
+database "PostgreSQL 16 (shared in Phase 1)" as db
+
+angular --> routes : /api/**, /uploads/**, /ws*
+routes --> jwtfilter : protected paths
+jwtfilter --> headers : valid token
+headers --> authc : lb://esprit-auth
+headers --> mkt : lb://esprit-marketplace
+headers --> srvsvc : lb://esprit-srv
+headers --> ep : lb://esprit-eventplanning
+headers --> pt : lb://esprit-partnership
+
+angular --> wsclients
+wsclients --> mkt : /ws-marketplace (SockJS)
+wsclients --> srvsvc : /ws (SockJS + ?token= JWT handshake)
+
+jwtfilter ..> jwtservice : validates tokens
+xuserfilter ..> headers : consumes headers
+
+auths --> uds : only for WS handshake
+auths --> blacklist
+auths --> db : JPA + Flyway (migration owner)
+mkt --> userrole
+del --> userrole
+srvsvc --> userrole
+ep --> userrole
+pt --> userrole
+
+mkt --> events : publishes NotificationEvent
+srvsvc --> events : publishes Notification/StatusTransition
+events ..> ptn : partnership push (optional WS)
+mkt --> db
+srvsvc --> db
+ep --> db
+pt --> db
+
+note bottom of db
+  Phase 1 constraint: ONE shared database.
+  Every service keeps its own UserRepository copy
+  (same schema, no projections). Database-per-service,
+  event-driven projections and FK removal = Phase 2.
+end note
+
 @enduml

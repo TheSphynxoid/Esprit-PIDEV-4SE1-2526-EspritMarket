@@ -1,690 +1,183 @@
 # EspritMarket Backend
 
-> A comprehensive, well-structured monolithic Spring Boot application for a full-featured marketplace with integrated delivery management, event planning, and partnership features.
+> Phase 1 microservices: one Maven reactor (`esprit-market-backend`) that builds a shared library, five independently deployable Spring Boot services, a Eureka registry, and a Spring Cloud Gateway edge — all against **one shared PostgreSQL database** (deliberate Phase 1 constraint).
 
 [![Java](https://img.shields.io/badge/Java-21-orange?logo=java)](https://www.oracle.com/java/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.2-green?logo=spring-boot)](https://spring.io/projects/spring-boot)
-[![Maven](https://img.shields.io/badge/Maven-3.8+-blue?logo=maven)](https://maven.apache.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Latest-blue?logo=postgresql)](https://www.postgresql.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.4-green?logo=spring-boot)](https://spring.io/projects/spring-boot)
+[![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2025.1.0-blue?logo=spring)](https://spring.io/projects/spring-cloud)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
+- [Modules](#modules)
+- [Ports and Routes](#ports-and-routes)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [API Documentation](#api-documentation)
-- [Project Structure](#project-structure)
-- [Authentication](#authentication)
-- [Database](#database)
-- [Contributing](#contributing)
-- [License](#license)
+- [Building](#building)
+- [Running](#running)
+- [Authentication Model](#authentication-model)
+- [Database and Flyway](#database-and-flyway)
+- [Testing](#testing)
+- [Troubleshooting](#troubleshooting)
 
 ## 🎯 Overview
 
-EspritMarket Backend is a comprehensive, modular Spring Boot application designed to power a full-featured marketplace ecosystem. It features a clean, layered architecture organized by functional domains (Common, Delivery, Marketplace, EventPlanning, Partnership) within a single cohesive application. It provides robust support for:
+The backend was split (Phase 1) from a monolith into five services behind a Eureka registry and a Spring Cloud Gateway. Key properties:
 
-- **User Management**: Registration, authentication, and profile management
-- **Marketplace Operations**: Product listings, categories, and transactions
-- **Delivery Management**: Order tracking, courier management, and logistics coordination
-- **Event Planning**: Event creation, management, and collaboration
-- **Partnership Management**: Partner onboarding, contracts, and collaboration tools
-- **High-Performance Communication**: gRPC services for internal low-latency operations
+- **Maven multi-module reactor**: `backend/pom.xml` is the parent; every service is its own Spring Boot application with its own `application.yml` and port.
+- **Shared database**: all five services point at the same PostgreSQL schema in Phase 1 (a conscious "distributed monolith" compromise; database-per-service, event-driven projections and FK removal are Phase 2).
+- **Gateway-centric security**: the gateway validates JWTs and injects trusted `X-User-*` headers; services do not parse the `Authorization` header themselves.
+- **`esprit-common` library**: plain JAR (no component scanning, no datasource) shared by all services.
 
-The backend follows modern architectural patterns including JWT-based authentication, modular domain-driven design, caching strategies, and comprehensive error handling.
+## 📦 Modules
 
-## ✨ Features
+| Module | Type | Contents |
+|--------|------|----------|
+| `esprit-common` | library JAR | `JwtService`, exception types + `GlobalExceptionHandler`, `ErrorResponse`, `PageResponse`, `User`/`Role` entities, `NotificationEvent`/`StatusTransitionEvent`, `XUserAuthFilter` |
+| `esprit-auth` | service :8081 | login/register/refresh/logout, `/api/auth/**`, `/api/common/users/**`, password reset, email service; **owns the shared-DB Flyway migrations in Phase 1** |
+| `esprit-marketplace` | service :8082 | Marketplace (products, stores, orders, reviews, seller requests) **and** Delivery (deliveries, couriers, vehicules, quiz, messages, map tracking) — shipped together deliberately: bidirectional `Order`↔`Delivery` cascades and shared raw SQL |
+| `esprit-srv` | service :8083 | services, bookings, projects, deliverables, escrow, wallets, notifications, pg_notify bridge |
+| `esprit-eventplanning` | service :8084 | events, tickets, stalls, equipment, reservations, Stripe payments |
+| `esprit-partnership` | service :8085 | job offers, applications, interviews, partner companies, profiles |
+| `eureka-server` | registry :8761 | Eureka service registry (standalone) |
+| `esprit-gateway` | edge :8088 | route table, JWT validation, `X-User-*` header injection |
 
-### Core Functionality
-- ✅ **JWT Authentication**: Secure token-based authentication with role-based access control (RBAC)
-- ✅ **User Management**: Complete user lifecycle management with profile customization
-- ✅ **Product Management**: Comprehensive product catalog with categories and inventory tracking
-- ✅ **Order Processing**: Full order lifecycle from creation to delivery
-- ✅ **Delivery Tracking**: Real-time delivery status updates with Google Maps integration
-- ✅ **Event Management**: Flexible event creation and attendee management
-- ✅ **Partnership Management**: Partner registration and collaboration features
+Package names are unchanged (`net.thesphynx.espritmarket.<Module>`), so business code imports are identical to the monolith era.
 
-### Technical Features
-- ✅ **gRPC Services**: High-performance internal communication layer
-- ✅ **REST API**: Complete REST API with OpenAPI/Swagger documentation
-- ✅ **Database Migrations**: Automated schema versioning with Flyway
-- ✅ **Caching**: Multi-level caching for improved performance
-- ✅ **Security**: Spring Security integration with JWT tokens
-- ✅ **Validation**: Comprehensive input validation with Bean Validation
-- ✅ **Email Notifications**: Built-in email service for user communications
-- ✅ **API Documentation**: Interactive Swagger UI for API exploration
-- ✅ **Exception Handling**: Centralized error handling with meaningful responses
+## 🌐 Ports and Routes
 
-## 🛠️ Tech Stack
+| Container | Port | Routes (via gateway) |
+|-----------|------|----------------------|
+| esprit-gateway | 8088 | single entrypoint |
+| esprit-auth | 8081 | `/api/auth/**`, `/api/common/**` |
+| esprit-marketplace | 8082 | `/api/marketplace/**`, `/api/market/**`, `/api/products/**`, `/api/stores/**`, `/api/search/products/**`, `/api/delivery/**`, `/api/admin/delivery/**`, `/api/admin/livreurs/**`, `/api/messages/**`, `/api/quiz/**`, `/uploads/**`, `/ws-marketplace/**` |
+| esprit-srv | 8083 | `/api/srv/**`, `/ws/**` (booking chat + srv notifications) |
+| esprit-eventplanning | 8084 | `/api/eventplanning/**` |
+| esprit-partnership | 8085 | `/api/partnership/**` |
+| eureka-server | 8761 | registry console |
 
-### Backend Framework
-- **Java 21**: Latest LTS version with modern language features
-- **Spring Boot 4.0.2**: Enterprise-grade monolithic application framework
-- **Spring Cloud 2025.1.0**: Cloud-ready capabilities for deployment flexibility
-
-### Data & Persistence
-- **Spring Data JPA**: Object-relational mapping
-- **PostgreSQL**: Production-grade relational database
-- **Flyway**: Database schema migration and versioning
-- **Hibernate**: Advanced ORM capabilities
-
-### Communication & API
-- **gRPC 1.77.1**: High-performance internal RPC framework
-- **Protocol Buffers 4.33.4**: Efficient message serialization
-- **REST Endpoints**: RESTful API for client applications
-- **SpringDoc OpenAPI 2.6.0**: Automatic API documentation with Swagger UI
-
-### Security & Authentication
-- **Spring Security**: Authentication and authorization
-- **JWT (JJWT 0.12.3)**: JSON Web Tokens for stateless authentication
-- **Spring Validation**: Input validation and constraint enforcement
-
-### Additional Libraries
-- **Lombok**: Reduce boilerplate code
-- **Spring Mail**: Email sending capabilities
-- **Spring Cache**: In-memory caching
-
-### Development & Testing
-- **Spring Boot DevTools**: Fast application restarts
-- **JUnit 5**: Testing framework
-- **Mockito**: Mocking library
-- **H2 Database**: In-memory database for testing
+> The partnership service also exposes `/ws` for its notification push, but the gateway routes `/ws/**` to `esprit-srv` (booking chat is the heavier `/ws` consumer). Partnership notifications degrade gracefully to REST polling (`@Autowired(required = false) SimpMessagingTemplate`) — Phase 2 will introduce proper topic routing.
 
 ## 🏗️ Architecture
 
-### Modular Monolith Architecture
-
 ```
-┌──────────────────────────────────────────────────────────────┐
-│              REST Client Requests (Angular, Postman, etc.)    │
-└──────────────────────┬───────────────────────────────────────┘
-                       │
-                       ▼
-        ┌──────────────────────────────┐
-        │  REST Controllers Layer       │
-        │  ┌──────────────────────────┐│
-        │  │ Common       Delivery     ││
-        │  │ Marketplace  Events       ││
-        │  │ Partnership  Auth         ││
-        │  └──────────────────────────┘│
-        └──────────────┬───────────────┘
-                       │
-          ┌────────────┴──────────────┐
-          │                           │
-          ▼                           ▼
-  ┌─────────────────┐       ┌──────────────────┐
-  │  Service Layer  │       │ gRPC Internal    │
-  │ - Business      │       │   Services       │
-  │   Logic         │       │ (for high-perf   │
-  │ - Validation    │       │  operations)     │
-  │ - Transactions  │       │                  │
-  └────────┬────────┘       └────────┬─────────┘
-           │                         │
-           └────────────┬────────────┘
-                        │
-        ┌───────────────┴───────────────┐
-        │   Data Access Layer (JPA)     │
-        │  - Repositories               │
-        │  - Entity Mapping             │
-        │  - Query Building             │
-        └───────────────┬───────────────┘
-                        │
-                        ▼
-                ┌───────────────────┐
-                │  PostgreSQL DB    │
-                │  with Flyway      │
-                │  Versioning       │
-                └───────────────────┘
+Browser → Angular (nginx :80 / ng serve :4200)
+        → Spring Cloud Gateway :8088  (validates JWT, strips Authorization,
+                                       injects X-User-Email/Id/Roles)
+        → lb://<service> via Eureka :8761
+        → service (XUserAuthFilter rebuilds SecurityContext from headers)
+        → shared PostgreSQL :5432
 ```
 
-### Module Structure (Domain-Driven Organization)
+- **No per-request DB user lookup**: services no longer run `JwtAuthFilter` (which loaded the user from the DB on every request). Authorization (`@PreAuthorize`, `hasRole`) reads the JWT role claim carried in `X-User-Roles`.
+- **Service-to-gateway trust**: the gateway injects `X-Gateway-Token` when `GATEWAY_SHARED_TOKEN` is set; `XUserAuthFilter` in each service only accepts `X-User-*` headers when that secret matches (empty value = trust mode for bare local development).
+- **WebSocket**: SockJS endpoints (`/ws`, `/ws-marketplace`) work through the gateway via HTTP transports; the SockJS `websocket` transport and native WS endpoints cannot be upgraded through the servlet gateway (known `gateway-server-webmvc` limitation, verified empirically) and fall back / degrade as described above.
 
-```
-esprit-market-backend/
-├── Common/           # Shared entities, DTOs, exceptions, configurations
-│   ├── Config/       # Spring configurations and beans
-│   ├── Security/     # JWT, authentication, security filters
-│   ├── Exception/    # Global exception handling
-│   └── Entity/       # Base entities and repositories
-│
-├── Delivery/         # Delivery management domain
-│   ├── Service/      # Delivery & courier business logic
-│   ├── Controller/   # REST endpoints
-│   ├── Entity/       # Domain entities
-│   └── DTO/          # Data transfer objects
-│
-├── Marketplace/      # Product catalog and transactions domain
-│   ├── Service/      # Product business logic
-│   ├── Controller/   # REST endpoints
-│   └── Entity/       # Domain entities
-│
-├── EventPlanning/    # Event management domain
-│   ├── Service/      # Event business logic
-│   ├── Controller/   # REST endpoints
-│   └── Entity/       # Domain entities
-│
-├── Partnership/      # Partnership management domain
-│   ├── Service/      # Partnership business logic
-│   ├── Controller/   # REST endpoints
-│   └── Entity/       # Domain entities
-│
-└── Srv/             # gRPC service definitions
-    └── proto/       # Protocol buffer definitions
+## ✅ Prerequisites
+
+- JDK 21 (`java --version`)
+- Maven wrapper included (`./mvnw`); no local Maven install needed
+- PostgreSQL 16 (local or via Docker)
+- Docker (optional, for the container stack)
+
+## 🔨 Building
+
+From `backend/`:
+
+```bash
+# Full reactor: build + test all modules
+./mvnw test                     # 259 tests across 9 modules
+
+# Build all jars, skip tests
+./mvnw package -DskipTests
+
+# Build one service (+ its dependencies)
+./mvnw package -DskipTests -pl esprit-auth -am
 ```
 
-## 📋 Prerequisites
+Artifacts land in `<module>/target/<module>-0.2.0.jar`.
 
-Before you begin, ensure you have the following installed:
+## ▶️ Running
 
-- **Java 21** or higher
-  ```bash
-  java --version
-  ```
-- **Maven 3.8+** for dependency management
-  ```bash
-  mvn --version
-  ```
-- **PostgreSQL 12+** for the main database
-  ```bash
-  psql --version
-  ```
-- **Git** for version control
-  ```bash
-  git --version
-  ```
+### Whole stack locally without Docker compose
 
-### Environment Variables Required
+Use `devops/local-stack.ps1` (starts eureka → auth → services → gateway, tracks PIDs, health-checks):
 
 ```powershell
-# Google Maps API Configuration
-$env:GOOGLE_MAPS_API_KEY="your_google_maps_key"
-
-# Database Configuration
-$env:DB_HOST="localhost"
-$env:DB_PORT="5432"
-$env:DB_NAME="espritmarket"
-$env:DB_USER="postgres"
-$env:DB_PASSWORD="your_password"
-
-# JWT Configuration
-$env:JWT_SECRET="your_jwt_secret_key_min_256_bits"
-$env:JWT_EXPIRATION="86400000"  # 24 hours in milliseconds
-
-# Email Configuration
-$env:MAIL_HOST="smtp.gmail.com"
-$env:MAIL_PORT="587"
-$env:MAIL_USERNAME="your_email@gmail.com"
-$env:MAIL_PASSWORD="your_email_password"
+powershell -ExecutionPolicy Bypass -File devops/local-stack.ps1 start    # or stop | status
 ```
 
-## 🚀 Installation
+It expects a PostgreSQL at `SPRING_DATASOURCE_URL` (default `localhost:55432`, e.g. the seeded container from `devops/db/init/`) and sets `JWT_SECRET` / `GATEWAY_SHARED_TOKEN` identically for all processes.
 
-### 1. Clone the Repository
+### One service in an IDE
+
+Run the module's application class (`AuthApplication`, `MarketplaceApplication`, `SrvApplication`, `EventPlanningApplication`, `PartnershipApplication`, `EurekaServerApplication`, `GatewayApplication`) with the module's `application.yml` defaults; override the datasource with environment variables. Boot `esprit-auth` before the other services so Flyway can prepare the schema.
+
+### Docker (per-service images)
+
+`backend/Dockerfile.service` is a parameterized multi-stage build (`ARG MODULE`); `devops/docker-compose.yml` builds and wires db + eureka + 5 services + gateway (+ frontend, ml-service, prometheus, grafana):
 
 ```bash
-git clone https://github.com/yourusername/esprit-market-backend.git
-cd esprit-market-backend
+cd devops
+docker compose build
+docker compose up -d
 ```
 
-### 2. Install Dependencies
+## 🔐 Authentication Model
 
-```bash
-mvn clean install
-```
+**Token issuance** (esprit-auth only):
+- `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/refresh` return `AuthResponse` with access + refresh tokens.
+- Access token claims: `sub` = email, `roles` = `["ROLE_<ROLE>"]`, `userId`/`user_id`/`id` = user id, `type` = `access` (refresh tokens carry `type=refresh`).
 
-### 3. Configure Environment Variables
+**Token consumption** (gateway):
+- The gateway validates signature, expiry and `type=access`, then strips `Authorization` (and any client-supplied `X-User-*`) and injects `X-User-Email`, `X-User-Id`, `X-User-Roles` (+ `X-Gateway-Token`).
+- Public paths (login/register/forgot/reset/refresh/logout, actuator, uploads, the public GET/POST endpoints of each module, WS paths) pass through untouched.
+- Everything else requires a valid access token → 401 from the gateway.
 
-For Windows PowerShell:
-```powershell
-$env:GOOGLE_MAPS_API_KEY="your_key"
-$env:DB_HOST="localhost"
-$env:DB_NAME="espritmarket"
-$env:DB_USER="postgres"
-$env:DB_PASSWORD="password"
-$env:JWT_SECRET="your_secret_key"
-```
+**Known Phase 1 limitation**: logout blacklisting is per-instance inside esprit-auth (`TokenBlacklistService`, in-memory). The gateway does not consult it, so a logged-out access token remains valid until expiry. A shared blacklist store is Phase 2 work.
 
-For Linux/macOS:
-```bash
-export GOOGLE_MAPS_API_KEY="your_key"
-export DB_HOST="localhost"
-export DB_NAME="espritmarket"
-export DB_USER="postgres"
-export DB_PASSWORD="password"
-export JWT_SECRET="your_secret_key"
-```
+## 💾 Database and Flyway
 
-## ⚙️ Configuration
-
-### Database Setup
-
-1. Create PostgreSQL database:
-```sql
-CREATE DATABASE espritmarket;
-CREATE USER esprit_user WITH PASSWORD 'your_password';
-GRANT ALL PRIVILEGES ON DATABASE espritmarket TO esprit_user;
-```
-
-2. Update `application.properties`:
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/espritmarket
-spring.datasource.username=esprit_user
-spring.datasource.password=your_password
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
-```
-
-### Google Maps Configuration
-
-Verify Maps configuration at runtime:
-```bash
-curl -X GET http://localhost:8080/api/delivery/maps/config
-```
-
-Expected response:
-```json
-{
-    "configured": true,
-    "baseUrl": "https://maps.googleapis.com/maps/api"
-}
-```
-
-### Application Properties
-
-Key configurations in `application.properties`:
-
-```properties
-# Server Configuration
-server.port=8080
-server.servlet.context-path=/api
-
-# JWT Configuration
-app.jwt.secret=${JWT_SECRET}
-app.jwt.expiration=86400000
-
-# Email Configuration
-spring.mail.host=${MAIL_HOST}
-spring.mail.port=${MAIL_PORT}
-spring.mail.username=${MAIL_USERNAME}
-spring.mail.password=${MAIL_PASSWORD}
-spring.mail.properties.mail.smtp.auth=true
-spring.mail.properties.mail.smtp.starttls.enable=true
-
-# Caching
-spring.cache.type=simple
-
-# Logging
-logging.level.root=INFO
-logging.level.net.thesphynx.espritmarket=DEBUG
-```
-
-## ▶️ Running the Application
-
-### Using Maven
-
-```bash
-# Development mode (with DevTools)
-mvn spring-boot:run
-
-# Production mode
-mvn clean package
-java -jar target/EspritMarket-0.0.1-SNAPSHOT.jar
-```
-
-### Using IDE (IntelliJ IDEA/Eclipse)
-
-1. Open project in IDE
-2. Create Run Configuration for `EspritMarketApplication`
-3. Configure environment variables in Run Configuration
-4. Click Run
-
-### Using Docker (Optional)
-
-```bash
-# Build Docker image
-docker build -t esprit-market:latest .
-
-# Run container
-docker run -e GOOGLE_MAPS_API_KEY="your_key" \
-           -e DB_HOST="postgres-host" \
-           -p 8080:8080 \
-           esprit-market:latest
-```
-
-## 📚 API Documentation
-
-### Accessing Swagger UI
-
-Once the application is running:
-
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
-- **OpenAPI JSON**: http://localhost:8080/v3/api-docs
-- **OpenAPI YAML**: http://localhost:8080/v3/api-docs.yaml
-
-### Core API Endpoints
-
-#### Authentication
-```bash
-# Register new user
-POST /api/auth/register
-Content-Type: application/json
-{
-    "email": "user@example.com",
-    "password": "securePassword123",
-    "firstName": "John",
-    "lastName": "Doe"
-}
-
-# Login user
-POST /api/auth/login
-Content-Type: application/json
-{
-    "email": "user@example.com",
-    "password": "securePassword123"
-}
-
-# Response includes JWT token
-{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": 86400000,
-    "user": {
-        "id": "uuid",
-        "email": "user@example.com",
-        "roles": ["USER"]
-    }
-}
-```
-
-#### Marketplace
-```bash
-# Get products
-GET /api/marketplace/products
-
-# Create product
-POST /api/marketplace/products
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
-{
-    "name": "Product Name",
-    "description": "Product Description",
-    "price": 99.99,
-    "categoryId": "category-uuid"
-}
-```
-
-#### Delivery
-```bash
-# Get delivery configuration
-GET /api/delivery/maps/config
-
-# Create delivery order
-POST /api/delivery/orders
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
-{
-    "orderId": "order-uuid",
-    "pickupLocation": "Location 1",
-    "deliveryLocation": "Location 2",
-    "courierId": "courier-uuid"
-}
-
-# Track delivery
-GET /api/delivery/orders/{orderId}/track
-```
-
-#### Events
-```bash
-# Get events
-GET /api/events
-
-# Create event
-POST /api/events
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
-{
-    "title": "Event Title",
-    "description": "Event Description",
-    "date": "2024-12-31T18:00:00Z",
-    "isOnline": true
-}
-```
-
-## 📁 Project Structure
-
-```
-src/main/java/net/thesphynx/espritmarket/
-├── Common/
-│   ├── Config/              # Spring configurations
-│   ├── Controller/          # REST controllers
-│   ├── DTO/                 # Data Transfer Objects
-│   ├── Entity/              # Domain entities
-│   ├── Exception/           # Custom exceptions
-│   ├── Repository/          # Data access layer
-│   ├── Security/            # JWT and security filters
-│   └── Service/             # Business logic
-├── Delivery/
-│   ├── Controller/          # Delivery endpoints
-│   ├── Service/             # Delivery services (CourierService, etc.)
-│   ├── Entity/              # Delivery entities
-│   └── DTO/                 # Delivery DTOs
-├── EventPlanning/
-│   ├── Controller/          # Event endpoints
-│   ├── Service/             # Event services
-│   └── Entity/              # Event entities
-├── Marketplace/
-│   ├── Controller/          # Product endpoints
-│   ├── Service/             # Product services
-│   └── Entity/              # Product entities
-├── Partnership/
-│   ├── Controller/          # Partnership endpoints
-│   ├── Service/             # Partnership services
-│   └── Entity/              # Partnership entities
-└── Srv/                     # gRPC service definitions
-
-src/main/resources/
-├── application.properties   # Main configuration
-├── application-test.properties  # Test configuration
-├── db/migration/            # Flyway migration scripts
-└── proto/                   # Protocol Buffer definitions
-```
-
-## 🔐 Authentication
-
-### JWT Implementation
-
-The backend uses JWT (JSON Web Tokens) for stateless authentication:
-
-**Token Structure:**
-- **Header**: Algorithm (HS256)
-- **Payload**: 
-  - `sub`: User email
-  - `roles`: User roles (ADMIN, USER, COURIER, etc.)
-  - `iat`: Issued at timestamp
-  - `exp`: Expiration timestamp (24 hours)
-- **Signature**: HMAC-SHA256 with secret key
-
-**Usage:**
-```bash
-# Include token in Authorization header
-curl -X GET http://localhost:8080/api/auth/profile \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**Key Files:**
-- `Security/JwtService.java`: Token generation and validation
-- `Security/JwtAuthenticationFilter.java`: Request filtering
-- `Security/SecurityConfig.java`: Security configuration
-
-## 💾 Database
-
-### Schema Management
-
-Flyway is used for database versioning and migration:
-
-```bash
-# Migrations are automatically applied on startup
-# Location: src/main/resources/db/migration/
-# Format: V<version>__<description>.sql
-```
-
-**Current Migrations:**
-- `V1__add_is_online_to_event.sql`: Online event flag support
-
-**Running Migrations:**
-```bash
-# Manual migration (if needed)
-mvn flyway:migrate
-
-# Validate schema
-mvn flyway:validate
-```
-
-### Entity Relationships
-
-Key entities and their relationships:
-- **User** ↔ Orders, Events, Partnerships
-- **Product** → Category, Orders
-- **Order** ↔ Delivery, User
-- **Delivery** → Courier, Order
-- **Event** → Attendees, Organizer
+- **One shared database** (`esprit_market`) for all services in Phase 1.
+- **esprit-auth is the only migration runner** (`spring.flyway.enabled=true`, full `classpath:db/migration` set); all other services run with `spring.flyway.enabled=false` and rely on Hibernate `ddl-auto=validate`.
+- The **pre-baseline legacy schema** (tables like `app_user`, `event`, `courier`, `orders`…) is not created by any migration file. On a fresh database it comes from `devops/db/init/01-espritmarket-base-schema.sql` (generated via Hibernate HBM2DDL from the pre-split monolith), mounted into the Postgres container's `docker-entrypoint-initdb.d`. Flyway then baselines at `20260325` and re-applies the guarded `V20260404+` migrations idempotently.
+- Cross-module FKs (e.g. `event.user_id → app_user(id)`) exist on the shared schema; removing them is Phase 2.
 
 ## 🧪 Testing
 
-### Running Tests
-
 ```bash
-# Run all tests
-mvn test
+# All modules (from backend/)
+./mvnw test
 
-# Run specific test class
-mvn test -Dtest=AuthServiceTest
+# Single module
+./mvnw test -pl esprit-marketplace
 
-# Run with coverage
-mvn test jacoco:report
-
-# View coverage report
-# target/site/jacoco/index.html
+# Single test class / method
+./mvnw test -pl esprit-marketplace -Dtest=ProductServiceTest
+./mvnw test -pl esprit-marketplace -Dtest='ProductServiceTest#create_shouldMapPersistAndReturnResponse'
 ```
 
-### Test Configuration
-
-- Uses H2 in-memory database
-- Spring Security Test utilities
-- Mockito for mocking dependencies
-- Configuration: `src/test/resources/application-test.properties`
-
-## 📊 Performance & Optimization
-
-### Caching Strategy
-- Spring Cache abstraction with simple provider
-- Cache key patterns for frequently accessed data
-- TTL configurations per entity type
-
-### Database Optimization
-- Indexed columns for better query performance
-- Batch operations for bulk updates
-- Query optimization with proper JPA relationships
-
-### gRPC Services
-- Protobuf message serialization for efficiency
-- Streaming capabilities for large datasets
-- Built-in compression and multiplexing
+All tests are plain JUnit 5 + Mockito unit tests (no Spring context / no DB required). Current counts: esprit-common 3, esprit-auth 11, esprit-marketplace 129, esprit-srv 42, esprit-eventplanning 42, esprit-partnership 32 — total **259**.
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+**`relation "event" does not exist` at startup (fresh DB)**
+→ The base schema is missing. Seed the DB from `devops/db/init/01-espritmarket-base-schema.sql`, or start `esprit-auth` against a DB that already has the legacy schema.
 
-**1. Database Connection Error**
-```
-Error: FATAL: password authentication failed
-Solution: 
-- Verify PostgreSQL is running: pg_isready
-- Check credentials in application.properties
-- Ensure database and user exist
-```
+**`jwt.secret` empty / token errors**
+→ `JWT_SECRET` must be set **identically** for the gateway and every service (the secret is Base64-decoded; an empty value fails on first use).
 
-**2. JWT Token Invalid**
-```
-Error: Invalid JWT token
-Solution:
-- Verify JWT_SECRET environment variable is set
-- Token may have expired (24-hour expiration)
-- Check Authorization header format: "Bearer <token>"
-```
+**Gateway 401 on everything**
+→ A token was expected (path is protected). For bare-service debugging without the gateway, note that services trust `X-User-*` headers only when `GATEWAY_SHARED_TOKEN` matches or is unset.
 
-**3. Google Maps API Error**
-```
-Error: Maps API key not found
-Solution:
-- Set GOOGLE_MAPS_API_KEY environment variable
-- Verify API key is valid and enabled in Google Cloud Console
-- Check /api/delivery/maps/config endpoint
-```
+**Port already in use**
+→ Service ports are set in each module's `application.yml` (`server.port`); override with `SERVER_PORT`. (Local note: on some dev machines `httpd` occupies 8081 — the local stack script runs auth on 18081.)
 
-**4. Port Already in Use**
-```
-Error: Address already in use :8080
-Solution:
-- Change port in application.properties: server.port=8081
-- Or kill process using port 8080
-```
-
-## 📝 Contributing
-
-### Getting Started
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### Code Standards
-
-- Follow Google Java Style Guide
-- Use meaningful variable and method names
-- Add JavaDoc for public methods
-- Write unit tests for new features
-- Keep methods focused and single-responsibility
-
-### Pull Request Process
-
-1. Update README.md with any new features
-2. Ensure all tests pass: `mvn test`
-3. Add/update documentation
-4. Get review approval
-5. Merge to main branch
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Authors
-
-- **Development Team**: ESPRIT School
-- **Project**: EspritMarket Marketplace Platform
-
-## 📞 Support & Contact
-
-- **Email**: support@espritmarket.com
-- **Issues**: [GitHub Issues](https://github.com/yourusername/esprit-market-backend/issues)
-- **Documentation**: See `/docs` folder for additional guides
-
-## 🎓 Learning Resources
-
-- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
-- [Spring Security Guide](https://spring.io/projects/spring-security)
-- [JWT Tutorial](https://jwt.io/introduction)
-- [gRPC Java Documentation](https://grpc.io/docs/languages/java/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+**Eureka shows nothing**
+→ Services retry registration; check `EUREKA_CLIENT_SERVICEURL_DEFAULTZONE` (default `http://localhost:8761/eureka/`).
 
 ---
 
-**Last Updated**: March 31, 2026
-**Version**: 0.0.1-SNAPSHOT
-**Status**: Active Development
+**Version**: 0.2.0
+**Status**: Phase 1 microservices (shared DB) — Phase 2 planned: database-per-service, event-driven projections, FK removal, shared token blacklist, WS routing.

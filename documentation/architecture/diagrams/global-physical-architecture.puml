@@ -1,24 +1,81 @@
 @startuml physical-architecture
 skinparam componentStyle rectangle
 skinparam componentFontName monospaced
+skinparam shadowing false
 
 actor "User" as user
 
 package "Client" {
     component "Web Browser" as browser
+    component "Angular Frontend\n(nginx, :80)" as frontend
 }
 
-package "Kubernetes Cluster" {
-    component "Spring Boot Application" as springBoot
-    component "AI Microservices" as ai
-    component "PostgreSQL Database" as db
-    component "Persistent Volume\n(File Storage)" as pvc
+package "Edge" {
+    component "Spring Cloud Gateway\n(esprit-gateway, :8088)\nJWT validation +\nX-User-* header injection" as gateway
+}
+
+package "Service Discovery" {
+    component "Eureka Registry\n(eureka-server, :8761)" as eureka
+}
+
+package "Microservices (Phase 1: shared database)" {
+    component "esprit-auth\n:8081\nusers, login, register,\npassword reset" as auth
+    component "esprit-marketplace\n:8082\nmarketplace + delivery\n(shop together in Phase 1)" as marketplace
+    component "esprit-srv\n:8083\nservices, bookings,\nprojects, escrow" as srv
+    component "esprit-eventplanning\n:8084\nevents, tickets, stalls,\nequipment, Stripe" as eventplanning
+    component "esprit-partnership\n:8085\njob offers, applications,\ninterviews, profiles" as partnership
+}
+
+package "Data & Files" {
+    database "PostgreSQL 16\n(SHARED by all services\nin Phase 1)" as db
+    component "uploads volume\n(/app/uploads)" as uploads
+}
+
+package "AI" {
+    component "ML Service\n(FastAPI, :8000)\nbooking completion,\nproject delay, sentiment" as ml
+}
+
+package "Observability" {
+    component "Prometheus\n:9090" as prometheus
+    component "Grafana\n:3000" as grafana
 }
 
 user <--> browser : HTTPS
-browser <--> springBoot : HTTP
-springBoot <--> ai : REST API
-springBoot <--> db : JDBC/5432
-springBoot <--> pvc : File I/O
-ai <--> pvc : File I/O
+browser <--> frontend : HTTP
+frontend <--> gateway : /api/**, /uploads/**, /ws*(reverse proxy)
+
+gateway <--> eureka : discovery (lb://)
+auth <--> eureka : register/heartbeat
+marketplace <--> eureka : register/heartbeat
+srv <--> eureka : register/heartbeat
+eventplanning <--> eureka : register/heartbeat
+partnership <--> eureka : register/heartbeat
+
+gateway --> auth : X-User-* headers
+gateway --> marketplace : X-User-* headers
+gateway --> srv : X-User-* headers
+gateway --> eventplanning : X-User-* headers
+gateway --> partnership : X-User-* headers
+
+auth --> db : JDBC/5432 (Flyway owner)
+marketplace --> db : JDBC/5432
+srv --> db : JDBC/5432
+eventplanning --> db : JDBC/5432
+partnership --> db : JDBC/5432
+
+marketplace --> uploads : product images, student cards
+srv --> uploads : srv images, deliverables, bookings
+
+srv --> ml : REST (predictions)
+ml --> db : read training data
+
+prometheus --> gateway : scrape /actuator/prometheus
+prometheus --> auth : scrape
+prometheus --> marketplace : scrape
+prometheus --> srv : scrape
+prometheus --> eventplanning : scrape
+prometheus --> partnership : scrape
+prometheus --> eureka : scrape
+grafana --> prometheus : dashboards
+
 @enduml

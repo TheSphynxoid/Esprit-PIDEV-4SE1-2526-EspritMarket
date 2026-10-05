@@ -8,7 +8,7 @@ EspritMarket is a full-stack marketplace platform designed for the ESPRIT studen
 
 **Frontend :** Angular 21, TypeScript, Tailwind CSS, Angular Material, Spartan NG
 
-**Backend :** Java 21, Spring Boot 4.0.4, Spring Security (JWT), Spring Data JPA, Flyway, gRPC, Prometheus, WebSocket
+**Backend :** Java 21, Spring Boot 4.0.4, Spring Cloud 2025.1.0 (Eureka, Spring Cloud Gateway), Spring Security (JWT), Spring Data JPA, Flyway, Prometheus, WebSocket — découpé en 5 microservices (Phase 1)
 
 **Base de donnees :** PostgreSQL 16
 
@@ -45,28 +45,36 @@ docker compose -f devops/docker-compose.yml up --build
 
 The application will be available at:
 - Frontend: http://localhost
-- Backend API: http://localhost:8088
-- Swagger UI: http://localhost:8088/swagger-ui.html
+- Gateway (API entrypoint): http://localhost:8088
+- Eureka console: http://localhost:8761
 - Prometheus: http://localhost:9090
 - Grafana: http://localhost:3000
 
+Swagger UI is exposed per service (8081-8085), not through the gateway.
+
 ### Local Development
 
-If you prefer to run services individually:
+If you prefer to run services individually (Phase 1 microservices, one shared PostgreSQL):
 
-```bash
-# Backend (Spring Boot)
+```powershell
+# 0. (optional) seed a fresh database from devops/db/init/
+docker run -d --name esprit-local-db -e POSTGRES_DB=esprit_market -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 55432:5432 -v "<repo>/devops/db/init:/docker-entrypoint-initdb.d:ro" postgres:16-alpine
+
+# 1. Build all modules (backend/ is a Maven reactor)
 cd backend
-./mvnw clean install
-./mvnw spring-boot:run
+./mvnw package -DskipTests
 
-# Frontend (Angular)
-cd frontend
-npm install
-ng serve
+# 2. Start the whole stack: eureka -> auth (Flyway owner) -> services -> gateway
+powershell -ExecutionPolicy Bypass -File ..\devops\local-stack.ps1 start
+#    (status / stop subcommands available)
 
-# ML Service (Python)
-cd ml-service
+# 3. Frontend (Angular)
+cd ..\frontend
+npm install --legacy-peer-deps
+npm start
+
+# 4. ML Service (Python)
+cd ..\ml-service
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -82,19 +90,32 @@ See [`.env.example`](.env.example) for the complete list.
 |----------|-------------|----------|
 | `POSTGRES_USER` | Database username | Yes |
 | `POSTGRES_PASSWORD` | Database password | Yes |
-| `JWT_SECRET` | JWT signing key (min 256 bits) | Yes |
+| `JWT_SECRET` | JWT signing key (min 256 bits) — **identical for the gateway and all services** | Yes |
+| `GATEWAY_SHARED_TOKEN` | Shared secret the gateway injects as `X-Gateway-Token`; services require it to trust `X-User-*` headers | Recommended |
 | `GOOGLE_MAPS_API_KEY` | Google Maps API key | No |
 | `GRAFANA_PASSWORD` | Grafana admin password | No |
 
 ## Infrastructure (Cloud / Kubernetes)
 
-This project can be deployed on Kubernetes. See [documentation/guides/K8S_DEPLOYMENT.md](documentation/guides/K8S_DEPLOYMENT.md).
+> **Note**: the Kubernetes manifests (`devops/k8s/`) and their guides are monolith-era — they still deploy the pre-split backend image. A microservices rewrite is planned with Phase 2.
 
-The infrastructure manifests are in `devops/k8s/` and a production `docker-compose.yml` is in `devops/`.
+See [documentation/guides/K8S_DEPLOYMENT.md](documentation/guides/K8S_DEPLOYMENT.md).
 
-### Architecture
+### Architecture (Phase 1 microservices)
 
-Architecture diagrams (PlantUML source) are available in the `documentation/architecture/diagrams/` directory and documented in [documentation/README.md](documentation/README.md).
+```
+Browser → Angular (nginx :80 / ng serve :4200)
+        → Spring Cloud Gateway :8088  (validates JWT, injects X-User-* headers)
+        → lb:// via Eureka :8761
+        → esprit-auth :8081      (users, login, /api/auth/**, /api/common/**)
+        → esprit-marketplace :8082 (Marketplace + Delivery)
+        → esprit-srv :8083       (services, bookings, projects)
+        → esprit-eventplanning :8084 (events, tickets, stalls)
+        → esprit-partnership :8085 (job offers, applications)
+        → shared PostgreSQL :5432  (Phase 1: one database for all services)
+```
+
+`esprit-common` is a shared library JAR (JWT service, exceptions, User/Role entities). Architecture diagrams (PlantUML) live in `documentation/architecture/diagrams/` and are documented in [documentation/README.md](documentation/README.md).
 
 ## ML Service (IA)
 
@@ -116,7 +137,7 @@ See [demo/](demo/) for screenshots and video links.
 
 ## Architecture
 
-The project follows a layered architecture per domain module (Marketplace, Delivery, EventPlanning, Partnership, Srv), with:
+Phase 1 organizes the backend as five Spring Boot services (auth, marketplace+delivery, srv, eventplanning, partnership) behind a Eureka registry and a Spring Cloud Gateway, with a shared library (`esprit-common`) and **one shared PostgreSQL database** (deliberate Phase 1 constraint; database-per-service is Phase 2). Each service keeps a layered structure per domain module:
 - Controller layer (REST endpoints with OpenAPI annotations)
 - Service layer (business logic)
 - Repository layer (Spring Data JPA)

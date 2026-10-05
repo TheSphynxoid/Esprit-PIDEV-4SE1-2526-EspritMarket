@@ -17,20 +17,17 @@ The UML diagrams (PlantUML source) are available in the [`architecture/diagrams/
 | Diagram | Path | Description |
 |---------|------|-------------|
 | Class Diagram | `architecture/diagrams/global-class.puml` | Global class diagram |
-| Logical Architecture | `architecture/diagrams/global-logical-architecture.puml` | Logical architecture overview |
-| Physical Architecture | `architecture/diagrams/global-physical-architecture.puml` | Physical deployment architecture |
+| Logical Architecture | `architecture/diagrams/global-logical-architecture.puml` | Logical architecture (Phase 1 microservices) |
+| Physical Architecture | `architecture/diagrams/global-physical-architecture.puml` | Physical deployment architecture (Phase 1 microservices) |
 | Use Case | `architecture/diagrams/global-usecase.puml` | Global use case diagram |
 | Srv Module Classes | `architecture/diagrams/srv-module/Srv-Diagram.md` | Class diagram (PlantUML source) for the Srv module |
 
 The `architecture/diagrams/sprint2/`, `architecture/diagrams/class/`, `architecture/diagrams/sequence/`, and `architecture/diagrams/usecase/` directories contain per-module diagrams for Marketplace, Delivery, Events, Services, and Partnerships.
 
-### Known diagram inaccuracies (not yet fixed in the sources)
+### Diagram accuracy status (updated after the Phase 1 microservices split)
 
-The following gaps were identified during the documentation consolidation. The `.puml` sources were moved verbatim and were **not** redesigned:
-
-- `architecture/diagrams/global-logical-architecture.puml` shows a purely technical layering (Presentation / Application / Business Logic / Data Access) with **no business modules**, although the codebase is organized into the business modules Marketplace, Delivery, EventPlanning, Srv, Partnership, and Common.
-- `architecture/diagrams/global-logical-architecture.puml:33` still shows `services --> external : REST/gRPC`, but gRPC was removed from the backend in commit `d2ab59f` ("chore: remove unused grpc and protobuf dependencies").
-- `architecture/diagrams/global-physical-architecture.puml` still shows a single monolithic "Spring Boot Application" box, which no longer reflects the actual deployment (separate frontend, backend, ML service, and database components).
+- `global-physical-architecture.puml` and `global-logical-architecture.puml` were **redesigned** for the Phase 1 microservices topology: gateway (JWT validation + X-User-* header injection), Eureka registry, five services (auth, marketplace+delivery, srv, eventplanning, partnership), the shared `esprit-common` library, and the **shared PostgreSQL** (deliberate Phase 1 constraint).
+- The per-module business diagrams (`class/`, `sequence/`, `usecase/`, `sprint2/`, `srv-module/`) are business-level sources that were moved verbatim during the documentation consolidation. The Phase 1 split did not change business logic, so they remain representative; their older inaccuracies (e.g. outdated role names in `srv-module/Srv-Diagram.md`) are known and not yet redesigned.
 
 ## Guides
 
@@ -45,7 +42,7 @@ Per-component READMEs and AI-agent coding guidelines. Each doc describes one dep
 
 | Document | Component | Description |
 |----------|-----------|-------------|
-| [`components/backend-README.md`](components/backend-README.md) | `backend/` | Spring Boot backend: features, tech stack, architecture, setup, API endpoints, testing |
+| [`components/backend-README.md`](components/backend-README.md) | `backend/` | Maven reactor: esprit-common library, 5 microservices, eureka, gateway — build/run, ports and routes, auth model, database/Flyway policy, testing |
 | [`components/backend-AGENTS.md`](components/backend-AGENTS.md) | `backend/` | Coding guidelines and build/test commands for AI agents working on the backend |
 | [`components/frontend-README.md`](components/frontend-README.md) | `frontend/` | Angular frontend: features, folder structure, scripts, technologies, deployment |
 | [`components/devops-README.md`](components/devops-README.md) | `devops/` | DevOps workspace: structure, services/ports, type generation, Docker and Kubernetes commands |
@@ -66,11 +63,20 @@ Per-component READMEs and AI-agent coding guidelines. Each doc describes one dep
 
 ## API Documentation
 
-The backend exposes an OpenAPI/Swagger UI when running:
+Each service exposes its own OpenAPI/Swagger UI (they are NOT routed through the gateway; access services directly during development):
 
-- Swagger UI: `http://localhost:8088/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:8088/v3/api-docs`
+| Service | Port | Swagger UI |
+|---------|------|------------|
+| esprit-auth | 8081 (18081 locally if 8081 is taken) | `http://localhost:8081/swagger-ui.html` |
+| esprit-marketplace | 8082 | `http://localhost:8082/swagger-ui.html` |
+| esprit-srv | 8083 | `http://localhost:8083/swagger-ui.html` |
+| esprit-eventplanning | 8084 | `http://localhost:8084/swagger-ui.html` |
+| esprit-partnership | 8085 | `http://localhost:8085/swagger-ui.html` |
+
+The single entrypoint for the application traffic is the gateway on `http://localhost:8088`.
 
 ## Kubernetes Deployment
+
+> **Status: monolith-era.** The K8s manifests (`devops/k8s/`, `backend/k8s/`) and the guides below still describe the pre-split monolith. They are kept for reference; they need a rewrite for the microservices topology (one deployment per service, or the gateway as the single ingress) — planned with Phase 2.
 
 See [`guides/K8S_DEPLOYMENT.md`](guides/K8S_DEPLOYMENT.md) for the full Kubernetes deployment guide.

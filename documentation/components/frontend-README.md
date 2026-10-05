@@ -54,14 +54,20 @@ cp src/environments/environment.ts src/environments/environment.local.ts
 
 ### Configuration
 
-Edit src/environments/environment.ts and add:
+Since the Phase 1 microservices split, the frontend uses **same-origin relative URLs** (`apiBaseUrl: ''`) and reaches the backend exclusively through the **Spring Cloud Gateway on port 8088**:
 
+- `npm start` (ng serve) proxies `/api`, `/uploads`, `/ws`, `/ws-marketplace` to `http://localhost:8088` via `proxy.conf.json`
+- In Docker, the nginx config reverse-proxies `/api/` and `/uploads/` to the gateway container (compose service name `backend`)
+
+`src/environments/environment.ts` (keep `apiBaseUrl` empty unless pointing at a remote backend):
+
+```typescript
 export const environment = {
-production: false,
-apiUrl: '[http://localhost:8080/api](http://localhost:8080/api)',
-googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
-wsUrl: 'ws://localhost:8080/ws'
+  production: false,
+  apiBaseUrl: '',
+  googleMapsApiKey: 'YOUR_GOOGLE_MAPS_API_KEY',
 };
+```
 
 ---
 
@@ -146,7 +152,7 @@ npm run ng -- help
 Angular ^21.1.0 – Main framework
 TypeScript ~5.9.2 – Language
 RxJS ~7.8.0 – Reactive programming
-Tailwind CSS ^3.4.1 – Styling
+Tailwind CSS ^4.2.2 – Styling (via @tailwindcss/postcss + lightningcss)
 Google Maps ^21.2.4 – Maps and tracking
 STOMP.js ^7.3.0 – WebSocket
 SockJS ^1.6.1 – WebSocket fallback
@@ -280,7 +286,7 @@ rm -rf node_modules
 npm install
 
 Google Maps: check API key and config
-WebSocket: check backend and URL
+WebSocket: chat/notifications use SockJS against the gateway (:8088) — the HTTP handshake works and SockJS falls back to XHR transports; native WebSocket upgrades (`/ws-marketplace-native`) cannot pass the servlet gateway (known `gateway-server-webmvc` limitation, Phase 2 item). Also note `npm install` requires `--legacy-peer-deps` (as in the Docker build).
 
 ---
 

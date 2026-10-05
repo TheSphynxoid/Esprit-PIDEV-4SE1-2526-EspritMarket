@@ -2,94 +2,124 @@
 
 Infrastructure, scripts, and shared resources for the Esprit Market monorepo workspace.
 
+> **Phase 1 microservices**: `docker-compose.yml` now brings up db + eureka + 5 services + gateway (+ frontend, ml-service, prometheus, grafana). `local-stack.ps1` runs the whole backend stack locally without compose. `docker-compose.dev.yml` and the `k8s/` manifests are **monolith-era** and pending a Phase 2 refresh.
+
 ## Structure
 
 ```
 devops/
-├── AGENTS.md              # AI agent instructions
-├── docker-compose.yml     # Production Docker Compose
-├── docker-compose.dev.yml # Development overrides
+├── docker-compose.yml        # Phase 1 microservices stack (db, eureka, 5 services, gateway, frontend, ml, monitoring)
+├── docker-compose.dev.yml    # MONOLITH-ERA dev overrides (mvn spring-boot:run on the old single module) - stale
+├── local-stack.ps1           # Run the 7 backend services + gateway locally as plain Java processes
+├── db/
+│   └── init/
+│       └── 01-espritmarket-base-schema.sql   # base schema for FRESH databases (mounted into postgres docker-entrypoint-initdb.d)
+├── config/
+│   └── prometheus.yml        # scrape targets: gateway + 5 services + eureka
 ├── scripts/
-│   ├── setup.sh           # Initialize workspace
-│   ├── start-dev.sh       # Start dev environment
-│   └── generate-types.sh  # Generate TypeScript from OpenAPI
-├── shared/
-│   └── api-types/         # Auto-generated API types
-└── k8s/
-    ├── backend/           # Backend K8s manifests
-    ├── frontend/          # Frontend K8s manifests
-    └── monitoring/        # Prometheus/Grafana configs
+│   ├── setup.sh              # Initialize workspace
+│   ├── start-dev.sh          # Start dev environment (monolith-era)
+│   ├── generate-types.sh     # Generate TypeScript from OpenAPI
+│   ├── create-secrets.sh     # K8s secrets helper
+│   ├── setup-vps.sh          # VPS bootstrap (kubeadm guide)
+│   └── setup-storage.sh      # Storage bootstrap
+├── shared/api-types/         # Auto-generated API types
+└── k8s/                      # MONOLITH-ERA manifests - pending microservices rewrite
+    ├── backend/              # monolith deployment + postgres
+    ├── frontend/
+    ├── dev/                  # dev overlays (monolith-era)
+    ├── monitoring/
+    └── overlays/single-node/
 ```
 
-## Quick Start
+## Services (docker compose)
+
+| Service | Container port | Host port | Description |
+|---------|----------------|-----------|-------------|
+| backend (**the gateway**) | 8088 | 8088 | Spring Cloud Gateway — single entrypoint (JWT validation + X-User-* headers). Named `backend` so the frontend nginx upstream `backend:8088` keeps resolving |
+| eureka | 8761 | 8761 | Service registry console |
+| auth | 8081 | — | login/register/refresh/logout, /api/common/users; runs Flyway |
+| marketplace | 8082 | — | Marketplace + Delivery (shipped together) |
+| srv | 8083 | — | services/bookings/projects; `/ws` booking chat |
+| eventplanning | 8084 | — | events/tickets/Stripe |
+| partnership | 8085 | — | partnership domain |
+| db | 5432 | — | PostgreSQL 16, seeded by `db/init/*.sql` on a fresh volume |
+| frontend | 8080 | 80 | Angular + nginx reverse proxy |
+| ml-service | 8000 | 8000 | FastAPI predictions |
+| prometheus / grafana | 9090 / 3000 | 9090 / 3000 | metrics |
+
+Frontend dev server (`ng serve`) runs on 4200 and proxies `/api`, `/uploads`, `/ws`, `/ws-marketplace` to the gateway (see `frontend/proxy.conf.json`).
+
+## Local stack (no compose)
+
+Prerequisite: jars built once (`cd backend && ./mvnw package -DskipTests`) and a PostgreSQL reachable at the datasource URL (the script defaults to `localhost:55432` — e.g. a container seeded from `db/init/`).
+
+```powershell
+powershell -ExecutionPolicy Bypass -File local-stack.ps1 start    # eureka -> auth (Flyway) -> 4 services -> gateway
+powershell -ExecutionPolicy Bypass -File local-stack.ps1 status
+powershell -ExecutionPolicy Bypass -File local-stack.ps1 stop
+```
+
+Boot order matters: **auth must start before the other services** (it owns the shared-DB migrations; the others run Hibernate `validate`).
+
+## Fresh database bootstrap
+
+The legacy pre-baseline schema (app_user, event, courier, orders, ...) is **not** created by any Flyway migration. For a fresh database, seed it first:
 
 ```bash
-# 1. Setup workspace
-./scripts/setup.sh
-
-# 2. Edit .env with your secrets
-nano ../.env
-
-# 3. Start development environment
-./scripts/start-dev.sh
-
-# 4. Generate API types (after backend starts)
-./scripts/generate-types.sh
+docker run -d --name esprit-local-db \
+  -e POSTGRES_DB=esprit_market -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres \
+  -p 55432:5432 \
+  -v "$(pwd)/db/init:/docker-entrypoint-initdb.d:ro" \
+  postgres:16-alpine
 ```
 
-## Services
+Afterwards auth baselines at `20260325` and re-applies the guarded `V20260404+` migrations idempotently.
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Frontend | 4200 | Angular dev server |
-| Backend | 8088 | Spring Boot API |
-| Backend Debug | 5005 | Remote debugging |
-| PostgreSQL | 5432 | Database |
-| Prometheus | 9090 | Metrics |
-| Grafana | 3000 | Dashboards |
+## Environment
 
-## Type Generation
+Required/expected variables (see `.env.example` at the repo root):
 
-API types are auto-generated from the backend's OpenAPI spec:
-
-```bash
-./scripts/generate-types.sh
-```
-
-This fetches `/v3/api-docs` from the running backend and generates TypeScript interfaces.
+| Variable | Description |
+|----------|-------------|
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` | Database credentials |
+| `JWT_SECRET` | JWT signing key — **must be identical for the gateway and all 5 services** |
+| `GATEWAY_SHARED_TOKEN` | Shared secret injected as `X-Gateway-Token`; services require it to trust `X-User-*` headers |
+| `GOOGLE_MAPS_API_KEY` | Marketplace delivery maps |
+| `STRIPE_*` | Eventplanning payments |
+| `SPRING_MAIL_USERNAME` / `SPRING_MAIL_PASSWORD` | SMTP (auth, marketplace, srv, eventplanning) |
+| `ML_DB_PASSWORD` | ml-service DB access |
 
 ## Docker Commands
 
 ```bash
-# Start all services
-docker compose up -d
+# Build all images (each module builds via backend/Dockerfile.service, ARG MODULE)
+docker compose build
 
-# Start with dev overrides
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+# Start the stack
+docker compose up -d
 
 # View logs
 docker compose logs -f
+docker compose logs -f backend      # gateway logs
 
 # Stop services
 docker compose down
 
-# Stop and remove volumes
+# Stop and remove volumes (drops the DB - re-seeded from db/init on next up)
 docker compose down -v
 ```
 
 ## Kubernetes
 
-```bash
-# Apply all manifests
-kubectl apply -f k8s/
+> **Monolith-era.** The manifests deploy the pre-split backend image. They need a rewrite for the microservices topology (per-service deployments or gateway-as-ingress) — tracked for Phase 2.
 
-# Or apply by component
-kubectl apply -f k8s/backend/
-kubectl apply -f k8s/frontend/
-kubectl apply -f k8s/monitoring/
+```bash
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/
 ```
 
 ## Related Repositories
 
-- **Backend**: `../backend/` - Spring Boot API
+- **Backend**: `../backend/` - Maven reactor: esprit-common, 5 services, eureka, gateway
 - **Frontend**: `../frontend/` - Angular Web App
