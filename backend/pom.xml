@@ -29,6 +29,7 @@
         <module>esprit-auth</module>
         <module>esprit-marketplace</module>
         <module>esprit-srv</module>
+        <module>esprit-eventplanning</module>
         <module>app</module>
     </modules>
 

@@ -1,0 +1,69 @@
+spring:
+  application:
+    name: esprit-eventplanning
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/esprit_market}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: false
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+server:
+  port: 8084
+
+app:
+  cors:
+    allowed-origins: http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201
+  event-notification:
+    also-send-to: ${EVENT_NOTIFICATION_EMAILS:}
+    teams-link-prefix: https://teams.microsoft.com/l/meetup-join/
+  stripe:
+    success-url: http://localhost:4200/payment-success
+    cancel-url: http://localhost:4200/payment-cancel
+
+stripe:
+  api:
+    key: ${STRIPE_API_KEY:}
+  publishable:
+    key: ${STRIPE_PUBLISHABLE_KEY:}
+  webhook:
+    secret: ${STRIPE_WEBHOOK_SECRET:}
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 28800000
+  refresh-expiration: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    mail:
+      enabled: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
