@@ -29,6 +29,8 @@ server:
   port: 8084
 
 app:
+  gateway:
+    token: ${GATEWAY_SHARED_TOKEN:}
   cors:
     allowed-origins: http://localhost:4200,http://localhost:4201,http://127.0.0.1:4200,http://127.0.0.1:4201
   event-notification:

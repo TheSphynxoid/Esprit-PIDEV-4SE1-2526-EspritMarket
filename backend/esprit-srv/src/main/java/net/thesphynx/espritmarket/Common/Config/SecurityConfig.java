@@ -21,7 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import net.thesphynx.espritmarket.Common.Security.CustomAccessDeniedHandler;
 import net.thesphynx.espritmarket.Common.Security.CustomAuthenticationEntryPoint;
-import net.thesphynx.espritmarket.Common.Security.JwtAuthFilter;
+import net.thesphynx.espritmarket.Common.Security.XUserAuthFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -33,7 +33,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,
-            JwtAuthFilter jwtAuthFilter,
+            XUserAuthFilter xUserAuthFilter,
             CustomAuthenticationEntryPoint authenticationEntryPoint,
             CustomAccessDeniedHandler accessDeniedHandler) throws Exception {
 
@@ -74,7 +74,7 @@ public class SecurityConfig {
 
 
                         .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(xUserAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

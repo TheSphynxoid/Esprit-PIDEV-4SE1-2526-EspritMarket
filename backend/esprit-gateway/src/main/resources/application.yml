@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: esprit-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: auth
+              uri: lb://esprit-auth
+              predicates:
+                - Path=/api/auth/**,/api/common/**
+            - id: marketplace
+              uri: lb://esprit-marketplace
+              predicates:
+                - Path=/api/marketplace/**,/api/market/**,/api/products/**,/api/stores/**,/api/search/products/**,/api/delivery/**,/api/admin/delivery/**,/api/admin/livreurs/**,/api/messages/**,/api/quiz/**,/uploads/**,/ws-marketplace/**,/ws-marketplace-native/**
+            - id: srv
+              uri: lb://esprit-srv
+              predicates:
+                - Path=/api/srv/**,/ws/**
+            - id: eventplanning
+              uri: lb://esprit-eventplanning
+              predicates:
+                - Path=/api/eventplanning/**
+            - id: partnership
+              uri: lb://esprit-partnership
+              predicates:
+                - Path=/api/partnership/**
+
+server:
+  port: 8088
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
+
+app:
+  gateway:
+    token: ${GATEWAY_SHARED_TOKEN:}
+
+jwt:
+  secret: ${JWT_SECRET:}
+  expiration: 28800000
+  refresh-expiration: 604800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
